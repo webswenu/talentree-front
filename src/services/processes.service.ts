@@ -1,0 +1,122 @@
+import { apiService } from './api.service';
+import { SelectionProcess, CreateProcessDto, UpdateProcessDto, AssignEvaluatorsDto } from '../types/process.types';
+
+interface ProcessFilters {
+  status?: string;
+  companyId?: string;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+interface ProcessStats {
+  totalApplications: number;
+  pendingApplications: number;
+  approvedApplications: number;
+  rejectedApplications: number;
+  completionRate: number;
+}
+
+class ProcessesService {
+  private basePath = '/processes';
+
+  async findAll(params?: ProcessFilters): Promise<SelectionProcess[]> {
+    const response = await apiService.get<SelectionProcess[]>(this.basePath, { params });
+    return response.data;
+  }
+
+  async findByCompany(companyId: string): Promise<SelectionProcess[]> {
+    const response = await apiService.get<SelectionProcess[]>(`${this.basePath}/company/${companyId}`);
+    return response.data;
+  }
+
+  async findOne(id: string): Promise<SelectionProcess> {
+    const response = await apiService.get<SelectionProcess>(`${this.basePath}/${id}`);
+    return response.data;
+  }
+
+  async getById(id: string): Promise<SelectionProcess> {
+    return this.findOne(id);
+  }
+
+  async getAll(params?: ProcessFilters): Promise<SelectionProcess[]> {
+    return this.findAll(params);
+  }
+
+  async create(data: CreateProcessDto): Promise<SelectionProcess> {
+    const response = await apiService.post<SelectionProcess>(this.basePath, data);
+    return response.data;
+  }
+
+  async update(id: string, data: UpdateProcessDto): Promise<SelectionProcess> {
+    const response = await apiService.patch<SelectionProcess>(`${this.basePath}/${id}`, data);
+    return response.data;
+  }
+
+  async delete(id: string): Promise<void> {
+    await apiService.delete(`${this.basePath}/${id}`);
+  }
+
+  async assignEvaluators(id: string, data: AssignEvaluatorsDto): Promise<SelectionProcess> {
+    const response = await apiService.post<SelectionProcess>(`${this.basePath}/${id}/evaluators`, data);
+    return response.data;
+  }
+
+  async getEvaluators(id: string): Promise<any[]> {
+    const response = await apiService.get<any[]>(`${this.basePath}/${id}/evaluators`);
+    return response.data;
+  }
+
+  async getApplications(id: string): Promise<any[]> {
+    const response = await apiService.get<any[]>(`${this.basePath}/${id}/applications`);
+    return response.data;
+  }
+
+  async getStats(id: string): Promise<ProcessStats> {
+    const response = await apiService.get<ProcessStats>(`${this.basePath}/${id}/stats`);
+    return response.data;
+  }
+
+  async updateStatus(id: string, status: string): Promise<SelectionProcess> {
+    const response = await apiService.patch<SelectionProcess>(`${this.basePath}/${id}/status`, { status });
+    return response.data;
+  }
+
+  async publish(id: string): Promise<SelectionProcess> {
+    const response = await apiService.post<SelectionProcess>(`${this.basePath}/${id}/publish`, {});
+    return response.data;
+  }
+
+  async close(id: string): Promise<SelectionProcess> {
+    const response = await apiService.post<SelectionProcess>(`${this.basePath}/${id}/close`, {});
+    return response.data;
+  }
+
+  async archive(id: string): Promise<SelectionProcess> {
+    const response = await apiService.post<SelectionProcess>(`${this.basePath}/${id}/archive`, {});
+    return response.data;
+  }
+
+  async addTest(id: string, testId: string): Promise<SelectionProcess> {
+    const response = await apiService.post<SelectionProcess>(`${this.basePath}/${id}/tests`, { testId });
+    return response.data;
+  }
+
+  async removeTest(id: string, testId: string): Promise<SelectionProcess> {
+    const response = await apiService.delete<SelectionProcess>(`${this.basePath}/${id}/tests/${testId}`);
+    return response.data;
+  }
+
+  async getTests(id: string): Promise<any[]> {
+    const response = await apiService.get<any[]>(`${this.basePath}/${id}/tests`);
+    return response.data;
+  }
+
+  async duplicate(id: string): Promise<SelectionProcess> {
+    const response = await apiService.post<SelectionProcess>(`${this.basePath}/${id}/duplicate`, {});
+    return response.data;
+  }
+}
+
+export const processesService = new ProcessesService();
+export default processesService;

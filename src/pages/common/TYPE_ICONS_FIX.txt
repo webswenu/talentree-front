@@ -1,0 +1,10 @@
+const TYPE_ICONS: Record<NotificationType, string> = {
+  [NotificationType.INFO]: 'i',
+  [NotificationType.SUCCESS]: '✓',
+  [NotificationType.WARNING]: '!',
+  [NotificationType.ERROR]: 'x',
+  [NotificationType.PROCESS_UPDATE]: 'P',
+  [NotificationType.TEST_ASSIGNED]: 'T',
+  [NotificationType.EVALUATION_COMPLETED]: 'E',
+  [NotificationType.REPORT_READY]: 'R',
+};
