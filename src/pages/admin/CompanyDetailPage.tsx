@@ -1,143 +1,275 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { companyService } from '../../services/company.service';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useUsers } from "../../hooks/useUsers";
+import { useUpdateCompany } from "../../hooks/useCompanies";
+import { companyService } from "../../services/company.service";
+import { UserRole } from "../../types/user.types";
 
 export const CompanyDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { data: users } = useUsers();
+  const updateMutation = useUpdateCompany();
 
+  // 📦 Obtener datos de la empresa
   const { data: company, isLoading, error } = useQuery({
-    queryKey: ['company', id],
+    queryKey: ["company", id],
     queryFn: () => companyService.getById(id!),
     enabled: !!id,
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-600">Cargando...</div>
-      </div>
-    );
-  }
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    rut: "",
+    industry: "",
+    address: "",
+    city: "",
+    country: "Chile",
+    userId: "",
+  });
 
-  if (error || !company) {
+  useEffect(() => {
+    if (company) {
+      setFormData({
+        name: company.name || "",
+        rut: company.rut || "",
+        industry: company.industry || "",
+        address: company.address || "",
+        city: company.city || "",
+        country: company.country || "Chile",
+        userId: company.user?.id || "",
+      });
+    }
+  }, [company]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSave = async () => {
+    try {
+      const { userId, rut, ...updateData } = formData;
+      await updateMutation.mutateAsync({ id: id!, data: updateData });
+      setIsEditing(false);
+    } catch (err) {
+      alert("Error al guardar los cambios");
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    if (company) {
+      setFormData({
+        name: company.name,
+        rut: company.rut,
+        industry: company.industry || "",
+        address: company.address || "",
+        city: company.city || "",
+        country: company.country || "Chile",
+        userId: company.user?.id || "",
+      });
+    }
+  };
+
+  const availableUsers = users?.filter((u) => u.role === UserRole.COMPANY) || [];
+
+  if (isLoading)
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-red-600">Error al cargar la empresa</div>
+        <p className="text-gray-600">Cargando empresa...</p>
       </div>
     );
-  }
+
+  if (error || !company)
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-red-600">Error al cargar la empresa</p>
+      </div>
+    );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-8">
+      {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
           <button
-            onClick={() => navigate('/admin/empresas')}
+            onClick={() => navigate("/admin/empresas")}
             className="text-sm text-gray-600 hover:text-gray-900 mb-2 flex items-center gap-1"
           >
             ← Volver a empresas
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">{company.name}</h1>
-          <p className="text-gray-600">{company.businessName}</p>
+          <h1 className="text-3xl font-bold text-gray-900">{company.name}</h1>
+          <p className="text-gray-600">{company.industry || "Sin industria definida"}</p>
         </div>
-        <button
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Editar Empresa
-        </button>
+
+        {!isEditing ? (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="text-teal-600 hover:text-teal-800 text-sm font-medium"
+          >
+            ✏️ Editar
+          </button>
+        ) : (
+          <div className="flex gap-3">
+            <button
+              onClick={handleSave}
+              className="bg-teal-500 hover:bg-teal-600 text-white text-sm px-4 py-1.5 rounded-lg shadow"
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? "Guardando..." : "Guardar"}
+            </button>
+            <button
+              onClick={handleCancel}
+              className="text-gray-600 hover:text-gray-900 text-sm"
+              disabled={updateMutation.isPending}
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          <button className="border-b-2 border-blue-500 py-4 px-1 text-sm font-medium text-blue-600">
-            Información
-          </button>
-          <button className="border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
-            Procesos
-          </button>
-          <button className="border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
-            Reportes
-          </button>
-          <button className="border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
-            Usuarios
-          </button>
-          <button className="border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
-            Facturación
-          </button>
-        </nav>
-      </div>
+      {/* INFORMACIÓN EMPRESA */}
+      <div className="bg-white shadow rounded-xl p-6 space-y-6">
+        <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
+          Información Empresa
+        </h2>
 
-      {/* Company Info */}
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Información General</h2>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre de la Empresa *
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              readOnly={!isEditing}
+              className={`input w-full ${
+                !isEditing ? "bg-gray-50 text-gray-600 cursor-default" : ""
+              }`}
+            />
+          </div>
 
-        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium text-gray-500">RUT</label>
-            <p className="text-gray-900">{company.rut}</p>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              RUT *
+            </label>
+            <input
+              type="text"
+              name="rut"
+              value={formData.rut}
+              onChange={handleChange}
+              readOnly
+              className="input w-full bg-gray-50 text-gray-600 cursor-default"
+            />
           </div>
-          <div>
-            <label className="text-sm font-medium text-gray-500">Email</label>
-            <p className="text-gray-900">{company.email}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-500">Teléfono</label>
-            <p className="text-gray-900">{company.phone || 'No especificado'}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-500">Estado</label>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              company.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-            }`}>
-              {company.isActive ? 'Activa' : 'Inactiva'}
-            </span>
-          </div>
-          <div className="col-span-2">
-            <label className="text-sm font-medium text-gray-500">Dirección</label>
-            <p className="text-gray-900">{company.address || 'No especificada'}</p>
-          </div>
-        </div>
-      </div>
 
-      {/* Contact Person */}
-      {company.contactPerson && (
-        <div className="bg-white rounded-lg shadow p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">Persona de Contacto</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Industria
+            </label>
+            <input
+              type="text"
+              name="industry"
+              value={formData.industry}
+              onChange={handleChange}
+              readOnly={!isEditing}
+              className={`input w-full ${
+                !isEditing ? "bg-gray-50 text-gray-600 cursor-default" : ""
+              }`}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ciudad
+            </label>
+            <input
+              type="text"
+              name="city"
+              value={formData.city}
+              onChange={handleChange}
+              readOnly={!isEditing}
+              className={`input w-full ${
+                !isEditing ? "bg-gray-50 text-gray-600 cursor-default" : ""
+              }`}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              País
+            </label>
+            <input
+              type="text"
+              name="country"
+              value={formData.country}
+              onChange={handleChange}
+              readOnly={!isEditing}
+              className={`input w-full ${
+                !isEditing ? "bg-gray-50 text-gray-600 cursor-default" : ""
+              }`}
+            />
+          </div>
+
+          {isEditing && (
             <div>
-              <label className="text-sm font-medium text-gray-500">Nombre</label>
-              <p className="text-gray-900">{company.contactPerson.name}</p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Usuario Representante *
+              </label>
+              <select
+                name="userId"
+                value={formData.userId}
+                onChange={handleChange}
+                className="input w-full"
+                required
+              >
+                <option value="">Seleccionar usuario...</option>
+                {availableUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.firstName} {user.lastName} ({user.email})
+                  </option>
+                ))}
+              </select>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Email</label>
-              <p className="text-gray-900">{company.contactPerson.email}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Teléfono</label>
-              <p className="text-gray-900">{company.contactPerson.phone}</p>
-            </div>
+          )}
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Dirección
+            </label>
+            <input
+              type="text"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              readOnly={!isEditing}
+              className={`input w-full ${
+                !isEditing ? "bg-gray-50 text-gray-600 cursor-default" : ""
+              }`}
+            />
           </div>
         </div>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-sm font-medium text-gray-500">Procesos Activos</h3>
-          <p className="text-3xl font-bold text-gray-900 mt-2">0</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-sm font-medium text-gray-500">Total Procesos</h3>
-          <p className="text-3xl font-bold text-gray-900 mt-2">0</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-sm font-medium text-gray-500">Usuarios</h3>
-          <p className="text-3xl font-bold text-gray-900 mt-2">0</p>
-        </div>
       </div>
+
+      {/* SECCIONES INFERIORES */}
+      <details className="bg-white shadow rounded-xl">
+        <summary className="cursor-pointer p-4 font-medium text-gray-700 hover:text-teal-600">
+          Procesos Activos
+        </summary>
+        <div className="p-4 text-gray-500">No hay procesos activos</div>
+      </details>
+
+      <details className="bg-white shadow rounded-xl">
+        <summary className="cursor-pointer p-4 font-medium text-gray-700 hover:text-teal-600">
+          Procesos Terminados
+        </summary>
+        <div className="p-4 text-gray-500">No hay procesos terminados</div>
+      </details>
     </div>
   );
 };

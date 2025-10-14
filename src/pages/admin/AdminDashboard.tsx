@@ -1,203 +1,163 @@
-import { useAuthStore } from '../../store/authStore';
-import { useNavigate } from 'react-router-dom';
-import { QuickStats } from '../../components/widgets/QuickStats';
-import { ActivityFeed } from '../../components/widgets/ActivityFeed';
-import { RecentList } from '../../components/widgets/RecentList';
-import { BarChart } from '../../components/charts/BarChart';
-import { QuickActions } from '../../components/widgets/QuickActions';
+import { useAuthStore } from "../../store/authStore";
+import { useNavigate } from "react-router-dom";
+import { QuickStats } from "../../components/widgets/QuickStats";
+import { ActivityFeed } from "../../components/widgets/ActivityFeed";
+import { RecentList } from "../../components/widgets/RecentList";
+import { BarChart } from "../../components/charts/BarChart";
+import { QuickActions } from "../../components/widgets/QuickActions";
 
 export const AdminDashboard = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
   const stats = [
-    {
-      title: 'Empresas Activas',
-      value: 24,
-      trend: { value: 12, isPositive: true },
-      color: 'blue' as const,
-      icon: (
-        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-        </svg>
-      )
-    },
-    {
-      title: 'Procesos Activos',
-      value: 58,
-      trend: { value: 8, isPositive: true },
-      color: 'green' as const,
-      icon: (
-        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-        </svg>
-      )
-    },
-    {
-      title: 'Candidatos',
-      value: 342,
-      trend: { value: 5, isPositive: false },
-      color: 'yellow' as const,
-      icon: (
-        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-      )
-    },
-    {
-      title: 'Tests Completados',
-      value: 128,
-      trend: { value: 15, isPositive: true },
-      color: 'gray' as const,
-      icon: (
-        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-        </svg>
-      )
-    }
-  ];
-
-  const recentProcesses = [
-    {
-      id: 1,
-      title: 'Operadores Mina Los Pelambres',
-      subtitle: 'Minera Los Pelambres',
-      status: { label: 'Activo', color: 'green' as const },
-      meta: '12 candidatos | Creado hace 2 días',
-      onClick: () => navigate('/admin/procesos/1')
-    },
-    {
-      id: 2,
-      title: 'Supervisores Turno Noche',
-      subtitle: 'Codelco El Teniente',
-      status: { label: 'En revisión', color: 'yellow' as const },
-      meta: '8 candidatos | Creado hace 5 días',
-      onClick: () => navigate('/admin/procesos/2')
-    },
-    {
-      id: 3,
-      title: 'Mecánicos Especialistas',
-      subtitle: 'Antofagasta Minerals',
-      status: { label: 'Cerrado', color: 'gray' as const },
-      meta: '15 candidatos | Finalizado hace 1 semana',
-      onClick: () => navigate('/admin/procesos/3')
-    }
-  ];
-
-  const activities = [
-    {
-      id: 1,
-      user: 'Juan Pérez',
-      action: 'creó un nuevo proceso',
-      target: 'Operadores Mina',
-      time: 'Hace 10 minutos',
-      type: 'create' as const
-    },
-    {
-      id: 2,
-      user: 'María González',
-      action: 'actualizó empresa',
-      target: 'Minera Los Pelambres',
-      time: 'Hace 1 hora',
-      type: 'update' as const
-    },
-    {
-      id: 3,
-      user: 'Carlos Soto',
-      action: 'eliminó test',
-      target: 'Test Psicométrico V2',
-      time: 'Hace 2 horas',
-      type: 'delete' as const
-    },
-    {
-      id: 4,
-      user: 'Ana Martínez',
-      action: 'aprobó candidato',
-      target: 'Roberto Silva',
-      time: 'Hace 3 horas',
-      type: 'info' as const
-    }
+    { title: "Views", value: 7265, trend: { value: 110, isPositive: true } },
+    { title: "Visits", value: 3671, trend: { value: -0.8, isPositive: false } },
+    { title: "New Users", value: 156, trend: { value: 16, isPositive: true } },
+    { title: "Active Users", value: 2318, trend: { value: 6, isPositive: true } },
   ];
 
   const processData = [
-    { label: 'Enero', value: 12, color: 'bg-blue-600' },
-    { label: 'Febrero', value: 19, color: 'bg-blue-600' },
-    { label: 'Marzo', value: 15, color: 'bg-blue-600' },
-    { label: 'Abril', value: 22, color: 'bg-blue-600' },
-    { label: 'Mayo', value: 18, color: 'bg-blue-600' },
-    { label: 'Junio', value: 25, color: 'bg-blue-600' }
+    { label: "Linux", value: 25 },
+    { label: "Mac", value: 28 },
+    { label: "iOS", value: 21 },
+    { label: "Windows", value: 17 },
+    { label: "Android", value: 24 },
   ];
 
-  const quickActions = [
-    {
-      id: 'new-company',
-      label: 'Nueva Empresa',
-      icon: (
-        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-      ),
-      onClick: () => navigate('/admin/empresas?action=create'),
-      color: 'blue' as const
-    },
-    {
-      id: 'new-process',
-      label: 'Nuevo Proceso',
-      icon: (
-        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-        </svg>
-      ),
-      onClick: () => navigate('/admin/procesos?action=create'),
-      color: 'green' as const
-    },
-    {
-      id: 'new-test',
-      label: 'Nuevo Test',
-      icon: (
-        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
-      onClick: () => navigate('/admin/tests?action=create'),
-      color: 'yellow' as const
-    }
+  const activities = [
+    { id: 1, user: "Juan Pérez", action: "creó un nuevo proceso", target: "Operadores Mina", time: "Hace 10 min" },
+    { id: 2, user: "María González", action: "actualizó empresa", target: "Minera Los Pelambres", time: "Hace 1 hora" },
+    { id: 3, user: "Carlos Soto", action: "eliminó test", target: "Test Psicométrico V2", time: "Hace 2 horas" },
+  ];
+
+  const documents = [
+    { name: "ByeWind", date: "Jun 24, 2025", amount: "$942.00", status: "In Progress" },
+    { name: "Natali Craig", date: "Mar 10, 2025", amount: "$881.00", status: "Complete" },
+    { name: "Drew Cano", date: "Nov 10, 2025", amount: "$409.00", status: "Pending" },
+    { name: "Orlando Diggs", date: "Dec 20, 2025", amount: "$953.00", status: "Approved" },
+    { name: "Andi Lane", date: "Jul 25, 2025", amount: "$907.00", status: "Rejected" },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+  <div className="space-y-10 min-h-full pb-16">
+    {/* Header */}
+    <header className="flex justify-between items-center">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600 mt-1">Bienvenido, {user?.firstName}</p>
       </div>
-
-      {/* Quick Stats */}
-      <QuickStats stats={stats} />
-
-      {/* Quick Actions */}
-      <QuickActions actions={quickActions} />
-
-      {/* Charts and Lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <BarChart
-          data={processData}
-          title="Procesos por Mes"
-          height={300}
+      <div className="flex items-center gap-4">
+        <input
+          type="text"
+          placeholder="Buscar..."
+          className="border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none"
         />
+        <button className="p-2 rounded-lg bg-white shadow hover:shadow-md transition">
+          🔔
+        </button>
+        <button className="p-2 rounded-lg bg-white shadow hover:shadow-md transition">
+          ⚙️
+        </button>
+      </div>
+    </header>
 
-        <RecentList
-          title="Procesos Recientes"
-          items={recentProcesses}
-          viewAllLink={{
-            label: 'Ver todos',
-            onClick: () => navigate('/admin/procesos')
-          }}
-        />
+    {/* Quick Stats */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {stats.map((stat, i) => (
+        <div
+          key={i}
+          className="bg-gradient-to-br from-teal-100 to-teal-50 rounded-2xl p-6 shadow hover:shadow-lg transition-all"
+        >
+          <div className="flex justify-between items-center">
+            <div>
+              <h4 className="text-sm text-gray-500">{stat.title}</h4>
+              <p className="text-3xl font-bold text-gray-800 mt-1">
+                {stat.value}
+              </p>
+            </div>
+            <span
+              className={`text-sm font-semibold ${
+                stat.trend.isPositive ? "text-teal-600" : "text-red-500"
+              }`}
+            >
+              {stat.trend.isPositive ? "+" : ""}
+              {stat.trend.value}%
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {/* Charts */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Procesos vs Trabajadores */}
+      <div className="bg-white p-6 rounded-2xl shadow">
+        <h2 className="text-lg font-semibold mb-4">Procesos vs Trabajadores</h2>
+        <BarChart data={processData} title="" height={260} />
       </div>
 
-      {/* Activity Feed */}
+      {/* Procesos Completados */}
+      <div className="bg-white p-6 rounded-2xl shadow">
+        <h2 className="text-lg font-semibold mb-4">Procesos Completados</h2>
+        <div className="flex justify-center items-center h-[260px]">
+          <div className="w-48 h-48 rounded-full border-[14px] border-teal-400 relative">
+            <div className="absolute inset-4 bg-white rounded-full flex items-center justify-center">
+              <span className="font-semibold text-gray-700">
+                52% Completado
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Documentos */}
+    <div className="bg-white p-6 rounded-2xl shadow">
+      <h2 className="text-lg font-semibold mb-6">Documentos</h2>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-gray-500 border-b">
+            <th className="text-left pb-3">Nombre</th>
+            <th className="text-left pb-3">Archivo</th>
+            <th className="text-left pb-3">Monto</th>
+            <th className="text-left pb-3">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {documents.map((doc, i) => (
+            <tr key={i} className="border-b last:border-none hover:bg-gray-50">
+              <td className="py-3">{doc.name}</td>
+              <td className="py-3">{doc.date}</td>
+              <td className="py-3 font-semibold">{doc.amount}</td>
+              <td className="py-3">
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    doc.status === "Complete"
+                      ? "bg-teal-100 text-teal-700"
+                      : doc.status === "Approved"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : doc.status === "Pending"
+                      ? "bg-blue-100 text-blue-700"
+                      : doc.status === "Rejected"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {doc.status}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    {/* Activity Feed */}
+    <div className="mt-10">
       <ActivityFeed activities={activities} maxItems={5} />
     </div>
-  );
+  </div>
+);
+
 };

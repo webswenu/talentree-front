@@ -223,10 +223,6 @@ export const LandingPage = () => {
   </div>
 </section>
 
-
-
-
-
       {/* ===== TESTIMONIOS ===== */}
       <Section id="testimonios" className="py-24 bg-gray-50 text-center">
         <h2 className="text-4xl font-bold mb-12 text-gray-800">Testimonios</h2>
