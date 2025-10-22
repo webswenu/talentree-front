@@ -45,3 +45,9 @@ export interface UpdateCompanyDto {
   isActive?: boolean;
   contractEndDate?: Date;
 }
+
+export interface CompanyStats {
+  total: number;
+  active: number;
+  inactive: number;
+}

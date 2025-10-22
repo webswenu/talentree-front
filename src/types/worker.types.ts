@@ -90,3 +90,8 @@ export const WorkerStatusColors: Record<WorkerStatus, string> = {
   [WorkerStatus.REJECTED]: 'bg-red-100 text-red-800',
   [WorkerStatus.HIRED]: 'bg-purple-100 text-purple-800',
 };
+
+export interface WorkerStats {
+  total: number;
+  byStatus: Record<string, number>;
+}

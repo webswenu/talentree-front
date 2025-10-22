@@ -2,22 +2,41 @@ import { useState } from 'react';
 import { useProcesses, useDeleteProcess } from '../../hooks/useProcesses';
 import { SelectionProcess, ProcessStatusLabels, ProcessStatusColors } from '../../types/process.types';
 import ProcessModal from '../../components/admin/ProcessModal';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 
 export default function ProcessesPage() {
   const { data: processes, isLoading } = useProcesses();
   const deleteMutation = useDeleteProcess();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProcess, setSelectedProcess] = useState<SelectionProcess | undefined>();
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [processToDelete, setProcessToDelete] = useState<SelectionProcess | null>(null);
 
   const handleEdit = (process: SelectionProcess) => {
     setSelectedProcess(process);
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('¿Está seguro de eliminar este proceso de selección?')) {
-      await deleteMutation.mutateAsync(id);
+  const handleDelete = (process: SelectionProcess) => {
+    setProcessToDelete(process);
+    setIsConfirmDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!processToDelete) return;
+
+    try {
+      await deleteMutation.mutateAsync(processToDelete.id);
+      setIsConfirmDeleteOpen(false);
+      setProcessToDelete(null);
+    } catch (err) {
+      // Error ya manejado por el hook
     }
+  };
+
+  const handleCancelDelete = () => {
+    setIsConfirmDeleteOpen(false);
+    setProcessToDelete(null);
   };
 
   const handleCloseModal = () => {
@@ -118,7 +137,7 @@ export default function ProcessesPage() {
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{process.company?.businessName || 'N/A'}</div>
+                  <div className="text-sm text-gray-900">{process.company?.name || 'N/A'}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {getStatusBadge(process.status)}
@@ -140,8 +159,9 @@ export default function ProcessesPage() {
                     Editar
                   </button>
                   <button
-                    onClick={() => handleDelete(process.id)}
-                    className="text-red-600 hover:text-red-900"
+                    onClick={() => handleDelete(process)}
+                    disabled={deleteMutation.isPending}
+                    className="text-red-600 hover:text-red-900 disabled:opacity-50"
                   >
                     Eliminar
                   </button>
@@ -158,6 +178,18 @@ export default function ProcessesPage() {
           onClose={handleCloseModal}
         />
       )}
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={isConfirmDeleteOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Proceso"
+        message={`¿Estás seguro de eliminar el proceso "${processToDelete?.name}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

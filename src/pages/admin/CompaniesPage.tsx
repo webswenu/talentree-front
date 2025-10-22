@@ -2,12 +2,15 @@ import { useState } from 'react';
 import { useCompanies, useDeleteCompany } from '../../hooks/useCompanies';
 import { Company } from '../../types/company.types';
 import { CompanyModal } from '../../components/admin/CompanyModal';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 
 export const CompaniesPage = () => {
   const { data: companies, isLoading, error } = useCompanies();
   const deleteMutation = useDeleteCompany();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
 
   const handleEdit = (company: Company) => {
     setSelectedCompany(company);
@@ -19,14 +22,26 @@ export const CompaniesPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('¿Estás seguro de eliminar esta empresa?')) {
-      try {
-        await deleteMutation.mutateAsync(id);
-      } catch (err) {
-        alert('Error al eliminar la empresa');
-      }
+  const handleDelete = (company: Company) => {
+    setCompanyToDelete(company);
+    setIsConfirmDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!companyToDelete) return;
+
+    try {
+      await deleteMutation.mutateAsync(companyToDelete.id);
+      setIsConfirmDeleteOpen(false);
+      setCompanyToDelete(null);
+    } catch (err) {
+      // Error ya manejado por el hook
     }
+  };
+
+  const handleCancelDelete = () => {
+    setIsConfirmDeleteOpen(false);
+    setCompanyToDelete(null);
   };
 
   const handleCloseModal = () => {
@@ -160,7 +175,7 @@ export const CompaniesPage = () => {
                       Editar
                     </button>
                     <button
-                      onClick={() => handleDelete(company.id)}
+                      onClick={() => handleDelete(company)}
                       disabled={deleteMutation.isPending}
                       className="text-red-600 hover:text-red-900 disabled:opacity-50"
                     >
@@ -190,6 +205,18 @@ export const CompaniesPage = () => {
           onClose={handleCloseModal}
         />
       )}
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={isConfirmDeleteOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Empresa"
+        message={`¿Estás seguro de eliminar la empresa "${companyToDelete?.name}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };

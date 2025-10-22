@@ -2,22 +2,41 @@ import { useState } from 'react';
 import { useWorkers, useDeleteWorker } from '../../hooks/useWorkers';
 import { Worker } from '../../types/worker.types';
 import WorkerModal from '../../components/admin/WorkerModal';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 
 export default function WorkersPage() {
   const { data: workers, isLoading } = useWorkers();
   const deleteMutation = useDeleteWorker();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState<Worker | undefined>();
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [workerToDelete, setWorkerToDelete] = useState<Worker | null>(null);
 
   const handleEdit = (worker: Worker) => {
     setSelectedWorker(worker);
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('¿Está seguro de eliminar este trabajador?')) {
-      await deleteMutation.mutateAsync(id);
+  const handleDelete = (worker: Worker) => {
+    setWorkerToDelete(worker);
+    setIsConfirmDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!workerToDelete) return;
+
+    try {
+      await deleteMutation.mutateAsync(workerToDelete.id);
+      setIsConfirmDeleteOpen(false);
+      setWorkerToDelete(null);
+    } catch (err) {
+      // Error ya manejado por el hook
     }
+  };
+
+  const handleCancelDelete = () => {
+    setIsConfirmDeleteOpen(false);
+    setWorkerToDelete(null);
   };
 
   const handleCloseModal = () => {
@@ -154,8 +173,9 @@ export default function WorkersPage() {
                     Editar
                   </button>
                   <button
-                    onClick={() => handleDelete(worker.id)}
-                    className="text-red-600 hover:text-red-900"
+                    onClick={() => handleDelete(worker)}
+                    disabled={deleteMutation.isPending}
+                    className="text-red-600 hover:text-red-900 disabled:opacity-50"
                   >
                     Eliminar
                   </button>
@@ -172,6 +192,18 @@ export default function WorkersPage() {
           onClose={handleCloseModal}
         />
       )}
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={isConfirmDeleteOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Trabajador"
+        message={`¿Estás seguro de eliminar al trabajador "${workerToDelete?.firstName} ${workerToDelete?.lastName}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

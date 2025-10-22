@@ -6,6 +6,7 @@ export enum ProcessStatus {
   ACTIVE = 'active',
   PAUSED = 'paused',
   COMPLETED = 'completed',
+  CLOSED = 'closed',
   ARCHIVED = 'archived',
 }
 
@@ -64,6 +65,7 @@ export const ProcessStatusLabels: Record<ProcessStatus, string> = {
   [ProcessStatus.ACTIVE]: 'Activo',
   [ProcessStatus.PAUSED]: 'Pausado',
   [ProcessStatus.COMPLETED]: 'Completado',
+  [ProcessStatus.CLOSED]: 'Cerrado',
   [ProcessStatus.ARCHIVED]: 'Archivado',
 };
 
@@ -72,5 +74,12 @@ export const ProcessStatusColors: Record<ProcessStatus, string> = {
   [ProcessStatus.ACTIVE]: 'bg-green-100 text-green-800',
   [ProcessStatus.PAUSED]: 'bg-yellow-100 text-yellow-800',
   [ProcessStatus.COMPLETED]: 'bg-blue-100 text-blue-800',
+  [ProcessStatus.CLOSED]: 'bg-purple-100 text-purple-800',
   [ProcessStatus.ARCHIVED]: 'bg-red-100 text-red-800',
 };
+
+export interface ProcessStats {
+  total: number;
+  byStatus: Record<string, number>;
+  byMonth: Array<{ month: string; count: number }>;
+}

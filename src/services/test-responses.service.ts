@@ -1,5 +1,5 @@
 import { apiService } from './api.service';
-import { TestResponse, TestAnswer, StartTestDto, SubmitTestDto, EvaluateAnswerDto } from '../types/test-response.types';
+import { TestResponse, TestAnswer, StartTestDto, SubmitTestDto, EvaluateAnswerDto, TestResponseStats } from '../types/test-response.types';
 
 class TestResponsesService {
   private basePath = '/test-responses';
@@ -45,6 +45,11 @@ class TestResponsesService {
 
   async findByTest(testId: string): Promise<TestResponse[]> {
     const response = await apiService.get<TestResponse[]>(`${this.basePath}/test/${testId}`);
+    return response.data;
+  }
+
+  async getAllStats(): Promise<TestResponseStats> {
+    const response = await apiService.get<TestResponseStats>(`${this.basePath}/stats`);
     return response.data;
   }
 }

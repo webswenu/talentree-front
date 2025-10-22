@@ -1,5 +1,5 @@
 import { apiService } from './api.service';
-import { SelectionProcess, CreateProcessDto, UpdateProcessDto, AssignEvaluatorsDto } from '../types/process.types';
+import { SelectionProcess, CreateProcessDto, UpdateProcessDto, AssignEvaluatorsDto, ProcessStats } from '../types/process.types';
 
 interface ProcessFilters {
   status?: string;
@@ -9,7 +9,7 @@ interface ProcessFilters {
   dateTo?: string;
 }
 
-interface ProcessStats {
+interface ProcessDetailStats {
   totalApplications: number;
   pendingApplications: number;
   approvedApplications: number;
@@ -26,7 +26,7 @@ class ProcessesService {
   }
 
   async findByCompany(companyId: string): Promise<SelectionProcess[]> {
-    const response = await apiService.get<SelectionProcess[]>(`${this.basePath}/company/${companyId}`);
+    const response = await apiService.get<SelectionProcess[]>(this.basePath, { params: { companyId } });
     return response.data;
   }
 
@@ -72,8 +72,13 @@ class ProcessesService {
     return response.data;
   }
 
-  async getStats(id: string): Promise<ProcessStats> {
-    const response = await apiService.get<ProcessStats>(`${this.basePath}/${id}/stats`);
+  async getAllStats(): Promise<ProcessStats> {
+    const response = await apiService.get<ProcessStats>(`${this.basePath}/stats`);
+    return response.data;
+  }
+
+  async getStats(id: string): Promise<ProcessDetailStats> {
+    const response = await apiService.get<ProcessDetailStats>(`${this.basePath}/${id}/stats`);
     return response.data;
   }
 

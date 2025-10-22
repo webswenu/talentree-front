@@ -1,7 +1,7 @@
 import apiService from './api.service';
-import { Company, CreateCompanyDto, UpdateCompanyDto } from '../types/company.types';
+import { Company, CreateCompanyDto, UpdateCompanyDto, CompanyStats } from '../types/company.types';
 
-interface CompanyStats {
+interface CompanyDetailStats {
   totalProcesses: number;
   activeProcesses: number;
   totalWorkers: number;
@@ -53,8 +53,13 @@ class CompaniesService {
     return data;
   }
 
-  async getStats(id: string): Promise<CompanyStats> {
-    const { data } = await apiService.get<CompanyStats>(`/companies/${id}/stats`);
+  async getAllStats(): Promise<CompanyStats> {
+    const { data } = await apiService.get<CompanyStats>('/companies/stats');
+    return data;
+  }
+
+  async getStats(id: string): Promise<CompanyDetailStats> {
+    const { data } = await apiService.get<CompanyDetailStats>(`/companies/${id}/stats`);
     return data;
   }
 

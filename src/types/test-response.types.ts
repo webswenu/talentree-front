@@ -52,3 +52,11 @@ export interface EvaluateAnswerDto {
   isCorrect: boolean;
   evaluatorComment?: string;
 }
+
+export interface TestResponseStats {
+  total: number;
+  completed: number;
+  pending: number;
+  passed: number;
+  failed: number;
+}

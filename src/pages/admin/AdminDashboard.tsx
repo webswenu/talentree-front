@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { QuickStats } from '../../components/widgets/QuickStats';
@@ -5,16 +6,37 @@ import { ActivityFeed } from '../../components/widgets/ActivityFeed';
 import { RecentList } from '../../components/widgets/RecentList';
 import { BarChart } from '../../components/charts/BarChart';
 import { QuickActions } from '../../components/widgets/QuickActions';
+import { CompanyModal } from '../../components/admin/CompanyModal';
+import ProcessModal from '../../components/admin/ProcessModal';
+import { useCompaniesStats } from '../../hooks/useCompanies';
+import { useProcessesStats, useProcesses } from '../../hooks/useProcesses';
+import { useWorkersStats } from '../../hooks/useWorkers';
+import { useTestResponsesStats } from '../../hooks/useTestResponses';
+import { useAuditStats } from '../../hooks/useAudit';
+import { ProcessStatusLabels } from '../../types/process.types';
 
 export const AdminDashboard = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
+  const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
 
+  // Fetch all stats
+  const { data: companiesStats, isLoading: loadingCompanies } = useCompaniesStats();
+  const { data: processesStats, isLoading: loadingProcesses } = useProcessesStats();
+  const { data: workersStats, isLoading: loadingWorkers } = useWorkersStats();
+  const { data: testResponsesStats, isLoading: loadingTests } = useTestResponsesStats();
+  const { data: auditStats, isLoading: loadingAudit } = useAuditStats();
+  const { data: recentProcesses, isLoading: loadingRecentProcesses } = useProcesses();
+
+  const isLoading = loadingCompanies || loadingProcesses || loadingWorkers || loadingTests || loadingAudit || loadingRecentProcesses;
+
+  // QuickStats data
   const stats = [
     {
       title: 'Empresas Activas',
-      value: 24,
-      trend: { value: 12, isPositive: true },
+      value: companiesStats?.active ?? 0,
+      trend: companiesStats ? { value: 12, isPositive: true } : undefined,
       color: 'blue' as const,
       icon: (
         <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -24,8 +46,8 @@ export const AdminDashboard = () => {
     },
     {
       title: 'Procesos Activos',
-      value: 58,
-      trend: { value: 8, isPositive: true },
+      value: processesStats?.byStatus?.active ?? 0,
+      trend: processesStats ? { value: 8, isPositive: true } : undefined,
       color: 'green' as const,
       icon: (
         <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -35,8 +57,8 @@ export const AdminDashboard = () => {
     },
     {
       title: 'Candidatos',
-      value: 342,
-      trend: { value: 5, isPositive: false },
+      value: workersStats?.total ?? 0,
+      trend: workersStats ? { value: 5, isPositive: false } : undefined,
       color: 'yellow' as const,
       icon: (
         <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -46,8 +68,8 @@ export const AdminDashboard = () => {
     },
     {
       title: 'Tests Completados',
-      value: 128,
-      trend: { value: 15, isPositive: true },
+      value: testResponsesStats?.completed ?? 0,
+      trend: testResponsesStats ? { value: 15, isPositive: true } : undefined,
       color: 'gray' as const,
       icon: (
         <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -57,77 +79,37 @@ export const AdminDashboard = () => {
     }
   ];
 
-  const recentProcesses = [
-    {
-      id: 1,
-      title: 'Operadores Mina Los Pelambres',
-      subtitle: 'Minera Los Pelambres',
-      status: { label: 'Activo', color: 'green' as const },
-      meta: '12 candidatos | Creado hace 2 días',
-      onClick: () => navigate('/admin/procesos/1')
+  // Recent processes list
+  const recentProcessesList = (recentProcesses || []).slice(0, 5).map((process) => ({
+    id: process.id,
+    title: process.name,
+    subtitle: process.company?.name || 'Sin empresa',
+    status: {
+      label: ProcessStatusLabels[process.status],
+      color: getStatusColor(process.status)
     },
-    {
-      id: 2,
-      title: 'Supervisores Turno Noche',
-      subtitle: 'Codelco El Teniente',
-      status: { label: 'En revisión', color: 'yellow' as const },
-      meta: '8 candidatos | Creado hace 5 días',
-      onClick: () => navigate('/admin/procesos/2')
-    },
-    {
-      id: 3,
-      title: 'Mecánicos Especialistas',
-      subtitle: 'Antofagasta Minerals',
-      status: { label: 'Cerrado', color: 'gray' as const },
-      meta: '15 candidatos | Finalizado hace 1 semana',
-      onClick: () => navigate('/admin/procesos/3')
-    }
-  ];
+    meta: `Creado el ${new Date(process.createdAt).toLocaleDateString('es-ES')}`,
+    onClick: () => navigate(`/admin/procesos/${process.id}`)
+  }));
 
-  const activities = [
-    {
-      id: 1,
-      user: 'Juan Pérez',
-      action: 'creó un nuevo proceso',
-      target: 'Operadores Mina',
-      time: 'Hace 10 minutos',
-      type: 'create' as const
-    },
-    {
-      id: 2,
-      user: 'María González',
-      action: 'actualizó empresa',
-      target: 'Minera Los Pelambres',
-      time: 'Hace 1 hora',
-      type: 'update' as const
-    },
-    {
-      id: 3,
-      user: 'Carlos Soto',
-      action: 'eliminó test',
-      target: 'Test Psicométrico V2',
-      time: 'Hace 2 horas',
-      type: 'delete' as const
-    },
-    {
-      id: 4,
-      user: 'Ana Martínez',
-      action: 'aprobó candidato',
-      target: 'Roberto Silva',
-      time: 'Hace 3 horas',
-      type: 'info' as const
-    }
-  ];
+  // Activity feed from audit
+  const activities = (auditStats?.recentActivity || []).slice(0, 10).map((log) => ({
+    id: log.id,
+    user: log.user ? `${log.user.firstName} ${log.user.lastName}` : 'Sistema',
+    action: getActionLabel(log.action),
+    target: log.entityType,
+    time: getTimeAgo(log.createdAt),
+    type: getActivityType(log.action)
+  }));
 
-  const processData = [
-    { label: 'Enero', value: 12, color: 'bg-blue-600' },
-    { label: 'Febrero', value: 19, color: 'bg-blue-600' },
-    { label: 'Marzo', value: 15, color: 'bg-blue-600' },
-    { label: 'Abril', value: 22, color: 'bg-blue-600' },
-    { label: 'Mayo', value: 18, color: 'bg-blue-600' },
-    { label: 'Junio', value: 25, color: 'bg-blue-600' }
-  ];
+  // Process chart data (by month)
+  const processData = (processesStats?.byMonth || []).map((item) => ({
+    label: item.month,
+    value: item.count,
+    color: 'bg-blue-600'
+  }));
 
+  // Quick actions
   const quickActions = [
     {
       id: 'new-company',
@@ -137,7 +119,7 @@ export const AdminDashboard = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
       ),
-      onClick: () => navigate('/admin/empresas?action=create'),
+      onClick: () => setIsCompanyModalOpen(true),
       color: 'blue' as const
     },
     {
@@ -148,21 +130,18 @@ export const AdminDashboard = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
       ),
-      onClick: () => navigate('/admin/procesos?action=create'),
+      onClick: () => setIsProcessModalOpen(true),
       color: 'green' as const
-    },
-    {
-      id: 'new-test',
-      label: 'Nuevo Test',
-      icon: (
-        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
-      onClick: () => navigate('/admin/tests?action=create'),
-      color: 'yellow' as const
     }
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Cargando estadísticas...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -176,28 +155,100 @@ export const AdminDashboard = () => {
       <QuickStats stats={stats} />
 
       {/* Quick Actions */}
-      <QuickActions actions={quickActions} />
+      <QuickActions actions={quickActions} columns={2} />
 
       {/* Charts and Lists */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <BarChart
-          data={processData}
-          title="Procesos por Mes"
-          height={300}
-        />
+        {processData.length > 0 && (
+          <BarChart
+            data={processData}
+            title="Procesos por Mes"
+            height={300}
+          />
+        )}
 
-        <RecentList
-          title="Procesos Recientes"
-          items={recentProcesses}
-          viewAllLink={{
-            label: 'Ver todos',
-            onClick: () => navigate('/admin/procesos')
-          }}
-        />
+        {recentProcessesList.length > 0 && (
+          <RecentList
+            title="Procesos Recientes"
+            items={recentProcessesList}
+            viewAllLink={{
+              label: 'Ver todos',
+              onClick: () => navigate('/admin/procesos')
+            }}
+          />
+        )}
       </div>
 
       {/* Activity Feed */}
-      <ActivityFeed activities={activities} maxItems={5} />
+      {activities.length > 0 && (
+        <ActivityFeed activities={activities} maxItems={10} />
+      )}
+
+      {/* Company Modal */}
+      {isCompanyModalOpen && (
+        <CompanyModal
+          company={null}
+          onClose={() => setIsCompanyModalOpen(false)}
+        />
+      )}
+
+      {/* Process Modal */}
+      {isProcessModalOpen && (
+        <ProcessModal
+          onClose={() => setIsProcessModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
+
+// Helper functions
+function getStatusColor(status: string): 'blue' | 'green' | 'yellow' | 'red' | 'gray' {
+  const colorMap: Record<string, 'blue' | 'green' | 'yellow' | 'red' | 'gray'> = {
+    draft: 'gray',
+    active: 'green',
+    paused: 'yellow',
+    completed: 'blue',
+    archived: 'red',
+    closed: 'red'
+  };
+  return colorMap[status] || 'gray';
+}
+
+function getActionLabel(action: string): string {
+  const actionLabels: Record<string, string> = {
+    created: 'creó',
+    updated: 'actualizó',
+    deleted: 'eliminó',
+    login: 'inició sesión',
+    logout: 'cerró sesión',
+    view: 'visualizó'
+  };
+  return actionLabels[action] || action;
+}
+
+function getActivityType(action: string): 'create' | 'update' | 'delete' | 'info' {
+  const typeMap: Record<string, 'create' | 'update' | 'delete' | 'info'> = {
+    created: 'create',
+    updated: 'update',
+    deleted: 'delete',
+    login: 'info',
+    logout: 'info',
+    view: 'info'
+  };
+  return typeMap[action] || 'info';
+}
+
+function getTimeAgo(date: Date | string): string {
+  const now = new Date();
+  const past = new Date(date);
+  const diffMs = now.getTime() - past.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Ahora';
+  if (diffMins < 60) return `Hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
+  if (diffHours < 24) return `Hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+  return `Hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+}

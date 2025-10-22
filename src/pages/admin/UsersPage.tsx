@@ -19,7 +19,6 @@ interface UserFormData {
   email: string;
   password?: string;
   role: UserRole;
-  companyId?: string;
 }
 
 const ROLE_OPTIONS = [
@@ -123,7 +122,6 @@ export const UsersPage = () => {
       email: '',
       password: '',
       role: UserRole.WORKER,
-      companyId: '',
     },
     onSubmit: (data) => {
       if (editingUser) {
@@ -175,7 +173,6 @@ export const UsersPage = () => {
       email: user.email,
       password: '',
       role: user.role,
-      companyId: user.companyId || '',
     });
     setShowModal(true);
   };

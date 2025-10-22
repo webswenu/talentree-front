@@ -90,3 +90,11 @@ export const useRecalculateScore = () => {
     },
   });
 };
+
+// Hook para obtener estadísticas globales de test responses
+export const useTestResponsesStats = () => {
+  return useQuery({
+    queryKey: [...testResponseKeys.all, 'stats'],
+    queryFn: () => testResponsesService.getAllStats(),
+  });
+};

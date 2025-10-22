@@ -18,6 +18,8 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
     code: '',
     position: '',
     description: '',
+    department: '',
+    location: '',
     companyId: '',
     status: ProcessStatus.DRAFT,
     startDate: undefined,
@@ -32,6 +34,8 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
         code: process.code,
         position: process.position,
         description: process.description || '',
+        department: process.department || '',
+        location: process.location || '',
         companyId: process.company?.id || '',
         status: process.status,
         startDate: process.startDate,
@@ -46,9 +50,70 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
 
     try {
       if (process) {
-        await updateMutation.mutateAsync({ id: process.id, data: formData });
+        // Only send UpdateProcessDto fields (exclude code, companyId, startDate)
+        const updateData: any = {
+          name: formData.name,
+          position: formData.position,
+          status: formData.status,
+        };
+
+        // Only include optional fields if they have values
+        if (formData.description && formData.description.trim()) {
+          updateData.description = formData.description;
+        }
+        if (formData.department && formData.department.trim()) {
+          updateData.department = formData.department;
+        }
+        if (formData.location && formData.location.trim()) {
+          updateData.location = formData.location;
+        }
+        if (formData.maxWorkers) {
+          updateData.maxWorkers = formData.maxWorkers;
+        }
+
+        // Convert endDate to ISO string if present and valid
+        if (formData.endDate && formData.endDate.trim() !== '') {
+          const date = new Date(formData.endDate);
+          if (!isNaN(date.getTime())) {
+            updateData.endDate = date.toISOString();
+          }
+        }
+
+        console.log('Sending update data:', updateData);
+        await updateMutation.mutateAsync({ id: process.id, data: updateData });
       } else {
-        await createMutation.mutateAsync(formData);
+        // For create, build the data object
+        const createData: any = {
+          name: formData.name,
+          code: formData.code,
+          position: formData.position,
+          status: formData.status,
+          companyId: formData.companyId,
+        };
+
+        // Only include optional fields if they have values
+        if (formData.description) createData.description = formData.description;
+        if (formData.department) createData.department = formData.department;
+        if (formData.location) createData.location = formData.location;
+        if (formData.maxWorkers) createData.maxWorkers = formData.maxWorkers;
+
+        // Convert dates to ISO strings if present and valid
+        if (formData.startDate) {
+          const date = new Date(formData.startDate);
+          if (!isNaN(date.getTime())) {
+            createData.startDate = date.toISOString();
+          }
+        }
+
+        if (formData.endDate) {
+          const date = new Date(formData.endDate);
+          if (!isNaN(date.getTime())) {
+            createData.endDate = date.toISOString();
+          }
+        }
+
+        console.log('Sending create data:', createData);
+        await createMutation.mutateAsync(createData);
       }
       onClose();
     } catch (error) {
@@ -58,9 +123,19 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
+    let processedValue: any = value || undefined;
+
+    if (name === 'maxWorkers') {
+      processedValue = value ? parseInt(value) : undefined;
+    } else if (name === 'startDate' || name === 'endDate') {
+      // For date inputs, keep the string value (YYYY-MM-DD) or undefined if empty
+      processedValue = value && value.trim() !== '' ? value : undefined;
+    }
+
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'maxWorkers' ? (value ? parseInt(value) : undefined) : value || undefined,
+      [name]: processedValue,
     }));
   };
 
@@ -81,18 +156,35 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre *
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre *
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Código *
+                </label>
+                <input
+                  type="text"
+                  name="code"
+                  value={formData.code}
+                  onChange={handleChange}
+                  required
+                  disabled={!!process}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                />
+              </div>
             </div>
 
             <div>
@@ -117,15 +209,58 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                 value={formData.companyId}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={!!process}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
               >
                 <option value="">Seleccione una empresa</option>
                 {companies?.map((company) => (
                   <option key={company.id} value={company.id}>
-                    {company.businessName} - {company.rut}
+                    {company.name} - {company.rut}
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Posición *
+                </label>
+                <input
+                  type="text"
+                  name="position"
+                  value={formData.position}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Departamento
+                </label>
+                <input
+                  type="text"
+                  name="department"
+                  value={formData.department || ''}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Ubicación
+              </label>
+              <input
+                type="text"
+                name="location"
+                value={formData.location || ''}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
 
             <div>

@@ -1,5 +1,5 @@
 import { apiService } from './api.service';
-import { Worker, WorkerProcess, CreateWorkerDto, UpdateWorkerDto, ApplyToProcessDto, UpdateWorkerProcessStatusDto } from '../types/worker.types';
+import { Worker, WorkerProcess, CreateWorkerDto, UpdateWorkerDto, ApplyToProcessDto, UpdateWorkerProcessStatusDto, WorkerStats } from '../types/worker.types';
 
 class WorkersService {
   private basePath = '/workers';
@@ -64,6 +64,11 @@ class WorkersService {
 
   async getWorkerProcessById(id: string): Promise<WorkerProcess> {
     const response = await apiService.get<WorkerProcess>(`${this.basePath}/worker-process/${id}`);
+    return response.data;
+  }
+
+  async getAllStats(): Promise<WorkerStats> {
+    const response = await apiService.get<WorkerStats>(`${this.basePath}/stats`);
     return response.data;
   }
 }

@@ -65,3 +65,11 @@ export const useDeleteCompany = () => {
     },
   });
 };
+
+// Hook para obtener estadísticas globales de empresas
+export const useCompaniesStats = () => {
+  return useQuery({
+    queryKey: [...companyKeys.all, 'stats'],
+    queryFn: () => companiesService.getAllStats(),
+  });
+};

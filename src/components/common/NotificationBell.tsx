@@ -63,9 +63,14 @@ export default function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50">
-          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">Notificaciones</h3>
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setIsOpen(false)}
+          />
+          <div className="absolute left-full ml-2 top-0 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">Notificaciones</h3>
             {notifications && notifications.length > 0 && (
               <button
                 onClick={handleMarkAllAsRead}
@@ -123,7 +128,8 @@ export default function NotificationBell() {
               </div>
             )}
           </div>
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

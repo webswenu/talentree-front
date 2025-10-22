@@ -1,13 +1,33 @@
+import { useState } from 'react';
 import { useReports, useDeleteReport } from '../../hooks/useReports';
 import { Report, ReportTypeLabels, ReportTypeColors } from '../../types/report.types';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
+import ReportModal from '../../components/admin/ReportModal';
 
 export default function ReportsPage() {
   const { data: reports, isLoading } = useReports();
   const deleteMutation = useDeleteReport();
 
-  const handleDelete = async (id: string) => {
-    if (confirm('¿Está seguro de eliminar este reporte?')) {
-      await deleteMutation.mutateAsync(id);
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<Report | undefined>(undefined);
+
+  const handleDelete = (report: Report) => {
+    setReportToDelete(report);
+    setIsConfirmDeleteOpen(true);
+  };
+
+  const handleCancelDelete = () => {
+    setIsConfirmDeleteOpen(false);
+    setReportToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (reportToDelete) {
+      await deleteMutation.mutateAsync(reportToDelete.id);
+      setIsConfirmDeleteOpen(false);
+      setReportToDelete(null);
     }
   };
 
@@ -15,6 +35,16 @@ export default function ReportsPage() {
     if (report.fileUrl) {
       window.open(report.fileUrl, '_blank');
     }
+  };
+
+  const handleOpenModal = (report?: Report) => {
+    setSelectedReport(report);
+    setIsReportModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsReportModalOpen(false);
+    setSelectedReport(undefined);
   };
 
   const getTypeBadge = (type: string) => {
@@ -47,6 +77,7 @@ export default function ReportsPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Reportes</h1>
         <button
+          onClick={() => handleOpenModal()}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
           + Nuevo Reporte
@@ -146,7 +177,7 @@ export default function ReportsPage() {
                     </button>
                   )}
                   <button
-                    onClick={() => handleDelete(report.id)}
+                    onClick={() => handleDelete(report)}
                     className="text-red-600 hover:text-red-900"
                   >
                     Eliminar
@@ -157,6 +188,19 @@ export default function ReportsPage() {
           </tbody>
         </table>
       </div>
+
+      <ConfirmModal
+        isOpen={isConfirmDeleteOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Reporte"
+        message={`¿Estás seguro de eliminar el reporte "${reportToDelete?.title}"? Esta acción no se puede deshacer.`}
+        isLoading={deleteMutation.isPending}
+      />
+
+      {isReportModalOpen && (
+        <ReportModal report={selectedReport} onClose={handleCloseModal} />
+      )}
     </div>
   );
 }

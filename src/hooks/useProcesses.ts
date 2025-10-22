@@ -88,3 +88,11 @@ export const useAssignEvaluators = () => {
     },
   });
 };
+
+// Hook para obtener estadísticas globales de procesos
+export const useProcessesStats = () => {
+  return useQuery({
+    queryKey: [...processKeys.all, 'stats'],
+    queryFn: () => processesService.getAllStats(),
+  });
+};

@@ -22,7 +22,7 @@ export const useNotifications = () => {
   useEffect(() => {
     if (user && !socket) {
       // Connect to WebSocket
-      socket = io('http://localhost:3000', {
+      socket = io('http://localhost:3002', {
         query: { userId: user.id },
       });
 

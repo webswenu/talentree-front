@@ -109,3 +109,11 @@ export const useUpdateWorkerProcessStatus = () => {
     },
   });
 };
+
+// Hook para obtener estadísticas globales de trabajadores
+export const useWorkersStats = () => {
+  return useQuery({
+    queryKey: [...workerKeys.all, 'stats'],
+    queryFn: () => workersService.getAllStats(),
+  });
+};
