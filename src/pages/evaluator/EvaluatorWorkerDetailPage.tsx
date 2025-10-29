@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { workersService } from '../../services/workers.service';
 
-export const WorkerDetailPage = () => {
+export const EvaluatorWorkerDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -25,7 +25,7 @@ export const WorkerDetailPage = () => {
       <div className="text-center py-8">
         <p className="text-gray-500">Trabajador no encontrado</p>
         <button
-          onClick={() => navigate('/admin/trabajadores')}
+          onClick={() => navigate('/evaluador/trabajadores')}
           className="mt-4 text-blue-600 hover:text-blue-800"
         >
           Volver a trabajadores
@@ -229,3 +229,5 @@ export const WorkerDetailPage = () => {
     </div>
   );
 };
+
+

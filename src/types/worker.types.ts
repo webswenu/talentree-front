@@ -1,5 +1,6 @@
 import { User } from './user.types';
 import { SelectionProcess } from './process.types';
+import { TestResponse } from './test-response.types';
 
 export enum WorkerStatus {
   PENDING = 'pending',
@@ -41,6 +42,7 @@ export interface WorkerProcess {
   metadata?: Record<string, any>;
   worker: Worker;
   process: SelectionProcess;
+  testResponses?: TestResponse[];
   createdAt: Date;
   updatedAt: Date;
 }

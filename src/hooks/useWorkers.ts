@@ -1,20 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { workersService } from '../services/workers.service';
+import { workersService, WorkerFilters } from '../services/workers.service';
 import { CreateWorkerDto, UpdateWorkerDto, ApplyToProcessDto, UpdateWorkerProcessStatusDto } from '../types/worker.types';
 
 export const workerKeys = {
   all: ['workers'] as const,
   lists: () => [...workerKeys.all, 'list'] as const,
+  list: (filters?: WorkerFilters) => [...workerKeys.lists(), filters] as const,
   detail: (id: string) => [...workerKeys.all, 'detail', id] as const,
   processes: (workerId: string) => [...workerKeys.all, 'processes', workerId] as const,
   processWorkers: (processId: string) => [...workerKeys.all, 'process-workers', processId] as const,
   workerProcess: (id: string) => [...workerKeys.all, 'worker-process', id] as const,
 };
 
-export const useWorkers = () => {
+export const useWorkers = (filters?: WorkerFilters) => {
   return useQuery({
-    queryKey: workerKeys.lists(),
-    queryFn: () => workersService.findAll(),
+    queryKey: workerKeys.list(filters),
+    queryFn: () => workersService.findAll(filters),
   });
 };
 
@@ -115,5 +116,39 @@ export const useWorkersStats = () => {
   return useQuery({
     queryKey: [...workerKeys.all, 'stats'],
     queryFn: () => workersService.getAllStats(),
+  });
+};
+
+// Hook para obtener estadísticas del dashboard de un worker específico
+export const useWorkerDashboardStats = (workerId: string | undefined) => {
+  return useQuery({
+    queryKey: [...workerKeys.all, 'dashboard-stats', workerId],
+    queryFn: () => workersService.getDashboardStats(workerId!),
+    enabled: !!workerId && workerId.length > 0,
+    retry: false,
+  });
+};
+
+// Hooks para operaciones de CV
+export const useUploadCV = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workerId, file }: { workerId: string; file: File }) =>
+      workersService.uploadCV(workerId, file),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: workerKeys.detail(variables.workerId) });
+    },
+  });
+};
+
+export const useDeleteCV = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (workerId: string) => workersService.deleteCV(workerId),
+    onSuccess: (_, workerId) => {
+      queryClient.invalidateQueries({ queryKey: workerKeys.detail(workerId) });
+    },
   });
 };

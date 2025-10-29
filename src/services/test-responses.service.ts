@@ -4,6 +4,11 @@ import { TestResponse, TestAnswer, StartTestDto, SubmitTestDto, EvaluateAnswerDt
 class TestResponsesService {
   private basePath = '/test-responses';
 
+  async findAll(): Promise<TestResponse[]> {
+    const response = await apiService.get<TestResponse[]>(this.basePath);
+    return response.data;
+  }
+
   async startTest(data: StartTestDto): Promise<TestResponse> {
     const response = await apiService.post<TestResponse>(`${this.basePath}/start`, data);
     return response.data;

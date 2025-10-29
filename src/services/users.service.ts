@@ -40,8 +40,12 @@ class UsersService {
     await apiService.post(`/users/${id}/reset-password`, { password: newPassword });
   }
 
-  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    await apiService.post('/users/me/change-password', { currentPassword, newPassword });
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
+    const { data } = await apiService.patch<{ message: string }>('/users/change-password', {
+      currentPassword,
+      newPassword,
+    });
+    return data;
   }
 
   async getByRole(role: string): Promise<User[]> {
@@ -51,6 +55,19 @@ class UsersService {
 
   async getByCompany(companyId: string): Promise<User[]> {
     const { data } = await apiService.get<User[]>(`/users/by-company/${companyId}`);
+    return data;
+  }
+
+  async updateNotificationPreferences(preferences: {
+    emailNotifications?: boolean;
+    newProcesses?: boolean;
+    applicationUpdates?: boolean;
+    testReminders?: boolean;
+    newEvaluations?: boolean;
+    candidateUpdates?: boolean;
+    processReminders?: boolean;
+  }): Promise<User> {
+    const { data } = await apiService.patch<User>('/users/notification-preferences', preferences);
     return data;
   }
 }

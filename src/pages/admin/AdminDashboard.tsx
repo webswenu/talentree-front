@@ -27,7 +27,8 @@ export const AdminDashboard = () => {
   const { data: workersStats, isLoading: loadingWorkers } = useWorkersStats();
   const { data: testResponsesStats, isLoading: loadingTests } = useTestResponsesStats();
   const { data: auditStats, isLoading: loadingAudit } = useAuditStats();
-  const { data: recentProcesses, isLoading: loadingRecentProcesses } = useProcesses();
+  const { data: processesData, isLoading: loadingRecentProcesses } = useProcesses();
+  const recentProcesses = processesData?.data || [];
 
   const isLoading = loadingCompanies || loadingProcesses || loadingWorkers || loadingTests || loadingAudit || loadingRecentProcesses;
 

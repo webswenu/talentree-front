@@ -3,14 +3,23 @@ import { useCompanies, useDeleteCompany } from '../../hooks/useCompanies';
 import { Company } from '../../types/company.types';
 import { CompanyModal } from '../../components/admin/CompanyModal';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
+import { useAuthStore } from '../../store/authStore';
+import { Permission, hasPermission } from '../../utils/permissions';
 
 export const CompaniesPage = () => {
-  const { data: companies, isLoading, error } = useCompanies();
+  const { user } = useAuthStore();
+  const { data: companiesData, isLoading, error } = useCompanies();
+  const companies = companiesData?.data || [];
   const deleteMutation = useDeleteCompany();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
+
+  // Permisos según rol
+  const canCreate = user && hasPermission(user.role, Permission.COMPANIES_CREATE);
+  const canEdit = user && hasPermission(user.role, Permission.COMPANIES_EDIT);
+  const canDelete = user && hasPermission(user.role, Permission.COMPANIES_DELETE);
 
   const handleEdit = (company: Company) => {
     setSelectedCompany(company);
@@ -76,9 +85,11 @@ export const CompaniesPage = () => {
           <h1 className="text-3xl font-bold text-gray-900">Empresas</h1>
           <p className="text-gray-600 mt-1">Gestión de empresas clientes</p>
         </div>
-        <button onClick={handleCreate} className="btn-primary">
-          + Nueva Empresa
-        </button>
+        {canCreate && (
+          <button onClick={handleCreate} className="btn-primary">
+            + Nueva Empresa
+          </button>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -168,19 +179,23 @@ export const CompaniesPage = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleEdit(company)}
-                      className="text-primary-600 hover:text-primary-900 mr-4"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => handleDelete(company)}
-                      disabled={deleteMutation.isPending}
-                      className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                    >
-                      Eliminar
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => handleEdit(company)}
+                        className="text-primary-600 hover:text-primary-900 mr-4"
+                      >
+                        Editar
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => handleDelete(company)}
+                        disabled={deleteMutation.isPending}
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                      >
+                        Eliminar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -190,9 +205,11 @@ export const CompaniesPage = () => {
           {companies?.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500">No hay empresas registradas</p>
-              <button onClick={handleCreate} className="btn-primary mt-4">
-                Crear primera empresa
-              </button>
+              {canCreate && (
+                <button onClick={handleCreate} className="btn-primary mt-4">
+                  Crear primera empresa
+                </button>
+              )}
             </div>
           )}
         </div>

@@ -8,15 +8,47 @@ interface CompanyDetailStats {
   totalApplications: number;
 }
 
-interface CompanyFilters {
-  status?: string;
+export interface CompanyDashboardStats {
+  procesosActivos: {
+    total: number;
+    nuevos: number;
+    texto: string;
+  };
+  candidatos: {
+    total: number;
+    nuevos: number;
+    texto: string;
+  };
+  candidatosAprobados: {
+    total: number;
+    tasaAprobacion: string;
+  };
+  procesosCompletados: {
+    total: number;
+    texto: string;
+  };
+}
+
+export interface CompanyFilters {
+  active?: boolean;
   search?: string;
-  industry?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 class CompaniesService {
-  async getAll(params?: CompanyFilters): Promise<Company[]> {
-    const { data } = await apiService.get<Company[]>('/companies', { params });
+  async getAll(params?: CompanyFilters): Promise<PaginatedResult<Company>> {
+    const { data } = await apiService.get<PaginatedResult<Company>>('/companies', { params });
     return data;
   }
 
@@ -60,6 +92,11 @@ class CompaniesService {
 
   async getStats(id: string): Promise<CompanyDetailStats> {
     const { data } = await apiService.get<CompanyDetailStats>(`/companies/${id}/stats`);
+    return data;
+  }
+
+  async getDashboardStats(id: string): Promise<CompanyDashboardStats> {
+    const { data } = await apiService.get<CompanyDashboardStats>(`/companies/${id}/dashboard-stats`);
     return data;
   }
 

@@ -65,3 +65,33 @@ export const useDeleteUser = () => {
     },
   });
 };
+
+// Hook para cambiar contraseña
+export const useChangePassword = () => {
+  return useMutation({
+    mutationFn: ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) =>
+      usersService.changePassword(currentPassword, newPassword),
+  });
+};
+
+// Hook para actualizar preferencias de notificaciones
+export const useUpdateNotificationPreferences = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (preferences: {
+      emailNotifications?: boolean;
+      newProcesses?: boolean;
+      applicationUpdates?: boolean;
+      testReminders?: boolean;
+      newEvaluations?: boolean;
+      candidateUpdates?: boolean;
+      processReminders?: boolean;
+    }) => usersService.updateNotificationPreferences(preferences),
+    onSuccess: (data) => {
+      // Invalidar la lista de usuarios y el detalle del usuario actualizado
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: userKeys.detail(data.id) });
+    },
+  });
+};

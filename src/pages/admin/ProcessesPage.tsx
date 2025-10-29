@@ -1,11 +1,29 @@
 import { useState } from 'react';
 import { useProcesses, useDeleteProcess } from '../../hooks/useProcesses';
 import { SelectionProcess, ProcessStatusLabels, ProcessStatusColors } from '../../types/process.types';
+import { ProcessFilters } from '../../services/processes.service';
 import ProcessModal from '../../components/admin/ProcessModal';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
+import { Pagination } from '../../components/common/Pagination';
+import { useAuthStore } from '../../store/authStore';
+import { Permission, hasPermission } from '../../utils/permissions';
+import { UserRole } from '../../types/user.types';
 
 export default function ProcessesPage() {
-  const { data: processes, isLoading } = useProcesses();
+  const { user } = useAuthStore();
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+
+  const filters: ProcessFilters = {
+    page,
+    limit,
+    ...(search && { search }),
+    ...(statusFilter && { status: statusFilter }),
+  };
+
+  const { data: processesData, isLoading } = useProcesses(filters);
   const deleteMutation = useDeleteProcess();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProcess, setSelectedProcess] = useState<SelectionProcess | undefined>();
@@ -62,23 +80,95 @@ export default function ProcessesPage() {
     );
   }
 
+  // Permisos según rol
+  const canCreate = user && hasPermission(user.role, Permission.PROCESSES_CREATE);
+  const canEdit = user && hasPermission(user.role, Permission.PROCESSES_EDIT);
+  const canDelete = user && hasPermission(user.role, Permission.PROCESSES_DELETE);
+
+  // Detectar base URL según rol
+  const getBaseUrl = () => {
+    if (user?.role === UserRole.COMPANY) return '/empresa/procesos';
+    if (user?.role === UserRole.GUEST) return '/invitado/procesos';
+    if (user?.role === UserRole.EVALUATOR) return '/evaluador/procesos';
+    return '/admin/procesos';
+  };
+
+  const processes = processesData?.data || [];
+  const meta = processesData?.meta;
+
   const stats = {
-    total: processes?.length || 0,
-    draft: processes?.filter(p => p.status === 'draft').length || 0,
-    active: processes?.filter(p => p.status === 'active').length || 0,
-    completed: processes?.filter(p => p.status === 'completed').length || 0,
+    total: meta?.total || 0,
+    draft: processes.filter(p => p.status === 'draft').length,
+    active: processes.filter(p => p.status === 'active').length,
+    completed: processes.filter(p => p.status === 'completed').length,
   };
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Procesos de Selección</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          + Nuevo Proceso
-        </button>
+        {canCreate && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            + Nuevo Proceso
+          </button>
+        )}
+      </div>
+
+      {/* Filtros */}
+      <div className="bg-white p-4 rounded-lg shadow mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Buscar
+            </label>
+            <input
+              type="text"
+              placeholder="Buscar por nombre, posición, código..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1); // Reset to page 1 on search
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Estado
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1); // Reset to page 1 on filter change
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todos los estados</option>
+              <option value="draft">Borrador</option>
+              <option value="active">Activo</option>
+              <option value="completed">Completado</option>
+              <option value="archived">Archivado</option>
+            </select>
+          </div>
+        </div>
+        {(search || statusFilter) && (
+          <div className="mt-3">
+            <button
+              onClick={() => {
+                setSearch('');
+                setStatusFilter('');
+                setPage(1);
+              }}
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-4 gap-4 mb-6">
@@ -153,43 +243,74 @@ export default function ProcessesPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
-                    onClick={() => handleEdit(process)}
+                    onClick={() => window.location.href = `${getBaseUrl()}/${process.id}`}
                     className="text-blue-600 hover:text-blue-900 mr-4"
                   >
-                    Editar
+                    Ver Detalle
                   </button>
-                  <button
-                    onClick={() => handleDelete(process)}
-                    disabled={deleteMutation.isPending}
-                    className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                  >
-                    Eliminar
-                  </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => handleEdit(process)}
+                      className="text-blue-600 hover:text-blue-900 mr-4"
+                    >
+                      Editar
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      onClick={() => handleDelete(process)}
+                      disabled={deleteMutation.isPending}
+                      className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                    >
+                      Eliminar
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        {/* Mostrar mensaje si no hay resultados */}
+        {!isLoading && processes.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            {search || statusFilter
+              ? 'No se encontraron procesos con los filtros aplicados'
+              : 'No hay procesos registrados'}
+          </div>
+        )}
       </div>
 
-      {isModalOpen && (
+      {/* Paginación */}
+      {meta && meta.totalPages > 1 && (
+        <div className="mt-6">
+          <Pagination
+            currentPage={meta.page}
+            totalPages={meta.totalPages}
+            onPageChange={setPage}
+          />
+        </div>
+      )}
+
+      {canCreate && isModalOpen && (
         <ProcessModal
           process={selectedProcess}
           onClose={handleCloseModal}
         />
       )}
 
-      {/* Confirm Delete Modal */}
-      <ConfirmModal
-        isOpen={isConfirmDeleteOpen}
-        onClose={handleCancelDelete}
-        onConfirm={handleConfirmDelete}
-        title="Eliminar Proceso"
-        message={`¿Estás seguro de eliminar el proceso "${processToDelete?.name}"? Esta acción no se puede deshacer.`}
-        confirmText="Eliminar"
-        cancelText="Cancelar"
-        isLoading={deleteMutation.isPending}
-      />
+      {canDelete && (
+        <ConfirmModal
+          isOpen={isConfirmDeleteOpen}
+          onClose={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+          title="Eliminar Proceso"
+          message={`¿Estás seguro de eliminar el proceso "${processToDelete?.name}"? Esta acción no se puede deshacer.`}
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          isLoading={deleteMutation.isPending}
+        />
+      )}
     </div>
   );
 }

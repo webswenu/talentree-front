@@ -1,21 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import companiesService from '../services/companies.service';
+import companiesService, { CompanyFilters } from '../services/companies.service';
 import { CreateCompanyDto, UpdateCompanyDto } from '../types/company.types';
 
 // Keys para React Query
 export const companyKeys = {
   all: ['companies'] as const,
   lists: () => [...companyKeys.all, 'list'] as const,
-  list: (filters?: any) => [...companyKeys.lists(), filters] as const,
+  list: (filters?: CompanyFilters) => [...companyKeys.lists(), filters] as const,
   details: () => [...companyKeys.all, 'detail'] as const,
   detail: (id: string) => [...companyKeys.details(), id] as const,
 };
 
 // Hook para listar todas las empresas
-export const useCompanies = () => {
+export const useCompanies = (filters?: CompanyFilters) => {
   return useQuery({
-    queryKey: companyKeys.lists(),
-    queryFn: () => companiesService.getAll(),
+    queryKey: companyKeys.list(filters),
+    queryFn: () => companiesService.getAll(filters),
   });
 };
 
@@ -71,5 +71,14 @@ export const useCompaniesStats = () => {
   return useQuery({
     queryKey: [...companyKeys.all, 'stats'],
     queryFn: () => companiesService.getAllStats(),
+  });
+};
+
+// Hook para obtener estadísticas del dashboard de una empresa
+export const useCompanyDashboardStats = (companyId: string | undefined) => {
+  return useQuery({
+    queryKey: [...companyKeys.detail(companyId || ''), 'dashboard-stats'],
+    queryFn: () => companiesService.getDashboardStats(companyId!),
+    enabled: !!companyId && companyId.length > 0,
   });
 };

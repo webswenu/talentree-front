@@ -1,11 +1,22 @@
 import apiService from './api.service';
-import type { LoginDto, AuthResponse } from '../types/user.types';
+import type { LoginDto, AuthResponse, RegisterWorkerDto } from '../types/user.types';
 
 class AuthService {
   async login(credentials: LoginDto): Promise<AuthResponse> {
     const { data } = await apiService.post<AuthResponse>('/auth/login', credentials);
 
     // Guardar tokens en localStorage
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    localStorage.setItem('user', JSON.stringify(data.user));
+
+    return data;
+  }
+
+  async registerWorker(registerData: RegisterWorkerDto): Promise<AuthResponse> {
+    const { data } = await apiService.post<AuthResponse>('/auth/register/worker', registerData);
+
+    // Guardar tokens en localStorage (auto-login)
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
     localStorage.setItem('user', JSON.stringify(data.user));

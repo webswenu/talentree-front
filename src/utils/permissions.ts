@@ -45,13 +45,24 @@ export enum Permission {
 
   // Configuración
   SETTINGS_VIEW = 'settings.view',
-  SETTINGS_EDIT = 'settings.edit'
+  SETTINGS_EDIT = 'settings.edit',
+
+  // Aplicaciones (Worker)
+  APPLICATIONS_CREATE = 'applications.create',
+  APPLICATIONS_VIEW = 'applications.view',
+
+  // Evaluación
+  CANDIDATES_APPROVE = 'candidates.approve',
+  CANDIDATES_REJECT = 'candidates.reject',
+
+  // Invitaciones (Company)
+  WORKERS_INVITE = 'workers.invite'
 }
 
 // Mapa de permisos por rol
 const rolePermissions: Record<UserRole, Permission[]> = {
   [UserRole.ADMIN_TALENTREE]: [
-    // Admin tiene todos los permisos
+    // ✅ Admin tiene TODOS los permisos - CRUD completo
     Permission.COMPANIES_VIEW,
     Permission.COMPANIES_CREATE,
     Permission.COMPANIES_EDIT,
@@ -65,10 +76,12 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     Permission.TESTS_CREATE,
     Permission.TESTS_EDIT,
     Permission.TESTS_DELETE,
+    Permission.TESTS_REVIEW,
     Permission.WORKERS_VIEW,
     Permission.WORKERS_CREATE,
     Permission.WORKERS_EDIT,
     Permission.WORKERS_DELETE,
+    Permission.WORKERS_INVITE,
     Permission.USERS_VIEW,
     Permission.USERS_CREATE,
     Permission.USERS_EDIT,
@@ -78,33 +91,57 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     Permission.REPORTS_DELETE,
     Permission.AUDIT_VIEW,
     Permission.SETTINGS_VIEW,
-    Permission.SETTINGS_EDIT
+    Permission.SETTINGS_EDIT,
+    Permission.CANDIDATES_APPROVE,
+    Permission.CANDIDATES_REJECT,
+    Permission.APPLICATIONS_VIEW,
+    Permission.APPLICATIONS_CREATE
   ],
 
   [UserRole.COMPANY]: [
-    Permission.PROCESSES_VIEW,
-    Permission.WORKERS_VIEW,
-    Permission.REPORTS_VIEW,
-    Permission.SETTINGS_VIEW
+    // ✅ SOLO LECTURA de procesos y trabajadores + INVITAR trabajadores
+    Permission.PROCESSES_VIEW,       // ✅ Ver procesos de su empresa
+    Permission.WORKERS_VIEW,         // ✅ Ver trabajadores postulantes
+    Permission.WORKERS_INVITE,       // ✅ Invitar trabajadores (único permiso de escritura)
+    Permission.SETTINGS_VIEW,        // ✅ Ver configuración
+    Permission.SETTINGS_EDIT         // ✅ Editar configuración
+    // ❌ NO puede: crear/editar/eliminar procesos
+    // ❌ NO puede: ver reportes ni tests
   ],
 
   [UserRole.EVALUATOR]: [
+    // ✅ Todo en modo LECTURA (igual que admin EXCEPTO auditoría) + REVISAR TESTS
+    Permission.COMPANIES_VIEW,
     Permission.PROCESSES_VIEW,
     Permission.TESTS_VIEW,
-    Permission.TESTS_REVIEW,
+    Permission.TESTS_REVIEW,         // ✅ Único permiso de escritura: revisar/calificar tests
     Permission.WORKERS_VIEW,
-    Permission.REPORTS_VIEW
+    Permission.USERS_VIEW,
+    Permission.REPORTS_VIEW,
+    Permission.SETTINGS_VIEW,
+    Permission.APPLICATIONS_VIEW
+    // ❌ NO puede: auditoría (solo Admin)
+    // ❌ NO puede: crear/editar/eliminar NADA (excepto revisar tests)
   ],
 
   [UserRole.WORKER]: [
-    Permission.PROCESSES_VIEW,
-    Permission.TESTS_VIEW,
-    Permission.TESTS_TAKE
+    // ✅ Ver procesos disponibles, postular, hacer tests, ver su estado
+    Permission.PROCESSES_VIEW,        // ✅ Ver procesos disponibles
+    Permission.TESTS_VIEW,            // ✅ Ver sus tests
+    Permission.TESTS_TAKE,            // ✅ Realizar tests
+    Permission.APPLICATIONS_CREATE,   // ✅ Postular a procesos
+    Permission.APPLICATIONS_VIEW,     // ✅ Ver estado de sus aplicaciones
+    Permission.SETTINGS_VIEW          // ✅ Ver configuración personal
   ],
 
   [UserRole.GUEST]: [
-    Permission.PROCESSES_VIEW,
-    Permission.REPORTS_VIEW
+    // ✅ SOLO LECTURA - Igual que COMPANY pero SIN invitar
+    Permission.PROCESSES_VIEW,        // ✅ Ver procesos de la empresa
+    Permission.WORKERS_VIEW,          // ✅ Ver trabajadores postulantes
+    Permission.SETTINGS_VIEW          // ✅ Ver configuración (solo lectura)
+    // ❌ NO puede: invitar trabajadores
+    // ❌ NO puede: editar nada
+    // ❌ NO puede: ver reportes ni tests
   ]
 };
 

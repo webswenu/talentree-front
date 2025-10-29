@@ -1,12 +1,23 @@
 import { apiService } from './api.service';
 import { SelectionProcess, CreateProcessDto, UpdateProcessDto, AssignEvaluatorsDto, ProcessStats } from '../types/process.types';
 
-interface ProcessFilters {
+export interface ProcessFilters {
   status?: string;
   companyId?: string;
+  evaluatorId?: string;
   search?: string;
-  dateFrom?: string;
-  dateTo?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 interface ProcessDetailStats {
@@ -20,8 +31,8 @@ interface ProcessDetailStats {
 class ProcessesService {
   private basePath = '/processes';
 
-  async findAll(params?: ProcessFilters): Promise<SelectionProcess[]> {
-    const response = await apiService.get<SelectionProcess[]>(this.basePath, { params });
+  async findAll(params?: ProcessFilters): Promise<PaginatedResult<SelectionProcess>> {
+    const response = await apiService.get<PaginatedResult<SelectionProcess>>(this.basePath, { params });
     return response.data;
   }
 

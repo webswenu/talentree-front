@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { useAuditLogs, useAuditStats } from '../../hooks/useAudit';
 import { AuditFilters, AuditActionLabels, AuditActionColors, AuditAction } from '../../types/audit.types';
+import { Pagination } from '../../components/common/Pagination';
 
 export default function AuditPage() {
-  const [filters, setFilters] = useState<AuditFilters>({});
-  const { data: logs, isLoading } = useAuditLogs(filters);
+  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState<AuditFilters>({ page, limit: 50 });
+  const { data: logsData, isLoading } = useAuditLogs({ ...filters, page });
   const { data: stats } = useAuditStats();
+  
+  const logs = logsData?.data || [];
+  const meta = logsData?.meta;
 
   const getActionBadge = (action: string) => {
     const color = AuditActionColors[action as AuditAction];
@@ -71,7 +76,10 @@ export default function AuditPage() {
             </label>
             <select
               value={filters.action || ''}
-              onChange={(e) => setFilters({ ...filters, action: e.target.value as AuditAction || undefined })}
+              onChange={(e) => {
+                setFilters({ ...filters, action: e.target.value as AuditAction || undefined });
+                setPage(1);
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg"
             >
               <option value="">Todas</option>
@@ -90,7 +98,10 @@ export default function AuditPage() {
             <input
               type="text"
               value={filters.entityType || ''}
-              onChange={(e) => setFilters({ ...filters, entityType: e.target.value || undefined })}
+              onChange={(e) => {
+                setFilters({ ...filters, entityType: e.target.value || undefined });
+                setPage(1);
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg"
               placeholder="ej: users, companies"
             />
@@ -103,7 +114,10 @@ export default function AuditPage() {
             <input
               type="date"
               value={filters.startDate || ''}
-              onChange={(e) => setFilters({ ...filters, startDate: e.target.value || undefined })}
+              onChange={(e) => {
+                setFilters({ ...filters, startDate: e.target.value || undefined });
+                setPage(1);
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg"
             />
           </div>
@@ -115,7 +129,10 @@ export default function AuditPage() {
             <input
               type="date"
               value={filters.endDate || ''}
-              onChange={(e) => setFilters({ ...filters, endDate: e.target.value || undefined })}
+              onChange={(e) => {
+                setFilters({ ...filters, endDate: e.target.value || undefined });
+                setPage(1);
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg"
             />
           </div>
@@ -172,6 +189,17 @@ export default function AuditPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Paginación */}
+      {meta && meta.totalPages > 1 && (
+        <div className="mt-6">
+          <Pagination
+            currentPage={meta.page}
+            totalPages={meta.totalPages}
+            onPageChange={setPage}
+          />
+        </div>
+      )}
     </div>
   );
 }

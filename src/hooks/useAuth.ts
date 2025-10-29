@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import authService from '../services/auth.service';
-import type { LoginDto } from '../types/user.types';
+import type { LoginDto, RegisterWorkerDto } from '../types/user.types';
 
 // Hook para login
 export const useLogin = () => {
@@ -21,6 +21,28 @@ export const useLogin = () => {
     },
     onError: (error: any) => {
       console.error('Login error:', error);
+      throw error;
+    },
+  });
+};
+
+// Hook para registro de worker
+export const useRegisterWorker = () => {
+  const navigate = useNavigate();
+  const setUser = useAuthStore((state) => state.setUser);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (registerData: RegisterWorkerDto) => authService.registerWorker(registerData),
+    onSuccess: (data) => {
+      setUser(data.user);
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+
+      // Redirigir al dashboard del trabajador
+      navigate('/trabajador');
+    },
+    onError: (error: any) => {
+      console.error('Register error:', error);
       throw error;
     },
   });

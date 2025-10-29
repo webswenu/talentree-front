@@ -39,7 +39,7 @@ import { CompanyDashboard } from '../pages/company/CompanyDashboard';
 import { CompanyProcessesPage } from '../pages/company/CompanyProcessesPage';
 import { CompanyProcessDetailPage } from '../pages/company/CompanyProcessDetailPage';
 import { CompanyWorkersPage } from '../pages/company/CompanyWorkersPage';
-import { CompanyReportsPage } from '../pages/company/CompanyReportsPage';
+import { CompanyWorkerDetailPage } from '../pages/company/CompanyWorkerDetailPage';
 import { CompanySettingsPage } from '../pages/company/CompanySettingsPage';
 import { CompanyProfilePage } from '../pages/company/CompanyProfilePage';
 
@@ -49,20 +49,26 @@ import { EvaluatorProcessesPage } from '../pages/evaluator/EvaluatorProcessesPag
 import { EvaluatorProcessDetailPage } from '../pages/evaluator/EvaluatorProcessDetailPage';
 import { EvaluatorTestReviewPage } from '../pages/evaluator/EvaluatorTestReviewPage';
 import { EvaluatorWorkersPage } from '../pages/evaluator/EvaluatorWorkersPage';
+import { EvaluatorWorkerDetailPage } from '../pages/evaluator/EvaluatorWorkerDetailPage';
 import { EvaluatorProfilePage } from '../pages/evaluator/EvaluatorProfilePage';
 
 // Worker Pages
 import { WorkerDashboard } from '../pages/worker/WorkerDashboard';
 import { WorkerProcessesPage } from '../pages/worker/WorkerProcessesPage';
 import { WorkerApplicationsPage } from '../pages/worker/WorkerApplicationsPage';
+import { WorkerApplicationDetailPage } from '../pages/worker/WorkerApplicationDetailPage';
 import { WorkerTestTakingPage } from '../pages/worker/WorkerTestTakingPage';
 import { WorkerTestResultsPage } from '../pages/worker/WorkerTestResultsPage';
+import { WorkerTestResultsListPage } from '../pages/worker/WorkerTestResultsListPage';
 import { WorkerProfilePage } from '../pages/worker/WorkerProfilePage';
 
 // Guest Pages
 import { GuestDashboard } from '../pages/guest/GuestDashboard';
-import { GuestProcessViewPage } from '../pages/guest/GuestProcessViewPage';
-import { GuestReportsViewPage } from '../pages/guest/GuestReportsViewPage';
+import { GuestProcessesPage } from '../pages/guest/GuestProcessesPage';
+import { GuestProcessDetailPage } from '../pages/guest/GuestProcessDetailPage';
+import { GuestWorkersPage } from '../pages/guest/GuestWorkersPage';
+import { GuestWorkerDetailPage } from '../pages/guest/GuestWorkerDetailPage';
+import { GuestProfilePage } from '../pages/guest/GuestProfilePage';
 
 // Componente para redirigir según el rol
 const RoleBasedRedirect = () => {
@@ -138,7 +144,7 @@ export const AppRoutes = () => {
           <Route path="procesos" element={<CompanyProcessesPage />} />
           <Route path="procesos/:id" element={<CompanyProcessDetailPage />} />
           <Route path="trabajadores" element={<CompanyWorkersPage />} />
-          <Route path="reportes" element={<CompanyReportsPage />} />
+          <Route path="trabajadores/:id" element={<CompanyWorkerDetailPage />} />
           <Route path="configuracion" element={<CompanySettingsPage />} />
           <Route path="perfil" element={<CompanyProfilePage />} />
         </Route>
@@ -153,10 +159,18 @@ export const AppRoutes = () => {
           }
         >
           <Route index element={<EvaluatorDashboard />} />
+          <Route path="empresas" element={<CompaniesPage />} />
+          <Route path="empresas/:id" element={<CompanyDetailPage />} />
           <Route path="procesos" element={<EvaluatorProcessesPage />} />
           <Route path="procesos/:id" element={<EvaluatorProcessDetailPage />} />
+          <Route path="tests" element={<TestsPage />} />
+          <Route path="tests/:id" element={<TestDetailPage />} />
           <Route path="trabajadores" element={<EvaluatorWorkersPage />} />
-          <Route path="perfil" element={<EvaluatorProfilePage />} />
+          <Route path="trabajadores/:id" element={<EvaluatorWorkerDetailPage />} />
+          <Route path="usuarios" element={<UsersPage />} />
+          <Route path="reportes" element={<ReportsPage />} />
+          <Route path="configuracion" element={<SettingsPage />} />
+          <Route path="perfil" element={<ProfilePage />} />
         </Route>
 
         {/* Evaluator Test Review - Full width layout */}
@@ -181,16 +195,25 @@ export const AppRoutes = () => {
           <Route index element={<WorkerDashboard />} />
           <Route path="procesos" element={<WorkerProcessesPage />} />
           <Route path="postulaciones" element={<WorkerApplicationsPage />} />
-          <Route path="resultados" element={<WorkerTestResultsPage />} />
+          <Route path="postulaciones/:id" element={<WorkerApplicationDetailPage />} />
+          <Route path="resultados" element={<WorkerTestResultsListPage />} />
           <Route path="perfil" element={<WorkerProfilePage />} />
         </Route>
 
-        {/* Worker Test Taking - Full width layout */}
+        {/* Worker Test Taking & Results - Full width layouts */}
         <Route
           path="/trabajador/test/:testResponseId"
           element={
             <ProtectedRoute allowedRoles={[UserRole.WORKER]}>
               <WorkerTestTakingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trabajador/resultados/:testResponseId"
+          element={
+            <ProtectedRoute allowedRoles={[UserRole.WORKER]}>
+              <WorkerTestResultsPage />
             </ProtectedRoute>
           }
         />
@@ -205,8 +228,11 @@ export const AppRoutes = () => {
           }
         >
           <Route index element={<GuestDashboard />} />
-          <Route path="proceso/:id" element={<GuestProcessViewPage />} />
-          <Route path="reportes" element={<GuestReportsViewPage />} />
+          <Route path="procesos" element={<GuestProcessesPage />} />
+          <Route path="procesos/:id" element={<GuestProcessDetailPage />} />
+          <Route path="trabajadores" element={<GuestWorkersPage />} />
+          <Route path="trabajadores/:id" element={<GuestWorkerDetailPage />} />
+          <Route path="perfil" element={<GuestProfilePage />} />
         </Route>
 
         {/* Redirect basado en rol */}

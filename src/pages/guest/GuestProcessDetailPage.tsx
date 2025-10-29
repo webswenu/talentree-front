@@ -1,21 +1,17 @@
+// Copia de CompanyProcessDetailPage pero SIN botón de invitar (Guest no tiene WORKERS_INVITE)
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { processesService } from '../../services/processes.service';
-import { useAuthStore } from '../../store/authStore';
-import { Permission, hasPermission } from '../../utils/permissions';
 import { WorkerStatus, WorkerStatusLabels } from '../../types/worker.types';
 import { ProcessStatusLabels, ProcessStatusColors } from '../../types/process.types';
-import { InviteWorkersModal } from '../../components/company/InviteWorkersModal';
 
 type TabType = 'info' | 'candidates' | 'approved';
 
-export const CompanyProcessDetailPage = () => {
+export const GuestProcessDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<TabType>('info');
-  const [showInviteModal, setShowInviteModal] = useState(false);
 
   const { data: process, isLoading } = useQuery({
     queryKey: ['process', id],
@@ -23,10 +19,6 @@ export const CompanyProcessDetailPage = () => {
     enabled: !!id,
   });
 
-  // Permisos
-  const canInvite = user && hasPermission(user.role, Permission.WORKERS_INVITE);
-
-  // Stats de trabajadores
   const workers = process?.workers || [];
   const stats = {
     total: workers.length,
@@ -50,7 +42,7 @@ export const CompanyProcessDetailPage = () => {
       <div className="text-center py-8">
         <p className="text-gray-500">Proceso no encontrado</p>
         <button
-          onClick={() => navigate('/empresa/procesos')}
+          onClick={() => navigate('/invitado/procesos')}
           className="mt-4 text-blue-600 hover:text-blue-800"
         >
           Volver a procesos
@@ -91,7 +83,7 @@ export const CompanyProcessDetailPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <button
-            onClick={() => navigate('/empresa/procesos')}
+            onClick={() => navigate('/invitado/procesos')}
             className="text-sm text-gray-600 hover:text-gray-900 mb-2 flex items-center gap-1"
           >
             ← Volver a procesos
@@ -101,15 +93,6 @@ export const CompanyProcessDetailPage = () => {
         </div>
         <div className="flex items-center gap-3">
           {getStatusBadge(process.status)}
-          {canInvite && (
-            <button
-              onClick={() => setShowInviteModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-            >
-              <span>+</span>
-              Invitar Trabajadores
-            </button>
-          )}
         </div>
       </div>
 
@@ -221,14 +204,6 @@ export const CompanyProcessDetailPage = () => {
             {workers.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-500">No hay candidatos postulados aún</p>
-                {canInvite && (
-                  <button
-                    onClick={() => setShowInviteModal(true)}
-                    className="mt-4 text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    Invitar trabajadores →
-                  </button>
-                )}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -246,9 +221,6 @@ export const CompanyProcessDetailPage = () => {
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                         Fecha Aplicación
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Acciones
                       </th>
                     </tr>
                   </thead>
@@ -273,16 +245,6 @@ export const CompanyProcessDetailPage = () => {
                           {workerProcess.appliedAt
                             ? new Date(workerProcess.appliedAt).toLocaleDateString('es-CL')
                             : '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          {workerProcess.worker?.id && (
-                            <button
-                              onClick={() => navigate(`/empresa/trabajadores/${workerProcess.worker.id}`)}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              Ver Detalle
-                            </button>
-                          )}
                         </td>
                       </tr>
                     ))}
@@ -354,15 +316,6 @@ export const CompanyProcessDetailPage = () => {
           </div>
         )}
       </div>
-
-      {/* Modal Invitar Trabajadores */}
-      {showInviteModal && process && (
-        <InviteWorkersModal
-          processId={process.id}
-          processName={process.name}
-          onClose={() => setShowInviteModal(false)}
-        />
-      )}
     </div>
   );
 };

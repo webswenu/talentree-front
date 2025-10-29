@@ -1,11 +1,28 @@
 import { apiService } from './api.service';
 import { Worker, WorkerProcess, CreateWorkerDto, UpdateWorkerDto, ApplyToProcessDto, UpdateWorkerProcessStatusDto, WorkerStats } from '../types/worker.types';
 
+export interface WorkerFilters {
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 class WorkersService {
   private basePath = '/workers';
 
-  async findAll(): Promise<Worker[]> {
-    const response = await apiService.get<Worker[]>(this.basePath);
+  async findAll(params?: WorkerFilters): Promise<PaginatedResult<Worker>> {
+    const response = await apiService.get<PaginatedResult<Worker>>(this.basePath, { params });
     return response.data;
   }
 
@@ -69,6 +86,41 @@ class WorkersService {
 
   async getAllStats(): Promise<WorkerStats> {
     const response = await apiService.get<WorkerStats>(`${this.basePath}/stats`);
+    return response.data;
+  }
+
+  async getDashboardStats(workerId: string): Promise<{
+    aplicadas: number;
+    enProceso: number;
+    finalizadas: number;
+    disponibles: number;
+  }> {
+    const response = await apiService.get(`${this.basePath}/${workerId}/dashboard-stats`);
+    return response.data;
+  }
+
+  // CV operations
+  async uploadCV(workerId: string, file: File): Promise<Worker> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await apiService.post<Worker>(`${this.basePath}/${workerId}/upload-cv`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
+  async downloadCV(workerId: string): Promise<Blob> {
+    const response = await apiService.get(`${this.basePath}/${workerId}/cv`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  }
+
+  async deleteCV(workerId: string): Promise<Worker> {
+    const response = await apiService.delete<Worker>(`${this.basePath}/${workerId}/cv`);
     return response.data;
   }
 }

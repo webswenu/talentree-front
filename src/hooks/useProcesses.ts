@@ -1,19 +1,42 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { processesService } from '../services/processes.service';
+import { processesService, ProcessFilters } from '../services/processes.service';
 import { CreateProcessDto, UpdateProcessDto, AssignEvaluatorsDto } from '../types/process.types';
+import { useAuthStore } from '../store/authStore';
+import { UserRole } from '../types/user.types';
 
 export const processKeys = {
   all: ['processes'] as const,
   lists: () => [...processKeys.all, 'list'] as const,
+  list: (filters?: ProcessFilters) => [...processKeys.lists(), filters] as const,
   byCompany: (companyId: string) => [...processKeys.all, 'company', companyId] as const,
   detail: (id: string) => [...processKeys.all, 'detail', id] as const,
   evaluators: (id: string) => [...processKeys.all, 'evaluators', id] as const,
 };
 
-export const useProcesses = () => {
+/**
+ * Hook principal para obtener procesos con paginación y filtros.
+ * Filtra automáticamente según el rol del usuario:
+ * - ADMIN: Todos los procesos
+ * - EVALUATOR: Todos los procesos (lectura)
+ * - COMPANY: Solo procesos de su empresa
+ * - GUEST: Solo procesos de su empresa
+ */
+export const useProcesses = (filters?: ProcessFilters) => {
+  const { user } = useAuthStore();
+
+  // Aplicar filtros automáticos por rol
+  const finalFilters: ProcessFilters = { ...filters };
+
+  // Solo COMPANY filtra por empresa propia
+  // ADMIN y EVALUATOR ven todos los procesos
+  if (user?.role === UserRole.COMPANY && user.company?.id) {
+    finalFilters.companyId = user.company.id;
+  }
+
   return useQuery({
-    queryKey: processKeys.lists(),
-    queryFn: () => processesService.findAll(),
+    queryKey: processKeys.list(finalFilters),
+    queryFn: () => processesService.findAll(finalFilters),
+    enabled: !!user,
   });
 };
 

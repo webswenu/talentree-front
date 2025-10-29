@@ -26,6 +26,8 @@ export interface AuditLog {
 }
 
 export interface AuditFilters {
+  page?: number;
+  limit?: number;
   userId?: string;
   action?: AuditAction;
   entityType?: string;

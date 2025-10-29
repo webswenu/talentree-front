@@ -12,6 +12,8 @@ import { usePagination } from '../../hooks/usePagination';
 import { useFilter } from '../../hooks/useFilter';
 import { toast } from '../../utils/toast';
 import { UserRole } from '../../types/user.types';
+import { useAuthStore } from '../../store/authStore';
+import { Permission, hasPermission } from '../../utils/permissions';
 
 interface UserFormData {
   firstName: string;
@@ -36,12 +38,18 @@ const STATUS_OPTIONS = [
 ];
 
 export const UsersPage = () => {
+  const { user: currentUser } = useAuthStore();
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [deletingUser, setDeletingUser] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 300);
+
+  // Permisos según rol
+  const canCreate = currentUser && hasPermission(currentUser.role, Permission.USERS_CREATE);
+  const canEdit = currentUser && hasPermission(currentUser.role, Permission.USERS_EDIT);
+  const canDelete = currentUser && hasPermission(currentUser.role, Permission.USERS_DELETE);
 
   const { filters, setFilter, clearFilters } = useFilter({
     role: 'all',
@@ -214,12 +222,14 @@ export const UsersPage = () => {
           <h1 className="text-2xl font-bold text-gray-900">Usuarios del Sistema</h1>
           <p className="text-gray-600 mt-1">Gestiona los usuarios y sus permisos</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          + Crear Usuario
-        </button>
+        {canCreate && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            + Crear Usuario
+          </button>
+        )}
       </div>
 
       {/* Filters */}
@@ -344,18 +354,22 @@ export const UsersPage = () => {
                       {user.createdAt ? new Date(user.createdAt).toLocaleDateString('es-CL') : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <button
-                        onClick={() => handleEdit(user)}
-                        className="text-blue-600 hover:text-blue-900 mr-3 font-medium"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user)}
-                        className="text-red-600 hover:text-red-900 font-medium"
-                      >
-                        Eliminar
-                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={() => handleEdit(user)}
+                          className="text-blue-600 hover:text-blue-900 mr-3 font-medium"
+                        >
+                          Editar
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          onClick={() => handleDelete(user)}
+                          className="text-red-600 hover:text-red-900 font-medium"
+                        >
+                          Eliminar
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
