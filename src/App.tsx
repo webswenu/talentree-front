@@ -1,12 +1,11 @@
-import { AppRoutes } from './routes';
-import { useWebSocket } from './hooks/useWebSocket';
-import './index.css';
+import { AppRoutes } from "./routes";
+import { useWebSocket } from "./hooks/useWebSocket";
+import "./index.css";
 
 function App() {
-  // Inicializar WebSocket connection
-  useWebSocket();
+    useWebSocket();
 
-  return <AppRoutes />;
+    return <AppRoutes />;
 }
 
 export default App;

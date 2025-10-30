@@ -1,1 +1,1 @@
-export { testsService as testService } from './tests.service';
+export { testsService as testService } from "./tests.service";

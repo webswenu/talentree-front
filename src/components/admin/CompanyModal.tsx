@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from "react";
 import { useCreateCompany, useUpdateCompany } from "../../hooks/useCompanies";
 import { useUsers } from "../../hooks/useUsers";
@@ -63,13 +64,12 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
             }
             onClose();
         } catch (err) {
-            // Error ya manejado por el hook
+            console.error("Error al guardar la empresa:", err);
         }
     };
 
     const mutation = isEditing ? updateMutation : createMutation;
 
-    // Filtrar solo usuarios con rol company que no tengan empresa asignada
     const availableUsers =
         users?.filter((u) => u.role === UserRole.COMPANY) || [];
 
@@ -84,8 +84,9 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
 
                 {mutation.isError && (
                     <div className="mx-6 mt-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                        {(mutation.error as any)?.response?.data?.message ||
-                            "Error al guardar la empresa"}
+                        {mutation.error instanceof Error
+                            ? mutation.error.message
+                            : "Error al guardar la empresa"}
                     </div>
                 )}
 
