@@ -1,5 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useWorkerProcess } from "../../hooks/useWorkers";
+import { useProcessTests } from "../../hooks/useProcesses";
+import { useStartTest } from "../../hooks/useTestResponses";
 import {
     WorkerStatusColors,
     WorkerStatusLabels,
@@ -8,8 +11,13 @@ import {
 export const WorkerApplicationDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const [startingTestId, setStartingTestId] = useState<string | null>(null);
 
     const { data: application, isLoading } = useWorkerProcess(id || "");
+    const { data: processTests } = useProcessTests(
+        application?.process.id || ""
+    );
+    const startTestMutation = useStartTest();
 
     if (isLoading) {
         return (
@@ -46,6 +54,27 @@ export const WorkerApplicationDetailPage = () => {
     const process = application.process;
     const hasTests =
         application.testResponses && application.testResponses.length > 0;
+
+    const handleStartTest = async (testId: string, isFixedTest: boolean = false) => {
+        if (!application?.id) return;
+
+        setStartingTestId(testId);
+        try {
+            const response = await startTestMutation.mutateAsync({
+                testId,
+                workerProcessId: application.id,
+                isFixedTest,
+            });
+
+            // Navigate to test taking page with the response ID
+            navigate(`/trabajador/test/${response.id}`);
+        } catch (error) {
+            console.error("Error starting test:", error);
+            alert("Error al iniciar el test. Por favor intenta nuevamente.");
+        } finally {
+            setStartingTestId(null);
+        }
+    };
 
     const formatDate = (dateString: string | Date | null | undefined) => {
         if (!dateString) return "No especificada";
@@ -195,6 +224,96 @@ export const WorkerApplicationDetailPage = () => {
                     </div>
                 )}
             </div>
+
+            {/* Available Tests Section */}
+            {processTests && (processTests.tests.length > 0 || processTests.fixedTests.length > 0) && (
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                    <h2 className="text-xl font-bold text-gray-900 mb-6">
+                        Tests Disponibles
+                    </h2>
+
+                    <div className="space-y-4">
+                        {/* Custom Tests */}
+                        {processTests.tests.map((test: any) => (
+                            <div
+                                key={test.id}
+                                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                            {test.name}
+                                        </h3>
+                                        {test.description && (
+                                            <p className="text-gray-600 text-sm mb-3">
+                                                {test.description}
+                                            </p>
+                                        )}
+                                        <div className="flex gap-4 text-sm text-gray-500">
+                                            {test.duration && (
+                                                <span>⏱️ {test.duration} minutos</span>
+                                            )}
+                                            {test.questions && (
+                                                <span>📝 {test.questions.length} preguntas</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleStartTest(test.id, false)}
+                                        disabled={startingTestId === test.id}
+                                        className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {startingTestId === test.id
+                                            ? "Iniciando..."
+                                            : "Iniciar Test"}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* Fixed Tests */}
+                        {processTests.fixedTests.map((fixedTest: any) => (
+                            <div
+                                key={fixedTest.id}
+                                className="border border-indigo-200 bg-indigo-50 rounded-lg p-4 hover:shadow-md transition"
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <h3 className="text-lg font-semibold text-gray-900">
+                                                {fixedTest.name}
+                                            </h3>
+                                            <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded">
+                                                Test Psicométrico
+                                            </span>
+                                        </div>
+                                        {fixedTest.description && (
+                                            <p className="text-gray-700 text-sm mb-3">
+                                                {fixedTest.description}
+                                            </p>
+                                        )}
+                                        <div className="flex gap-4 text-sm text-gray-600">
+                                            {fixedTest.duration && (
+                                                <span>⏱️ {fixedTest.duration} minutos</span>
+                                            )}
+                                            <span>🎯 {fixedTest.code}</span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleStartTest(fixedTest.id, true)}
+                                        disabled={startingTestId === fixedTest.id}
+                                        className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {startingTestId === fixedTest.id
+                                            ? "Iniciando..."
+                                            : "Iniciar Test"}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Tests Section */}
             {hasTests && application.testResponses && (

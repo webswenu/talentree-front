@@ -20,6 +20,7 @@ export const processKeys = {
         [...processKeys.all, "company", companyId] as const,
     detail: (id: string) => [...processKeys.all, "detail", id] as const,
     evaluators: (id: string) => [...processKeys.all, "evaluators", id] as const,
+    tests: (id: string) => [...processKeys.all, "tests", id] as const,
 };
 
 export const useProcesses = (filters?: ProcessFilters) => {
@@ -35,6 +36,8 @@ export const useProcesses = (filters?: ProcessFilters) => {
         queryKey: processKeys.list(finalFilters),
         queryFn: () => processesService.findAll(finalFilters),
         enabled: !!user,
+        // Mantener datos anteriores mientras se hace fetch para evitar re-renders que rompan inputs
+        placeholderData: (previousData) => previousData,
     });
 };
 
@@ -58,6 +61,14 @@ export const useProcessEvaluators = (id: string) => {
     return useQuery({
         queryKey: processKeys.evaluators(id),
         queryFn: () => processesService.getEvaluators(id),
+        enabled: !!id,
+    });
+};
+
+export const useProcessTests = (id: string) => {
+    return useQuery({
+        queryKey: processKeys.tests(id),
+        queryFn: () => processesService.getTests(id),
         enabled: !!id,
     });
 };

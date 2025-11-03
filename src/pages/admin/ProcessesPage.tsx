@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useProcesses, useDeleteProcess } from "../../hooks/useProcesses";
+import { useCompanies } from "../../hooks/useCompanies";
 import {
     SelectionProcess,
     ProcessStatusLabels,
@@ -13,19 +15,47 @@ import { useAuthStore } from "../../store/authStore";
 import { Permission, hasPermission } from "../../utils/permissions";
 import { UserRole } from "../../types/user.types";
 
+/**
+ * IMPORTANTE: Patrón de filtros para inputs controlados
+ *
+ * Para evitar que los inputs pierdan el foco al escribir:
+ * 1. Usar inputs controlados directamente con estado (value + onChange)
+ * 2. Usar useMemo para los filtros para evitar cambios innecesarios en queryKey
+ * 3. En el hook useQuery agregar: placeholderData: (previousData) => previousData
+ *
+ * Esto mantiene los datos anteriores mientras se hace fetch, evitando re-renders que rompan el input.
+ */
 export default function ProcessesPage() {
     const { user } = useAuthStore();
+    const [searchParams] = useSearchParams();
     const [page, setPage] = useState(1);
     const [limit] = useState(10);
     const [search, setSearch] = useState("");
-    const [statusFilter, setStatusFilter] = useState<string>("");
+    const [statusFilter, setStatusFilter] = useState("");
+    const [companyFilter, setCompanyFilter] = useState("");
 
-    const filters: ProcessFilters = {
-        page,
-        limit,
-        ...(search && { search }),
-        ...(statusFilter && { status: statusFilter }),
-    };
+    const { data: companiesData } = useCompanies();
+    const companies = companiesData?.data || [];
+
+    // Initialize company filter from URL params
+    useEffect(() => {
+        const companyIdFromUrl = searchParams.get("companyId");
+        if (companyIdFromUrl) {
+            setCompanyFilter(companyIdFromUrl);
+        }
+    }, [searchParams]);
+
+    // Memoizar filtros para evitar re-fetches innecesarios
+    const filters = useMemo<ProcessFilters>(
+        () => ({
+            page,
+            limit,
+            ...(search && { search }),
+            ...(statusFilter && { status: statusFilter }),
+            ...(companyFilter && { companyId: companyFilter }),
+        }),
+        [page, limit, search, statusFilter, companyFilter]
+    );
 
     const { data: processesData, isLoading } = useProcesses(filters);
     const deleteMutation = useDeleteProcess();
@@ -132,7 +162,7 @@ export default function ProcessesPage() {
 
             {/* Filtros */}
             <div className="bg-white p-4 rounded-lg shadow mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Buscar
@@ -147,6 +177,26 @@ export default function ProcessesPage() {
                             }}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Empresa
+                        </label>
+                        <select
+                            value={companyFilter}
+                            onChange={(e) => {
+                                setCompanyFilter(e.target.value);
+                                setPage(1);
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">Todas las empresas</option>
+                            {companies.map((company) => (
+                                <option key={company.id} value={company.id}>
+                                    {company.name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -168,12 +218,13 @@ export default function ProcessesPage() {
                         </select>
                     </div>
                 </div>
-                {(search || statusFilter) && (
+                {(search || statusFilter || companyFilter) && (
                     <div className="mt-3">
                         <button
                             onClick={() => {
                                 setSearch("");
                                 setStatusFilter("");
+                                setCompanyFilter("");
                                 setPage(1);
                             }}
                             className="text-sm text-blue-600 hover:text-blue-800"
@@ -319,7 +370,7 @@ export default function ProcessesPage() {
                 {/* Mostrar mensaje si no hay resultados */}
                 {!isLoading && processes.length === 0 && (
                     <div className="text-center py-8 text-gray-500">
-                        {search || statusFilter
+                        {search || statusFilter || companyFilter
                             ? "No se encontraron procesos con los filtros aplicados"
                             : "No hay procesos registrados"}
                     </div>

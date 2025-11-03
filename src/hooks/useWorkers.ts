@@ -25,6 +25,8 @@ export const useWorkers = (filters?: WorkerFilters) => {
     return useQuery({
         queryKey: workerKeys.list(filters),
         queryFn: () => workersService.findAll(filters),
+        // Mantener datos anteriores mientras se hace fetch para evitar re-renders que rompan inputs
+        placeholderData: (previousData) => previousData,
     });
 };
 

@@ -14,6 +14,11 @@ export enum QuestionType {
     OPEN_TEXT = "open_text",
     SCALE = "scale",
     MULTIPLE_RESPONSE = "multiple_response",
+    // Tipos específicos para tests fijos
+    MULTIPLE_CHOICE_TERNARY = "multiple_choice_ternary",
+    FORCED_CHOICE = "forced_choice",
+    LIKERT_SCALE = "likert_scale",
+    TABLE_CHECKBOX = "table_checkbox",
 }
 
 export interface TestQuestion {
@@ -89,4 +94,8 @@ export const QuestionTypeLabels: Record<QuestionType, string> = {
     [QuestionType.OPEN_TEXT]: "Texto Abierto",
     [QuestionType.SCALE]: "Escala",
     [QuestionType.MULTIPLE_RESPONSE]: "Respuesta Múltiple",
+    [QuestionType.MULTIPLE_CHOICE_TERNARY]: "Opción Múltiple Ternaria (A/B/C)",
+    [QuestionType.FORCED_CHOICE]: "Elección Forzada (Más/Menos)",
+    [QuestionType.LIKERT_SCALE]: "Escala Likert (1-5)",
+    [QuestionType.TABLE_CHECKBOX]: "Tabla con Casillas",
 };

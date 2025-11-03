@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCompanies, useDeleteCompany } from "../../hooks/useCompanies";
 import { Company } from "../../types/company.types";
 import { CompanyModal } from "../../components/admin/CompanyModal";
@@ -8,6 +9,7 @@ import { Permission, hasPermission } from "../../utils/permissions";
 
 export const CompaniesPage = () => {
     const { user } = useAuthStore();
+    const navigate = useNavigate();
     const { data: companiesData, isLoading, error } = useCompanies();
     const companies = companiesData?.data || [];
     const deleteMutation = useDeleteCompany();
@@ -207,6 +209,16 @@ export const CompaniesPage = () => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button
+                                            onClick={() =>
+                                                navigate(
+                                                    `/admin/procesos?companyId=${company.id}`
+                                                )
+                                            }
+                                            className="text-blue-600 hover:text-blue-900 mr-4"
+                                        >
+                                            Procesos
+                                        </button>
                                         {canEdit && (
                                             <button
                                                 onClick={() =>

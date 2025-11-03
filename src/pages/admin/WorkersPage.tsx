@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWorkers, useDeleteWorker } from "../../hooks/useWorkers";
-import { Worker } from "../../types/worker.types";
+import {
+    Worker,
+    WorkerStatus,
+    WorkerStatusLabels,
+    WorkerStatusColors,
+} from "../../types/worker.types";
 import { WorkerFilters } from "../../services/workers.service";
 import WorkerModal from "../../components/admin/WorkerModal";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
@@ -18,12 +23,16 @@ export default function WorkersPage() {
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("");
 
-    const filters: WorkerFilters = {
-        page,
-        limit,
-        ...(search && { search }),
-        ...(statusFilter && { status: statusFilter }),
-    };
+    // Memoizar filtros para evitar re-fetches innecesarios
+    const filters = useMemo<WorkerFilters>(
+        () => ({
+            page,
+            limit,
+            ...(search && { search }),
+            ...(statusFilter && { status: statusFilter }),
+        }),
+        [page, limit, search, statusFilter]
+    );
 
     const { data: workersData, isLoading } = useWorkers(filters);
     const deleteMutation = useDeleteWorker();
@@ -111,8 +120,9 @@ export default function WorkersPage() {
         total: meta?.total || 0,
         withUser: workers.filter((w) => w.user).length,
         withCV: workers.filter((w) => w.cvUrl).length,
-        withSkills: workers.filter((w) => w.skills && w.skills.length > 0)
-            .length,
+        inProcesses: workers.filter(
+            (w) => w.workerProcesses && w.workerProcesses.length > 0
+        ).length,
     };
 
     return (
@@ -186,27 +196,27 @@ export default function WorkersPage() {
 
             <div className="grid grid-cols-4 gap-4 mb-6">
                 <div className="bg-white p-4 rounded-lg shadow">
-                    <p className="text-gray-500 text-sm">Total</p>
+                    <p className="text-gray-500 text-sm">Total Trabajadores</p>
                     <p className="text-2xl font-bold text-gray-800">
                         {stats.total}
                     </p>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow">
-                    <p className="text-gray-500 text-sm">Con Usuario</p>
+                    <p className="text-gray-500 text-sm">Con Usuario Activo</p>
                     <p className="text-2xl font-bold text-blue-600">
                         {stats.withUser}
                     </p>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow">
-                    <p className="text-gray-500 text-sm">Con CV</p>
+                    <p className="text-gray-500 text-sm">Con CV Cargado</p>
                     <p className="text-2xl font-bold text-green-600">
                         {stats.withCV}
                     </p>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow">
-                    <p className="text-gray-500 text-sm">Con Habilidades</p>
+                    <p className="text-gray-500 text-sm">En Procesos</p>
                     <p className="text-2xl font-bold text-purple-600">
-                        {stats.withSkills}
+                        {stats.inProcesses}
                     </p>
                 </div>
             </div>
@@ -225,7 +235,7 @@ export default function WorkersPage() {
                                 Email
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Teléfono
+                                Procesos
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Ciudad
@@ -262,8 +272,58 @@ export default function WorkersPage() {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {worker.email}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {worker.phone || "-"}
+                                <td className="px-6 py-4">
+                                    {worker.workerProcesses &&
+                                    worker.workerProcesses.length > 0 ? (
+                                        <div className="flex flex-col gap-2">
+                                            {worker.workerProcesses
+                                                .filter((wp) => wp.process)
+                                                .slice(0, 2)
+                                                .map((wp) => (
+                                                    <div
+                                                        key={wp.id}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <span
+                                                            className="text-xs text-blue-600 hover:underline cursor-pointer"
+                                                            onClick={() =>
+                                                                navigate(
+                                                                    `/admin/procesos/${wp.process.id}`
+                                                                )
+                                                            }
+                                                        >
+                                                            {wp.process.name}
+                                                        </span>
+                                                        <span
+                                                            className={`px-2 py-0.5 text-xs font-semibold rounded ${
+                                                                WorkerStatusColors[
+                                                                    wp.status as WorkerStatus
+                                                                ] || "bg-gray-100 text-gray-800"
+                                                            }`}
+                                                        >
+                                                            {
+                                                                WorkerStatusLabels[
+                                                                    wp.status as WorkerStatus
+                                                                ] || wp.status
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            {worker.workerProcesses.filter((wp) => wp.process).length >
+                                                2 && (
+                                                <span className="text-xs text-gray-500">
+                                                    +
+                                                    {worker.workerProcesses.filter((wp) => wp.process)
+                                                        .length - 2}{" "}
+                                                    más
+                                                </span>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <span className="text-sm text-gray-400">
+                                            Sin procesos
+                                        </span>
+                                    )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {worker.city || "-"}
