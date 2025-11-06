@@ -20,6 +20,11 @@ export const CompanyProcessDetailPage = () => {
     const [activeTab, setActiveTab] = useState<TabType>("info");
     const [showInviteModal, setShowInviteModal] = useState(false);
 
+    const getBaseUrl = () => {
+        if (user?.role === "guest") return "/invitado";
+        return "/empresa";
+    };
+
     const { data: process, isLoading } = useQuery({
         queryKey: ["process", id],
         queryFn: () => processesService.getById(id!),
@@ -57,7 +62,7 @@ export const CompanyProcessDetailPage = () => {
             <div className="text-center py-8">
                 <p className="text-gray-500">Proceso no encontrado</p>
                 <button
-                    onClick={() => navigate("/empresa/procesos")}
+                    onClick={() => navigate(`${getBaseUrl()}/procesos`)}
                     className="mt-4 text-blue-600 hover:text-blue-800"
                 >
                     Volver a procesos
@@ -104,7 +109,7 @@ export const CompanyProcessDetailPage = () => {
             <div className="flex items-center justify-between">
                 <div>
                     <button
-                        onClick={() => navigate("/empresa/procesos")}
+                        onClick={() => navigate(`${getBaseUrl()}/procesos`)}
                         className="text-sm text-gray-600 hover:text-gray-900 mb-2 flex items-center gap-1"
                     >
                         ← Volver a procesos
@@ -375,7 +380,7 @@ export const CompanyProcessDetailPage = () => {
                                                         <button
                                                             onClick={() =>
                                                                 navigate(
-                                                                    `/empresa/trabajadores/${workerProcess.worker.id}`
+                                                                    `${getBaseUrl()}/trabajadores/${workerProcess.worker.id}`
                                                                 )
                                                             }
                                                             className="text-blue-600 hover:text-blue-900"

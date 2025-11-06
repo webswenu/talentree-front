@@ -137,16 +137,17 @@ export const sidebarSections: SidebarSection[] = [
     },
 
     {
+        path: "/empresa/invitaciones",
+        label: "Invitaciones",
+        icon: "✉️",
+        roles: [UserRole.COMPANY],
+    },
+
+    {
         path: "/admin/usuarios",
         label: "Usuarios",
         icon: "👤",
         roles: [UserRole.ADMIN_TALENTREE],
-    },
-    {
-        path: "/evaluador/usuarios",
-        label: "Usuarios",
-        icon: "👤",
-        roles: [UserRole.EVALUATOR],
     },
 
     {
@@ -156,10 +157,22 @@ export const sidebarSections: SidebarSection[] = [
         roles: [UserRole.ADMIN_TALENTREE],
     },
     {
+        path: "/empresa/reportes",
+        label: "Reportes",
+        icon: "📄",
+        roles: [UserRole.COMPANY],
+    },
+    {
         path: "/evaluador/reportes",
         label: "Reportes",
         icon: "📄",
         roles: [UserRole.EVALUATOR],
+    },
+    {
+        path: "/invitado/reportes",
+        label: "Reportes",
+        icon: "📄",
+        roles: [UserRole.GUEST],
     },
 
     {
@@ -186,6 +199,12 @@ export const sidebarSections: SidebarSection[] = [
         label: "Configuración",
         icon: "⚙️",
         roles: [UserRole.EVALUATOR],
+    },
+    {
+        path: "/invitado/configuracion",
+        label: "Configuración",
+        icon: "⚙️",
+        roles: [UserRole.GUEST],
     },
     {
         path: "/trabajador/perfil",

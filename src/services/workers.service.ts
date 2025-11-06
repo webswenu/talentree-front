@@ -14,6 +14,7 @@ export interface WorkerFilters {
     search?: string;
     page?: number;
     limit?: number;
+    companyId?: string;
 }
 
 export interface PaginatedResult<T> {

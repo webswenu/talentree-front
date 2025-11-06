@@ -1,16 +1,21 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useCompanies, useDeleteCompany } from "../../hooks/useCompanies";
 import { Company } from "../../types/company.types";
 import { CompanyModal } from "../../components/admin/CompanyModal";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { useAuthStore } from "../../store/authStore";
 import { Permission, hasPermission } from "../../utils/permissions";
+import { toast } from "../../utils/toast";
 
 export const CompaniesPage = () => {
     const { user } = useAuthStore();
     const navigate = useNavigate();
+    const location = useLocation();
     const { data: companiesData, isLoading, error } = useCompanies();
+
+    // Detect if in admin or evaluador
+    const baseRoute = location.pathname.includes("/evaluador") ? "/evaluador" : "/admin";
     const companies = companiesData?.data || [];
     const deleteMutation = useDeleteCompany();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,10 +53,37 @@ export const CompaniesPage = () => {
 
         try {
             await deleteMutation.mutateAsync(companyToDelete.id);
+            toast.success("Empresa eliminada correctamente");
             setIsConfirmDeleteOpen(false);
             setCompanyToDelete(null);
-        } catch (err) {
-            console.error(err);
+        } catch (err: unknown) {
+            // Extraer mensaje de error del backend
+            let errorMessage = "Error al eliminar la empresa";
+            
+            if (err && typeof err === "object" && "response" in err) {
+                const axiosError = err as { 
+                    response?: { 
+                        data?: { 
+                            message?: string | string[];
+                        } 
+                    } 
+                };
+                
+                const message = axiosError.response?.data?.message;
+                
+                if (typeof message === "string") {
+                    errorMessage = message;
+                } else if (Array.isArray(message) && message.length > 0) {
+                    errorMessage = message[0];
+                } else if (typeof axiosError.response?.data === "string") {
+                    errorMessage = axiosError.response.data;
+                }
+            } else if (err instanceof Error) {
+                errorMessage = err.message;
+            }
+            
+            toast.error(errorMessage, { duration: 5000 });
+            // No cerramos el modal para que el usuario pueda ver el error
         }
     };
 
@@ -212,7 +244,7 @@ export const CompaniesPage = () => {
                                         <button
                                             onClick={() =>
                                                 navigate(
-                                                    `/admin/procesos?companyId=${company.id}`
+                                                    `${baseRoute}/procesos?companyId=${company.id}`
                                                 )
                                             }
                                             className="text-blue-600 hover:text-blue-900 mr-4"

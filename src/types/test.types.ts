@@ -49,6 +49,19 @@ export interface Test {
     updatedAt: Date;
 }
 
+export interface FixedTest {
+    id: string;
+    code: string;
+    name: string;
+    description?: string;
+    duration?: number;
+    isActive: boolean;
+    orderIndex?: number;
+    configuration: Record<string, unknown>;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 export interface CreateQuestionDto {
     question: string;
     type: QuestionType;

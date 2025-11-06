@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
     useGeneralSettings,
     useNotificationSettings,
@@ -12,6 +13,8 @@ import {
 } from "../../types/settings.types";
 
 export const SettingsPage = () => {
+    const location = useLocation();
+    const isEvaluator = location.pathname.includes("/evaluador");
     const [activeTab, setActiveTab] = useState("general");
     const [hasInitialized, setHasInitialized] = useState(false);
 
@@ -166,9 +169,14 @@ export const SettingsPage = () => {
                 <h1 className="text-2xl font-bold text-gray-800">
                     Configuración del Sistema
                 </h1>
-                {successMessage && (
+                {successMessage && !isEvaluator && (
                     <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded">
                         {successMessage}
+                    </div>
+                )}
+                {isEvaluator && (
+                    <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-2 rounded text-sm">
+                        Modo solo lectura
                     </div>
                 )}
             </div>
@@ -213,8 +221,9 @@ export const SettingsPage = () => {
                                 name="system_name"
                                 value={generalForm.system_name}
                                 onChange={handleGeneralChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                disabled={isLoading}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                                disabled={isLoading || isEvaluator}
+                                readOnly={isEvaluator}
                             />
                         </div>
                         <div>
@@ -226,8 +235,9 @@ export const SettingsPage = () => {
                                 name="contact_email"
                                 value={generalForm.contact_email}
                                 onChange={handleGeneralChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                disabled={isLoading}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                                disabled={isLoading || isEvaluator}
+                                readOnly={isEvaluator}
                             />
                         </div>
                         <div>
@@ -239,8 +249,9 @@ export const SettingsPage = () => {
                                 value={generalForm.system_description}
                                 onChange={handleGeneralChange}
                                 rows={3}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                disabled={isLoading}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                                disabled={isLoading || isEvaluator}
+                                readOnly={isEvaluator}
                             />
                         </div>
                         <div>
@@ -251,8 +262,8 @@ export const SettingsPage = () => {
                                 name="timezone"
                                 value={generalForm.timezone}
                                 onChange={handleGeneralChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                disabled={isLoading}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                                disabled={isLoading || isEvaluator}
                             >
                                 <option value="America/Santiago">
                                     America/Santiago
@@ -281,17 +292,20 @@ export const SettingsPage = () => {
                                 value={generalForm.logo_url}
                                 onChange={handleGeneralChange}
                                 placeholder="https://ejemplo.com/logo.png"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                disabled={isLoading}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                                disabled={isLoading || isEvaluator}
+                                readOnly={isEvaluator}
                             />
                         </div>
-                        <button
-                            type="submit"
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                            disabled={isLoading}
-                        >
-                            {isLoading ? "Guardando..." : "Guardar Cambios"}
-                        </button>
+                        {!isEvaluator && (
+                            <button
+                                type="submit"
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? "Guardando..." : "Guardar Cambios"}
+                            </button>
+                        )}
                     </form>
                 </div>
             )}
@@ -314,7 +328,7 @@ export const SettingsPage = () => {
                                 }
                                 onChange={handleNotificationChange}
                                 className="h-4 w-4 text-blue-600 rounded"
-                                disabled={isLoading}
+                                disabled={isLoading || isEvaluator}
                             />
                             <label className="ml-2 text-sm text-gray-700">
                                 Habilitar notificaciones del sistema
@@ -329,7 +343,8 @@ export const SettingsPage = () => {
                                 className="h-4 w-4 text-blue-600 rounded"
                                 disabled={
                                     isLoading ||
-                                    !notificationsForm.notifications_enabled
+                                    !notificationsForm.notifications_enabled ||
+                                    isEvaluator
                                 }
                             />
                             <label className="ml-2 text-sm text-gray-700">
@@ -345,7 +360,8 @@ export const SettingsPage = () => {
                                 className="h-4 w-4 text-blue-600 rounded"
                                 disabled={
                                     isLoading ||
-                                    !notificationsForm.notifications_enabled
+                                    !notificationsForm.notifications_enabled ||
+                                    isEvaluator
                                 }
                             />
                             <label className="ml-2 text-sm text-gray-700">
@@ -360,10 +376,11 @@ export const SettingsPage = () => {
                                 name="notification_frequency"
                                 value={notificationsForm.notification_frequency}
                                 onChange={handleNotificationChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50"
                                 disabled={
                                     isLoading ||
-                                    !notificationsForm.notifications_enabled
+                                    !notificationsForm.notifications_enabled ||
+                                    isEvaluator
                                 }
                             >
                                 <option value="instant">Instantáneas</option>
@@ -371,13 +388,15 @@ export const SettingsPage = () => {
                                 <option value="weekly">Resumen Semanal</option>
                             </select>
                         </div>
-                        <button
-                            type="submit"
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                            disabled={isLoading}
-                        >
-                            {isLoading ? "Guardando..." : "Guardar Cambios"}
-                        </button>
+                        {!isEvaluator && (
+                            <button
+                                type="submit"
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? "Guardando..." : "Guardar Cambios"}
+                            </button>
+                        )}
                     </form>
                 </div>
             )}

@@ -1,6 +1,7 @@
 import { apiService } from "./api.service";
 import {
     Test,
+    FixedTest,
     CreateTestDto,
     UpdateTestDto,
     TestQuestion,
@@ -27,6 +28,13 @@ class TestsService {
         const response = await apiService.get<Test[]>(this.basePath, {
             params,
         });
+        return response.data;
+    }
+
+    async findAllFixed(): Promise<FixedTest[]> {
+        const response = await apiService.get<FixedTest[]>(
+            `${this.basePath}/fixed`
+        );
         return response.data;
     }
 

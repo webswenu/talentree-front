@@ -38,7 +38,9 @@ export enum Permission {
   // Reportes
   REPORTS_VIEW = 'reports.view',
   REPORTS_CREATE = 'reports.create',
+  REPORTS_EDIT = 'reports.edit',
   REPORTS_DELETE = 'reports.delete',
+  REPORTS_APPROVE = 'reports.approve',
 
   // Auditoría
   AUDIT_VIEW = 'audit.view',
@@ -88,7 +90,9 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     Permission.USERS_DELETE,
     Permission.REPORTS_VIEW,
     Permission.REPORTS_CREATE,
+    Permission.REPORTS_EDIT,
     Permission.REPORTS_DELETE,
+    Permission.REPORTS_APPROVE,
     Permission.AUDIT_VIEW,
     Permission.SETTINGS_VIEW,
     Permission.SETTINGS_EDIT,
@@ -99,29 +103,32 @@ const rolePermissions: Record<UserRole, Permission[]> = {
   ],
 
   [UserRole.COMPANY]: [
-    // ✅ SOLO LECTURA de procesos y trabajadores + INVITAR trabajadores
+    // ✅ SOLO LECTURA de procesos y trabajadores + INVITAR trabajadores + VER REPORTES APROBADOS
     Permission.PROCESSES_VIEW,       // ✅ Ver procesos de su empresa
     Permission.WORKERS_VIEW,         // ✅ Ver trabajadores postulantes
     Permission.WORKERS_INVITE,       // ✅ Invitar trabajadores (único permiso de escritura)
+    Permission.REPORTS_VIEW,         // ✅ Ver reportes aprobados (solo approved)
     Permission.SETTINGS_VIEW,        // ✅ Ver configuración
     Permission.SETTINGS_EDIT         // ✅ Editar configuración
     // ❌ NO puede: crear/editar/eliminar procesos
-    // ❌ NO puede: ver reportes ni tests
+    // ❌ NO puede: crear/editar/aprobar reportes
   ],
 
   [UserRole.EVALUATOR]: [
-    // ✅ Todo en modo LECTURA (igual que admin EXCEPTO auditoría) + REVISAR TESTS
+    // ✅ Todo en modo LECTURA + REVISAR TESTS + EDITAR REPORTES (subir archivos, no aprobar)
     Permission.COMPANIES_VIEW,
     Permission.PROCESSES_VIEW,
     Permission.TESTS_VIEW,
-    Permission.TESTS_REVIEW,         // ✅ Único permiso de escritura: revisar/calificar tests
+    Permission.TESTS_REVIEW,         // ✅ Revisar/calificar tests
     Permission.WORKERS_VIEW,
     Permission.USERS_VIEW,
     Permission.REPORTS_VIEW,
+    Permission.REPORTS_CREATE,       // ✅ Crear reportes
+    Permission.REPORTS_EDIT,         // ✅ Editar reportes (upload archivos)
     Permission.SETTINGS_VIEW,
     Permission.APPLICATIONS_VIEW
+    // ❌ NO puede: aprobar reportes (solo Admin)
     // ❌ NO puede: auditoría (solo Admin)
-    // ❌ NO puede: crear/editar/eliminar NADA (excepto revisar tests)
   ],
 
   [UserRole.WORKER]: [

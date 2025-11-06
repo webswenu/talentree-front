@@ -5,6 +5,7 @@ import { CreateTestDto, UpdateTestDto } from "../types/test.types";
 export const testKeys = {
     all: ["tests"] as const,
     lists: () => [...testKeys.all, "list"] as const,
+    fixed: () => [...testKeys.all, "fixed"] as const,
     byType: (type: string) => [...testKeys.all, "type", type] as const,
     detail: (id: string) => [...testKeys.all, "detail", id] as const,
     questions: (id: string) => [...testKeys.all, "questions", id] as const,
@@ -14,6 +15,13 @@ export const useTests = () => {
     return useQuery({
         queryKey: testKeys.lists(),
         queryFn: () => testsService.findAll(),
+    });
+};
+
+export const useFixedTests = () => {
+    return useQuery({
+        queryKey: testKeys.fixed(),
+        queryFn: () => testsService.findAllFixed(),
     });
 };
 

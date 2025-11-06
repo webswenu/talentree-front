@@ -1,16 +1,48 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { workersService } from "../../services/workers.service";
+import { reportsService } from "../../services/reports.service";
+import {
+    WorkerStatus,
+    WorkerStatusLabels,
+    WorkerStatusColors,
+} from "../../types/worker.types";
+import {
+    ReportStatus,
+    ReportStatusLabels,
+    ReportStatusColors,
+    ReportTypeLabels,
+    ReportTypeColors,
+} from "../../types/report.types";
+import {
+    useUploadReportFile,
+    useDownloadReportFile,
+    useApproveReport,
+} from "../../hooks/useReports";
 
 export const WorkerDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Detect if in admin or evaluador
+    const baseRoute = location.pathname.includes("/evaluador") ? "/evaluador" : "/admin";
 
     const { data: worker, isLoading } = useQuery({
         queryKey: ["worker", id],
         queryFn: () => workersService.getById(id!),
         enabled: !!id,
     });
+
+    const { data: reports = [] } = useQuery({
+        queryKey: ["worker-reports", id],
+        queryFn: () => reportsService.findByWorker(id!),
+        enabled: !!id,
+    });
+
+    const uploadMutation = useUploadReportFile();
+    const downloadMutation = useDownloadReportFile();
+    const approveMutation = useApproveReport();
 
     if (isLoading) {
         return (
@@ -27,7 +59,7 @@ export const WorkerDetailPage = () => {
             <div className="text-center py-8">
                 <p className="text-gray-500">Trabajador no encontrado</p>
                 <button
-                    onClick={() => navigate("/admin/trabajadores")}
+                    onClick={() => navigate(`${baseRoute}/trabajadores`)}
                     className="mt-4 text-blue-600 hover:text-blue-800"
                 >
                     Volver a trabajadores
@@ -70,7 +102,7 @@ export const WorkerDetailPage = () => {
                         Postulaciones
                     </p>
                     <p className="text-3xl font-bold text-gray-900 mt-2">
-                        {worker.applications?.length || 0}
+                        {worker.workerProcesses?.length || 0}
                     </p>
                 </div>
                 <div className="bg-white rounded-lg shadow p-6">
@@ -82,9 +114,11 @@ export const WorkerDetailPage = () => {
                     </p>
                 </div>
                 <div className="bg-white rounded-lg shadow p-6">
-                    <p className="text-sm font-medium text-gray-600">Ciudad</p>
-                    <p className="text-xl font-semibold text-gray-900 mt-2">
-                        {worker.city || "No especificada"}
+                    <p className="text-sm font-medium text-gray-600">
+                        Reportes Generados
+                    </p>
+                    <p className="text-3xl font-bold text-purple-600 mt-2">
+                        {reports.length}
                     </p>
                 </div>
                 <div className="bg-white rounded-lg shadow p-6">
@@ -212,10 +246,10 @@ export const WorkerDetailPage = () => {
             )}
 
             {/* Procesos */}
-            {worker.applications && worker.applications.length > 0 && (
+            {worker.workerProcesses && worker.workerProcesses.length > 0 && (
                 <div className="bg-white rounded-lg shadow p-6">
                     <h2 className="text-lg font-semibold mb-6">
-                        Historial de Postulaciones
+                        Procesos de Selección
                     </h2>
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
@@ -231,52 +265,285 @@ export const WorkerDetailPage = () => {
                                         Fecha de Aplicación
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Última Actualización
+                                        Reportes
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        Acciones
                                     </th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {worker.applications.map((application) => (
-                                    <tr
-                                        key={application.id}
-                                        className="hover:bg-gray-50"
-                                    >
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                {worker.workerProcesses.map((wp) => {
+                                    const processReports = reports.filter(
+                                        (r) => r.processId === wp.process?.id
+                                    );
+                                    return (
+                                        <tr
+                                            key={wp.id}
+                                            className="hover:bg-gray-50"
+                                        >
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm font-medium text-gray-900">
+                                                    {wp.process?.name || "N/A"}
+                                                </div>
+                                                <div className="text-sm text-gray-500">
+                                                    {wp.process?.code || ""}
+                                                </div>
+                                                {wp.process?.position && (
+                                                    <div className="text-xs text-gray-400">
+                                                        {wp.process.position}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span
+                                                    className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                                        WorkerStatusColors[
+                                                            wp.status as WorkerStatus
+                                                        ] ||
+                                                        "bg-gray-100 text-gray-800"
+                                                    }`}
+                                                >
+                                                    {WorkerStatusLabels[
+                                                        wp.status as WorkerStatus
+                                                    ] || wp.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {wp.appliedAt
+                                                    ? new Date(
+                                                          wp.appliedAt
+                                                      ).toLocaleDateString(
+                                                          "es-CL"
+                                                      )
+                                                    : "-"}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {processReports.length > 0 ? (
+                                                    <div className="flex flex-col gap-1">
+                                                        {processReports.map(
+                                                            (report) => (
+                                                                <a
+                                                                    key={
+                                                                        report.id
+                                                                    }
+                                                                    href={
+                                                                        report.fileUrl ||
+                                                                        "#"
+                                                                    }
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                                                >
+                                                                    <span>
+                                                                        📄
+                                                                    </span>
+                                                                    {
+                                                                        report.title
+                                                                    }
+                                                                </a>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-gray-400">
+                                                        Sin reportes
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                {wp.process && (
+                                                    <button
+                                                        onClick={() =>
+                                                            navigate(
+                                                                `${baseRoute}/procesos/${wp.process.id}`
+                                                            )
+                                                        }
+                                                        className="text-blue-600 hover:text-blue-900"
+                                                    >
+                                                        Ver Proceso
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* Reportes */}
+            <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-lg font-semibold mb-4">Reportes Generados</h2>
+                <p className="text-sm text-gray-600 mb-6">
+                    Los reportes se generan automáticamente cuando el trabajador completa todos los tests de un proceso.
+                </p>
+
+                {reports.length > 0 ? (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Título
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Proceso
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Estado
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Tipo
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Fecha
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Acciones
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {reports.map((report: any) => (
+                                    <tr key={report.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4">
                                             <div className="text-sm font-medium text-gray-900">
-                                                {application.process?.name ||
-                                                    "N/A"}
+                                                {report.title}
                                             </div>
-                                            <div className="text-sm text-gray-500">
-                                                {application.process?.code ||
-                                                    ""}
-                                            </div>
+                                            {report.description && (
+                                                <div className="text-sm text-gray-500">
+                                                    {report.description.substring(0, 40)}...
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                {application.status}
+                                            {report.process ? (
+                                                <button
+                                                    onClick={() =>
+                                                        navigate(`/admin/procesos/${report.process.id}`)
+                                                    }
+                                                    className="text-sm text-blue-600 hover:text-blue-900"
+                                                >
+                                                    {report.process.name}
+                                                </button>
+                                            ) : (
+                                                <span className="text-sm text-gray-500">-</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span
+                                                className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                                    ReportStatusColors[report.status as ReportStatus]
+                                                }`}
+                                            >
+                                                {ReportStatusLabels[report.status as ReportStatus]}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span
+                                                className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                                    ReportTypeColors[report.type]
+                                                }`}
+                                            >
+                                                {ReportTypeLabels[report.type]}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {application.appliedAt
-                                                ? new Date(
-                                                      application.appliedAt
-                                                  ).toLocaleDateString("es-CL")
-                                                : "-"}
+                                            {new Date(report.generatedDate || report.createdAt).toLocaleDateString()}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {application.updatedAt
-                                                ? new Date(
-                                                      application.updatedAt
-                                                  ).toLocaleDateString("es-CL")
-                                                : "-"}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <div className="flex gap-2">
+                                                {report.fileUrl && (
+                                                    <button
+                                                        onClick={async () => {
+                                                            try {
+                                                                const blob = await downloadMutation.mutateAsync(report.id);
+                                                                const url = window.URL.createObjectURL(blob);
+                                                                const a = document.createElement("a");
+                                                                a.href = url;
+                                                                a.download = report.fileName || `reporte-${report.id}.pdf`;
+                                                                document.body.appendChild(a);
+                                                                a.click();
+                                                                window.URL.revokeObjectURL(url);
+                                                                document.body.removeChild(a);
+                                                            } catch (error) {
+                                                                alert("Error al descargar archivo");
+                                                            }
+                                                        }}
+                                                        disabled={downloadMutation.isPending}
+                                                        className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                                                    >
+                                                        Descargar
+                                                    </button>
+                                                )}
+                                                {report.status === ReportStatus.PENDING_APPROVAL && (
+                                                    <>
+                                                        <button
+                                                            onClick={async () => {
+                                                                if (
+                                                                    window.confirm(
+                                                                        "¿Estás seguro de aprobar este reporte? La empresa podrá verlo."
+                                                                    )
+                                                                ) {
+                                                                    try {
+                                                                        await approveMutation.mutateAsync({
+                                                                            id: report.id,
+                                                                            data: { status: ReportStatus.APPROVED },
+                                                                        });
+                                                                        alert("Reporte aprobado exitosamente");
+                                                                    } catch (error) {
+                                                                        alert("Error al aprobar reporte");
+                                                                    }
+                                                                }
+                                                            }}
+                                                            disabled={approveMutation.isPending}
+                                                            className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                                                        >
+                                                            Aprobar
+                                                        </button>
+                                                        <button
+                                                            onClick={async () => {
+                                                                const reason = window.prompt(
+                                                                    "Ingrese el motivo del rechazo (opcional):"
+                                                                );
+                                                                if (reason !== null) {
+                                                                    try {
+                                                                        await approveMutation.mutateAsync({
+                                                                            id: report.id,
+                                                                            data: {
+                                                                                status: ReportStatus.REJECTED,
+                                                                                rejectionReason: reason,
+                                                                            },
+                                                                        });
+                                                                        alert("Reporte rechazado");
+                                                                    } catch (error) {
+                                                                        alert("Error al rechazar reporte");
+                                                                    }
+                                                                }
+                                                            }}
+                                                            disabled={approveMutation.isPending}
+                                                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                                                        >
+                                                            Rechazar
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
-                </div>
-            )}
+                ) : (
+                    <p className="text-center text-gray-500 py-8">
+                        No hay reportes generados para este trabajador.
+                    </p>
+                )}
+            </div>
         </div>
     );
 };

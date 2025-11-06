@@ -133,3 +133,71 @@ export const useProcessesStats = () => {
         queryFn: () => processesService.getAllStats(),
     });
 };
+
+export const useAddTest = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ processId, testId }: { processId: string; testId: string }) =>
+            processesService.addTest(processId, testId),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: processKeys.tests(variables.processId),
+            });
+            queryClient.invalidateQueries({
+                queryKey: processKeys.detail(variables.processId),
+            });
+        },
+    });
+};
+
+export const useRemoveTest = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ processId, testId }: { processId: string; testId: string }) =>
+            processesService.removeTest(processId, testId),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: processKeys.tests(variables.processId),
+            });
+            queryClient.invalidateQueries({
+                queryKey: processKeys.detail(variables.processId),
+            });
+        },
+    });
+};
+
+export const useAddFixedTest = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ processId, fixedTestId }: { processId: string; fixedTestId: string }) =>
+            processesService.addFixedTest(processId, fixedTestId),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: processKeys.tests(variables.processId),
+            });
+            queryClient.invalidateQueries({
+                queryKey: processKeys.detail(variables.processId),
+            });
+        },
+    });
+};
+
+export const useRemoveFixedTest = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ processId, fixedTestId }: { processId: string; fixedTestId: string }) =>
+            processesService.removeFixedTest(processId, fixedTestId),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: processKeys.tests(variables.processId),
+            });
+            queryClient.invalidateQueries({
+                queryKey: processKeys.detail(variables.processId),
+            });
+        },
+    });
+};

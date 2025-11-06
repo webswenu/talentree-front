@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useWorkers, useDeleteWorker } from "../../hooks/useWorkers";
 import {
     Worker,
@@ -18,10 +18,18 @@ import { UserRole } from "../../types/user.types";
 export default function WorkersPage() {
     const { user } = useAuthStore();
     const navigate = useNavigate();
+    const location = useLocation();
     const [page, setPage] = useState(1);
     const [limit] = useState(10);
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("");
+
+    // Detectar si estamos en admin o evaluador para usar la ruta correcta
+    const isEvaluator = location.pathname.includes("/evaluador");
+    const processBaseRoute = isEvaluator ? "/evaluador/procesos" : "/admin/procesos";
+
+    // Obtener el companyId si el usuario es de tipo COMPANY
+    const companyId = user?.role === UserRole.COMPANY ? user?.company?.id : undefined;
 
     // Memoizar filtros para evitar re-fetches innecesarios
     const filters = useMemo<WorkerFilters>(
@@ -30,8 +38,9 @@ export default function WorkersPage() {
             limit,
             ...(search && { search }),
             ...(statusFilter && { status: statusFilter }),
+            ...(companyId && { companyId }),
         }),
-        [page, limit, search, statusFilter]
+        [page, limit, search, statusFilter, companyId]
     );
 
     const { data: workersData, isLoading } = useWorkers(filters);
@@ -288,7 +297,7 @@ export default function WorkersPage() {
                                                             className="text-xs text-blue-600 hover:underline cursor-pointer"
                                                             onClick={() =>
                                                                 navigate(
-                                                                    `/admin/procesos/${wp.process.id}`
+                                                                    `${processBaseRoute}/${wp.process.id}`
                                                                 )
                                                             }
                                                         >

@@ -24,6 +24,11 @@ export const CompanyDashboard = () => {
     const navigate = useNavigate();
     const companyId = user?.company?.id;
 
+    const getBaseUrl = () => {
+        if (user?.role === "guest") return "/invitado";
+        return "/empresa";
+    };
+
     const { data: processes } = useProcessesByCompany(companyId || "");
 
     const { data: dashboardStats, isLoading: isLoadingStats } =
@@ -85,17 +90,19 @@ export const CompanyDashboard = () => {
             ?.flatMap((proceso: SelectionProcess) => {
                 const workers =
                     (proceso.workers as unknown as WorkerInProcess[]) || [];
-                return workers.slice(0, 5).map((worker: WorkerInProcess) => ({
+                return workers.map((worker: WorkerInProcess) => ({
                     id: worker.id,
                     tipo: "nuevo_postulante",
-                    nombre: `${worker.worker?.firstName} ${worker.worker?.lastName}`,
+                    nombre: `${worker.worker?.firstName || ''} ${worker.worker?.lastName || ''}`.trim() || 'Candidato',
                     proceso: proceso.name,
                     fecha: worker.appliedAt
                         ? getRelativeTime(new Date(worker.appliedAt))
                         : "Recientemente",
+                    appliedAt: worker.appliedAt ? new Date(worker.appliedAt).getTime() : 0,
                 }));
             })
             .filter(Boolean)
+            .sort((a, b) => b.appliedAt - a.appliedAt)
             .slice(0, 5) || [];
 
     function getRelativeTime(date: Date): string {
@@ -190,7 +197,7 @@ export const CompanyDashboard = () => {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">
-                                    Candidatos Totales
+                                    Aplicaciones en Procesos
                                 </p>
                                 <p className="text-3xl font-bold text-green-600 mt-2">
                                     {stats.candidatos}
@@ -254,7 +261,7 @@ export const CompanyDashboard = () => {
                         Procesos Activos
                     </h2>
                     <button
-                        onClick={() => navigate("/empresa/procesos")}
+                        onClick={() => navigate(`${getBaseUrl()}/procesos`)}
                         className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
                     >
                         Ver Todos →
@@ -302,7 +309,7 @@ export const CompanyDashboard = () => {
                                     <button
                                         onClick={() =>
                                             navigate(
-                                                `/empresa/procesos/${proceso.id}`
+                                                `${getBaseUrl()}/procesos/${proceso.id}`
                                             )
                                         }
                                         className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
@@ -324,40 +331,46 @@ export const CompanyDashboard = () => {
                     </h2>
                 </div>
                 <div className="divide-y divide-gray-200">
-                    {actividadReciente.map(
-                        (actividad: {
-                            id: string;
-                            tipo: string;
-                            nombre: string;
-                            proceso: string;
-                            fecha: string;
-                        }) => (
-                        <div
-                            key={actividad.id}
-                            className="px-6 py-3 hover:bg-gray-50 transition-colors"
-                        >
-                            <div className="flex items-center gap-3">
-                                <span className="text-2xl">
-                                    {getIconoActividad(actividad.tipo)}
-                                </span>
-                                <div className="flex-1">
-                                    <p className="text-sm text-gray-900">
-                                        {getTextoActividad(actividad)}
-                                    </p>
+                    {actividadReciente.length > 0 ? (
+                        actividadReciente.map(
+                            (actividad: {
+                                id: string;
+                                tipo: string;
+                                nombre: string;
+                                proceso: string;
+                                fecha: string;
+                            }) => (
+                            <div
+                                key={actividad.id}
+                                className="px-6 py-3 hover:bg-gray-50 transition-colors"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="text-2xl">
+                                        {getIconoActividad(actividad.tipo)}
+                                    </span>
+                                    <div className="flex-1">
+                                        <p className="text-sm text-gray-900">
+                                            {getTextoActividad(actividad)}
+                                        </p>
+                                    </div>
+                                    <span className="text-xs text-gray-500">
+                                        {actividad.fecha}
+                                    </span>
                                 </div>
-                                <span className="text-xs text-gray-500">
-                                    {actividad.fecha}
-                                </span>
                             </div>
+                        ))
+                    ) : (
+                        <div className="px-6 py-8 text-center text-gray-500">
+                            No hay actividad reciente para mostrar
                         </div>
-                    ))}
+                    )}
                 </div>
                 <div className="px-6 py-3 border-t border-gray-200 text-center">
                     <button
-                        onClick={() => navigate("/empresa/candidatos")}
+                        onClick={() => navigate(`${getBaseUrl()}/trabajadores`)}
                         className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                     >
-                        Ver toda la actividad →
+                        Ver todos los candidatos →
                     </button>
                 </div>
             </div>

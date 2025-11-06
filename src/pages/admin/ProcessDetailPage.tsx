@@ -1,38 +1,201 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useProcess, useProcessTests } from "../../hooks/useProcesses";
 import { useProcessWorkers } from "../../hooks/useWorkers";
 import {
     useReportsByProcess,
     useCreateReport,
+    useUploadReportFile,
+    useDownloadReportFile,
+    useApproveReport,
+    useDeleteReport,
 } from "../../hooks/useReports";
+import { useRemoveTest, useRemoveFixedTest } from "../../hooks/useProcesses";
+import { useAuthStore } from "../../store/authStore";
+import { UserRole } from "../../types/user.types";
 import {
     ProcessStatusLabels,
     ProcessStatusColors,
 } from "../../types/process.types";
 import {
+    Report,
     ReportType,
     ReportTypeLabels,
     ReportTypeColors,
+    ReportStatus,
+    ReportStatusLabels,
+    ReportStatusColors,
 } from "../../types/report.types";
 import {
     WorkerStatus,
     WorkerStatusLabels,
     WorkerStatusColors,
 } from "../../types/worker.types";
+import { ApproveRejectModal } from "../../components/common/ApproveRejectModal";
+import { FormatSelectionModal } from "../../components/common/FormatSelectionModal";
+import { AssignTestsModal } from "../../components/common/AssignTestsModal";
+import ProcessModal from "../../components/admin/ProcessModal";
 
 type TabType = "info" | "tests" | "candidates" | "approved" | "reports" | "timeline";
 
 export const ProcessDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const [activeTab, setActiveTab] = useState<TabType>("info");
+    const [approveRejectModal, setApproveRejectModal] = useState<{
+        isOpen: boolean;
+        report: Report | null;
+    }>({ isOpen: false, report: null });
+    const [formatSelectionModal, setFormatSelectionModal] = useState<{
+        isOpen: boolean;
+        report: Report | null;
+    }>({ isOpen: false, report: null });
+    const [assignTestsModal, setAssignTestsModal] = useState(false);
+    const [editProcessModal, setEditProcessModal] = useState(false);
 
     const { data: process, isLoading, error } = useProcess(id!);
     const { data: testsData } = useProcessTests(id!);
     const { data: workersData } = useProcessWorkers(id!);
     const { data: reportsData } = useReportsByProcess(id!);
     const createReportMutation = useCreateReport();
+    const uploadMutation = useUploadReportFile();
+    const downloadMutation = useDownloadReportFile();
+    const approveMutation = useApproveReport();
+    const deleteMutation = useDeleteReport();
+    const removeTestMutation = useRemoveTest();
+    const removeFixedTestMutation = useRemoveFixedTest();
+    const { user } = useAuthStore();
+    const isAdmin = user?.role === UserRole.ADMIN_TALENTREE;
+    const isEvaluator = location.pathname.includes("/evaluador");
+    const isCompany = location.pathname.includes("/empresa");
+    const baseRoute = isEvaluator ? "/evaluador" : isCompany ? "/empresa" : "/admin";
+
+    // Solo admin puede editar/asignar/eliminar
+    const canEdit = isAdmin && !isEvaluator && !isCompany;
+
+    // Helper functions
+    const isPDF = (fileName: string | null | undefined) => {
+        if (!fileName) return false;
+        return fileName.toLowerCase().endsWith('.pdf');
+    };
+
+    const isDOCX = (fileName: string | null | undefined) => {
+        if (!fileName) return false;
+        return fileName.toLowerCase().endsWith('.docx') || fileName.toLowerCase().endsWith('.doc');
+    };
+
+    // Download handler with format selection
+    const handleDownloadClick = (report: Report) => {
+        const hasPdf = !!report.pdfFileUrl;
+        const hasDocx = !!report.docxFileUrl;
+
+        // Handle old reports with fileUrl (backward compatibility)
+        if (!hasPdf && !hasDocx && report.fileUrl) {
+            handleDownload(report, undefined);
+            return;
+        }
+
+        // If has both files, show modal to choose
+        if (hasPdf && hasDocx) {
+            setFormatSelectionModal({ isOpen: true, report });
+        } else if (hasPdf) {
+            handleDownload(report, 'pdf');
+        } else if (hasDocx) {
+            handleDownload(report, 'docx');
+        }
+    };
+
+    const handleDownload = async (report: Report, format?: 'pdf' | 'docx') => {
+        try {
+            const blob = await downloadMutation.mutateAsync({ id: report.id, format });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+
+            // Determine filename based on format
+            let filename = `reporte-${report.id}.pdf`;
+            if (format === 'pdf' && report.pdfFileName) {
+                filename = report.pdfFileName;
+            } else if (format === 'docx' && report.docxFileName) {
+                filename = report.docxFileName;
+            } else if (report.fileName) {
+                filename = report.fileName;
+            }
+
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            // Close modal if open
+            setFormatSelectionModal({ isOpen: false, report: null });
+        } catch (error) {
+            console.error("Download error:", error);
+        }
+    };
+
+    const handleApproveRejectClick = (report: Report) => {
+        setApproveRejectModal({ isOpen: true, report });
+    };
+
+    const handleApprove = async () => {
+        if (!approveRejectModal.report) return;
+
+        try {
+            await approveMutation.mutateAsync({
+                id: approveRejectModal.report.id,
+                data: { status: ReportStatus.APPROVED },
+            });
+            setApproveRejectModal({ isOpen: false, report: null });
+        } catch (error) {
+            console.error("Approve error:", error);
+        }
+    };
+
+    const handleReject = async (reason: string) => {
+        if (!approveRejectModal.report) return;
+
+        try {
+            await approveMutation.mutateAsync({
+                id: approveRejectModal.report.id,
+                data: {
+                    status: ReportStatus.REJECTED,
+                    rejectionReason: reason,
+                },
+            });
+            setApproveRejectModal({ isOpen: false, report: null });
+        } catch (error) {
+            console.error("Reject error:", error);
+        }
+    };
+
+    const handleDelete = async (reportId: string) => {
+        try {
+            await deleteMutation.mutateAsync(reportId);
+        } catch (error) {
+            console.error("Delete error:", error);
+        }
+    };
+
+    const handleRemoveTest = async (testId: string) => {
+        if (!id) return;
+        try {
+            await removeTestMutation.mutateAsync({ processId: id, testId });
+        } catch (error) {
+            console.error("Remove test error:", error);
+        }
+    };
+
+    const handleRemoveFixedTest = async (fixedTestId: string) => {
+        if (!id) return;
+        try {
+            await removeFixedTestMutation.mutateAsync({ processId: id, fixedTestId });
+        } catch (error) {
+            console.error("Remove fixed test error:", error);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -56,7 +219,7 @@ export const ProcessDetailPage = () => {
             <div className="flex items-center justify-between">
                 <div>
                     <button
-                        onClick={() => navigate("/admin/procesos")}
+                        onClick={() => navigate(`${baseRoute}/procesos`)}
                         className="text-sm text-gray-600 hover:text-gray-900 mb-2 flex items-center gap-1"
                     >
                         ← Volver a procesos
@@ -66,14 +229,22 @@ export const ProcessDetailPage = () => {
                     </h1>
                     <p className="text-gray-600">{process.description}</p>
                 </div>
-                <div className="flex gap-2">
-                    <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                        Asignar Tests
-                    </button>
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                        Editar Proceso
-                    </button>
-                </div>
+                {canEdit && (
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setAssignTestsModal(true)}
+                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            Asignar Tests
+                        </button>
+                        <button
+                            onClick={() => setEditProcessModal(true)}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            Editar Proceso
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Status Banner */}
@@ -275,13 +446,13 @@ export const ProcessDetailPage = () => {
                                         Postulantes
                                     </span>
                                     <span className="text-sm font-medium text-gray-900">
-                                        0
+                                        {workersData?.length || 0}
                                     </span>
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-2">
                                     <div
                                         className="bg-blue-600 h-2 rounded-full"
-                                        style={{ width: "0%" }}
+                                        style={{ width: `${workersData?.length ? 100 : 0}%` }}
                                     ></div>
                                 </div>
                             </div>
@@ -291,13 +462,17 @@ export const ProcessDetailPage = () => {
                                         En Evaluación
                                     </span>
                                     <span className="text-sm font-medium text-gray-900">
-                                        0
+                                        {workersData?.filter((w: any) => w.status === "in_process").length || 0}
                                     </span>
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-2">
                                     <div
                                         className="bg-yellow-500 h-2 rounded-full"
-                                        style={{ width: "0%" }}
+                                        style={{
+                                            width: `${workersData?.length > 0
+                                                ? ((workersData.filter((w: any) => w.status === "in_process").length / workersData.length) * 100)
+                                                : 0}%`
+                                        }}
                                     ></div>
                                 </div>
                             </div>
@@ -307,34 +482,20 @@ export const ProcessDetailPage = () => {
                                         Aprobados
                                     </span>
                                     <span className="text-sm font-medium text-gray-900">
-                                        0
+                                        {workersData?.filter((w: any) => w.status === "approved").length || 0}
                                     </span>
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-2">
                                     <div
                                         className="bg-green-600 h-2 rounded-full"
-                                        style={{ width: "0%" }}
+                                        style={{
+                                            width: `${workersData?.length > 0
+                                                ? ((workersData.filter((w: any) => w.status === "approved").length / workersData.length) * 100)
+                                                : 0}%`
+                                        }}
                                     ></div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Quick Actions */}
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-sm font-medium text-gray-500 mb-4">
-                            Acciones Rápidas
-                        </h3>
-                        <div className="space-y-2">
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded">
-                                Exportar candidatos
-                            </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded">
-                                Generar reporte
-                            </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded">
-                                Notificar empresa
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -361,7 +522,7 @@ export const ProcessDetailPage = () => {
                                                 className="border rounded-lg p-4 hover:bg-gray-50"
                                             >
                                                 <div className="flex justify-between items-start">
-                                                    <div>
+                                                    <div className="flex-1">
                                                         <h4 className="font-medium text-gray-900">
                                                             {test.name}
                                                         </h4>
@@ -372,6 +533,18 @@ export const ProcessDetailPage = () => {
                                                             {test.questions?.length || 0} preguntas • {test.duration} minutos
                                                         </p>
                                                     </div>
+                                                    {canEdit && (
+                                                        <button
+                                                            onClick={() => handleRemoveTest(test.id)}
+                                                            disabled={removeTestMutation.isPending}
+                                                            className="ml-4 p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                                                            title="Remover test"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
@@ -391,7 +564,7 @@ export const ProcessDetailPage = () => {
                                                 className="border rounded-lg p-4 bg-indigo-50 border-indigo-200"
                                             >
                                                 <div className="flex justify-between items-start">
-                                                    <div>
+                                                    <div className="flex-1">
                                                         <div className="flex items-center gap-2">
                                                             <h4 className="font-medium text-gray-900">
                                                                 {test.name}
@@ -407,6 +580,18 @@ export const ProcessDetailPage = () => {
                                                             {test.code} • {test.duration} minutos
                                                         </p>
                                                     </div>
+                                                    {canEdit && (
+                                                        <button
+                                                            onClick={() => handleRemoveFixedTest(test.id)}
+                                                            disabled={removeFixedTestMutation.isPending}
+                                                            className="ml-4 p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                                                            title="Remover test fijo"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
@@ -449,13 +634,21 @@ export const ProcessDetailPage = () => {
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                                 Puntaje
                                             </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Reportes
+                                            </th>
                                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                                                 Acciones
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {workersData.map((workerProcess: any) => (
+                                        {workersData.map((workerProcess: any) => {
+                                            const workerReports = reportsData?.filter(
+                                                (r: any) => r.workerId === workerProcess.worker.id && r.processId === id
+                                            ) || [];
+
+                                            return (
                                             <tr key={workerProcess.id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div>
@@ -487,10 +680,21 @@ export const ProcessDetailPage = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {workerProcess.totalScore || "-"}
                                                 </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    {workerReports.length > 0 ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs text-green-600 font-medium">
+                                                                {workerReports.length} {workerReports.length === 1 ? "reporte" : "reportes"}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-xs text-gray-400">Sin reportes</span>
+                                                    )}
+                                                </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <button
                                                         onClick={() =>
-                                                            navigate(`/admin/trabajadores/${workerProcess.worker.id}`)
+                                                            navigate(`${baseRoute}/trabajadores/${workerProcess.worker.id}`)
                                                         }
                                                         className="text-blue-600 hover:text-blue-900 mr-3"
                                                     >
@@ -498,7 +702,7 @@ export const ProcessDetailPage = () => {
                                                     </button>
                                                 </td>
                                             </tr>
-                                        ))}
+                                        )})}
                                     </tbody>
                                 </table>
                             </div>
@@ -541,7 +745,7 @@ export const ProcessDetailPage = () => {
                                                     Puntaje Final
                                                 </th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                                    Notas
+                                                    Reportes
                                                 </th>
                                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                                                     Acciones
@@ -549,7 +753,12 @@ export const ProcessDetailPage = () => {
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {approvedWorkers.map((workerProcess: any) => (
+                                            {approvedWorkers.map((workerProcess: any) => {
+                                                const workerReports = reportsData?.filter(
+                                                    (r: any) => r.workerId === workerProcess.worker.id && r.processId === id
+                                                ) || [];
+
+                                                return (
                                                 <tr key={workerProcess.id} className="hover:bg-gray-50">
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div>
@@ -581,41 +790,29 @@ export const ProcessDetailPage = () => {
                                                             {workerProcess.totalScore || "-"}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                                                        {workerProcess.notes || "-"}
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        {workerReports.length > 0 ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs text-green-600 font-medium">
+                                                                    {workerReports.length} {workerReports.length === 1 ? "reporte" : "reportes"}
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-xs text-gray-400">Sin reportes</span>
+                                                        )}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                         <button
                                                             onClick={() =>
-                                                                navigate(`/admin/trabajadores/${workerProcess.worker.id}`)
+                                                                navigate(`${baseRoute}/trabajadores/${workerProcess.worker.id}`)
                                                             }
                                                             className="text-blue-600 hover:text-blue-900"
                                                         >
                                                             Ver Detalle
                                                         </button>
-                                                        <button
-                                                            onClick={async () => {
-                                                                try {
-                                                                    await createReportMutation.mutateAsync({
-                                                                        title: `Evaluación - ${workerProcess.worker.firstName} ${workerProcess.worker.lastName}`,
-                                                                        description: `Reporte de evaluación para ${workerProcess.worker.firstName} ${workerProcess.worker.lastName}`,
-                                                                        type: ReportType.WORKER_EVALUATION,
-                                                                        processId: id,
-                                                                        workerId: workerProcess.worker.id,
-                                                                        generatedDate: new Date().toISOString(),
-                                                                    });
-                                                                    alert("Reporte generado exitosamente");
-                                                                } catch (error) {
-                                                                    alert("Error al generar reporte");
-                                                                }
-                                                            }}
-                                                            className="text-green-600 hover:text-green-900"
-                                                        >
-                                                            Generar Reporte
-                                                        </button>
                                                     </td>
                                                 </tr>
-                                            ))}
+                                            )})}
                                         </tbody>
                                     </table>
                                 </div>
@@ -631,103 +828,180 @@ export const ProcessDetailPage = () => {
 
             {/* Tab Reportes */}
             {activeTab === "reports" && (
-                <div className="space-y-6">
-                    {/* Header con botón generar */}
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-semibold text-gray-900">
-                                Reportes del Proceso
-                            </h2>
-                            <button
-                                onClick={async () => {
-                                    try {
-                                        await createReportMutation.mutateAsync({
-                                            title: `Resumen del Proceso - ${process?.name}`,
-                                            description: `Reporte automático generado para el proceso ${process?.name}`,
-                                            type: ReportType.PROCESS_SUMMARY,
-                                            processId: id,
-                                            generatedDate: new Date().toISOString(),
-                                        });
-                                        alert("Reporte generado exitosamente");
-                                    } catch (error) {
-                                        alert("Error al generar reporte");
-                                    }
-                                }}
-                                disabled={createReportMutation.isPending}
-                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                            >
-                                {createReportMutation.isPending
-                                    ? "Generando..."
-                                    : "+ Generar Reporte del Proceso"}
-                            </button>
+                <div className="bg-white rounded-lg shadow">
+                    <div className="p-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                            Reportes del Proceso
+                        </h2>
+
+                        {/* Info message */}
+                        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
+                            <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                            </svg>
+                            <div className="flex-1">
+                                <h3 className="text-sm font-medium text-blue-900">Información importante</h3>
+                                <p className="text-sm text-blue-700 mt-1">
+                                    Solo se pueden aprobar reportes en formato PDF. Los archivos DOCX generados automáticamente deben ser convertidos a PDF antes de poder aprobarlos.
+                                </p>
+                            </div>
                         </div>
 
-                        {/* Lista de reportes */}
                         {reportsData && reportsData.length > 0 ? (
-                            <div className="space-y-3">
-                                {reportsData.map((report) => (
-                                    <div
-                                        key={report.id}
-                                        className="border rounded-lg p-4 hover:bg-gray-50"
-                                    >
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <h3 className="font-medium text-gray-900">
-                                                        {report.title}
-                                                    </h3>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Título
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Tipo
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Estado
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Proceso
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Trabajador
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Acciones
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {reportsData.map((report: any) => (
+                                            <tr key={report.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center">
+                                                        {(report.pdfFileUrl || report.docxFileUrl || report.fileUrl) && (
+                                                            <svg
+                                                                className="w-5 h-5 text-blue-500 mr-2"
+                                                                fill="currentColor"
+                                                                viewBox="0 0 20 20"
+                                                            >
+                                                                <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z" />
+                                                            </svg>
+                                                        )}
+                                                        <div>
+                                                            <div className="text-sm font-medium text-gray-900">
+                                                                {report.title}
+                                                            </div>
+                                                            {report.description && (
+                                                                <div className="text-sm text-gray-500">
+                                                                    {report.description.substring(0, 50)}
+                                                                    {report.description.length > 50 && "..."}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
                                                     <span
-                                                        className={`px-2 py-0.5 text-xs font-semibold rounded ${
+                                                        className={`px-2 py-1 text-xs font-semibold rounded-full ${
                                                             ReportTypeColors[report.type]
                                                         }`}
                                                     >
                                                         {ReportTypeLabels[report.type]}
                                                     </span>
-                                                </div>
-                                                {report.description && (
-                                                    <p className="text-sm text-gray-600 mb-2">
-                                                        {report.description}
-                                                    </p>
-                                                )}
-                                                <div className="flex items-center gap-4 text-xs text-gray-500">
-                                                    <span>
-                                                        Creado por: {report.createdBy.firstName}{" "}
-                                                        {report.createdBy.lastName}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span
+                                                        className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                                            ReportStatusColors[report.status as ReportStatus]
+                                                        }`}
+                                                    >
+                                                        {ReportStatusLabels[report.status as ReportStatus]}
                                                     </span>
-                                                    <span>
-                                                        Fecha:{" "}
-                                                        {new Date(
-                                                            report.generatedDate || report.createdAt
-                                                        ).toLocaleDateString()}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                {report.fileUrl && (
-                                                    <button className="text-blue-600 hover:text-blue-800 text-sm">
-                                                        Descargar
-                                                    </button>
-                                                )}
-                                                <button
-                                                    onClick={() =>
-                                                        navigate(`/admin/reportes/${report.id}`)
-                                                    }
-                                                    className="text-blue-600 hover:text-blue-800 text-sm"
-                                                >
-                                                    Ver Detalle
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {report.process?.name || "-"}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {report.worker
+                                                        ? `${report.worker.firstName} ${report.worker.lastName}`
+                                                        : "-"}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    <div className="flex gap-2 items-center">
+                                                        {/* Download button */}
+                                                        {(report.pdfFileUrl || report.docxFileUrl || report.fileUrl) && (
+                                                            <button
+                                                                onClick={() => handleDownloadClick(report)}
+                                                                disabled={downloadMutation.isPending}
+                                                                className="p-1 text-green-600 hover:text-green-900 hover:bg-green-50 rounded disabled:opacity-50"
+                                                                title="Descargar"
+                                                            >
+                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
+
+                                                        {/* File type badges */}
+                                                        {report.docxFileUrl && (
+                                                            <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+                                                                DOCX
+                                                            </span>
+                                                        )}
+                                                        {report.pdfFileUrl && (
+                                                            <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-700">
+                                                                PDF
+                                                            </span>
+                                                        )}
+                                                        {!report.pdfFileUrl && !report.docxFileUrl && report.fileUrl && (
+                                                            <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                                                isDOCX(report.fileName)
+                                                                    ? 'bg-blue-100 text-blue-700'
+                                                                    : 'bg-red-100 text-red-700'
+                                                            }`}>
+                                                                {isDOCX(report.fileName) ? 'DOCX' : 'PDF'}
+                                                            </span>
+                                                        )}
+
+                                                        {/* Approve/Reject button - only for reports with PDF */}
+                                                        {(report.status === ReportStatus.PENDING_APPROVAL ||
+                                                          report.status === ReportStatus.REVISION_EVALUADOR ||
+                                                          report.status === ReportStatus.REVISION_ADMIN) &&
+                                                          (report.pdfFileUrl || (report.fileUrl && isPDF(report.fileName))) && (
+                                                            <button
+                                                                onClick={() => handleApproveRejectClick(report)}
+                                                                disabled={approveMutation.isPending}
+                                                                className="p-1 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded disabled:opacity-50"
+                                                                title="Aprobar/Rechazar"
+                                                            >
+                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
+
+                                                        {/* Delete button */}
+                                                        {canEdit && (
+                                                            <button
+                                                                onClick={() => handleDelete(report.id)}
+                                                                disabled={deleteMutation.isPending}
+                                                                className="p-1 text-red-600 hover:text-red-900 hover:bg-red-50 rounded disabled:opacity-50"
+                                                                title="Eliminar"
+                                                            >
+                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         ) : (
                             <p className="text-center text-gray-500 py-8">
                                 No hay reportes generados para este proceso.
-                                <br />
-                                <span className="text-sm">
-                                    Haz clic en "Generar Reporte" para crear uno.
-                                </span>
                             </p>
                         )}
                     </div>
@@ -924,6 +1198,41 @@ export const ProcessDetailPage = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Modals */}
+            <ApproveRejectModal
+                isOpen={approveRejectModal.isOpen}
+                onClose={() => setApproveRejectModal({ isOpen: false, report: null })}
+                onApprove={handleApprove}
+                onReject={handleReject}
+                reportTitle={approveRejectModal.report?.title || ''}
+            />
+
+            <FormatSelectionModal
+                isOpen={formatSelectionModal.isOpen}
+                onClose={() => setFormatSelectionModal({ isOpen: false, report: null })}
+                onSelectFormat={(format) => {
+                    if (formatSelectionModal.report) {
+                        handleDownload(formatSelectionModal.report, format);
+                    }
+                }}
+                hasPdf={!!formatSelectionModal.report?.pdfFileUrl}
+                hasDocx={!!formatSelectionModal.report?.docxFileUrl}
+            />
+
+            <AssignTestsModal
+                isOpen={assignTestsModal}
+                onClose={() => setAssignTestsModal(false)}
+                processId={id!}
+                assignedTestIds={testsData?.fixedTests?.map((t: any) => t.id) || []}
+            />
+
+            {editProcessModal && (
+                <ProcessModal
+                    process={process}
+                    onClose={() => setEditProcessModal(false)}
+                />
             )}
         </div>
     );

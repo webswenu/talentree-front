@@ -1,10 +1,17 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { workersService } from "../../services/workers.service";
+import { useAuthStore } from "../../store/authStore";
 
 export const CompanyWorkerDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { user } = useAuthStore();
+
+    const getBaseUrl = () => {
+        if (user?.role === "guest") return "/invitado";
+        return "/empresa";
+    };
 
     const { data: worker, isLoading } = useQuery({
         queryKey: ["worker", id],
@@ -27,7 +34,7 @@ export const CompanyWorkerDetailPage = () => {
             <div className="text-center py-8">
                 <p className="text-gray-500">Candidato no encontrado</p>
                 <button
-                    onClick={() => navigate("/empresa/trabajadores")}
+                    onClick={() => navigate(`${getBaseUrl()}/trabajadores`)}
                     className="mt-4 text-blue-600 hover:text-blue-800"
                 >
                     Volver a candidatos

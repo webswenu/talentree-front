@@ -17,6 +17,7 @@ import { LoginPage } from "../pages/public/LoginPage";
 import { RegisterWorkerPage } from "../pages/public/RegisterWorkerPage";
 import { UnauthorizedPage } from "../pages/public/UnauthorizedPage";
 import { NotFoundPage } from "../pages/public/NotFoundPage";
+import { AcceptInvitationPage } from "../pages/AcceptInvitationPage";
 
 // Admin Pages
 import { AdminDashboard } from "../pages/admin/AdminDashboard";
@@ -37,11 +38,12 @@ import { ProfilePage } from "../pages/admin/ProfilePage";
 // Company Pages
 import { CompanyDashboard } from "../pages/company/CompanyDashboard";
 import { CompanyProcessesPage } from "../pages/company/CompanyProcessesPage";
-import { CompanyProcessDetailPage } from "../pages/company/CompanyProcessDetailPage";
 import { CompanyWorkersPage } from "../pages/company/CompanyWorkersPage";
 import { CompanyWorkerDetailPage } from "../pages/company/CompanyWorkerDetailPage";
+import CompanyReportsPage from "../pages/company/CompanyReportsPage";
 import { CompanySettingsPage } from "../pages/company/CompanySettingsPage";
 import { CompanyProfilePage } from "../pages/company/CompanyProfilePage";
+import { CompanyInvitationsPage } from "../pages/company/CompanyInvitationsPage";
 
 // Evaluator Pages
 import { EvaluatorDashboard } from "../pages/evaluator/EvaluatorDashboard";
@@ -68,6 +70,8 @@ import { GuestProcessDetailPage } from "../pages/guest/GuestProcessDetailPage";
 import { GuestWorkersPage } from "../pages/guest/GuestWorkersPage";
 import { GuestWorkerDetailPage } from "../pages/guest/GuestWorkerDetailPage";
 import { GuestProfilePage } from "../pages/guest/GuestProfilePage";
+import GuestReportsPage from "../pages/guest/GuestReportsPage";
+import { GuestSettingsPage } from "../pages/guest/GuestSettingsPage";
 
 // Componente para redirigir según el rol
 const RoleBasedRedirect = () => {
@@ -104,6 +108,10 @@ export const AppRoutes = () => {
                     <Route
                         path="register/worker"
                         element={<RegisterWorkerPage />}
+                    />
+                    <Route
+                        path="accept-invitation/:token"
+                        element={<AcceptInvitationPage />}
                     />
                     <Route path="unauthorized" element={<UnauthorizedPage />} />
                 </Route>
@@ -157,7 +165,7 @@ export const AppRoutes = () => {
                     <Route path="procesos" element={<CompanyProcessesPage />} />
                     <Route
                         path="procesos/:id"
-                        element={<CompanyProcessDetailPage />}
+                        element={<ProcessDetailPage />}
                     />
                     <Route
                         path="trabajadores"
@@ -167,6 +175,11 @@ export const AppRoutes = () => {
                         path="trabajadores/:id"
                         element={<CompanyWorkerDetailPage />}
                     />
+                    <Route
+                        path="invitaciones"
+                        element={<CompanyInvitationsPage />}
+                    />
+                    <Route path="reportes" element={<CompanyReportsPage />} />
                     <Route
                         path="configuracion"
                         element={<CompanySettingsPage />}
@@ -195,7 +208,7 @@ export const AppRoutes = () => {
                     />
                     <Route
                         path="procesos/:id"
-                        element={<EvaluatorProcessDetailPage />}
+                        element={<ProcessDetailPage />}
                     />
                     <Route path="tests" element={<TestsPage />} />
                     <Route path="tests/:id" element={<TestDetailPage />} />
@@ -205,9 +218,8 @@ export const AppRoutes = () => {
                     />
                     <Route
                         path="trabajadores/:id"
-                        element={<EvaluatorWorkerDetailPage />}
+                        element={<WorkerDetailPage />}
                     />
-                    <Route path="usuarios" element={<UsersPage />} />
                     <Route path="reportes" element={<ReportsPage />} />
                     <Route path="configuracion" element={<SettingsPage />} />
                     <Route path="perfil" element={<ProfilePage />} />
@@ -286,6 +298,11 @@ export const AppRoutes = () => {
                     <Route
                         path="trabajadores/:id"
                         element={<GuestWorkerDetailPage />}
+                    />
+                    <Route path="reportes" element={<GuestReportsPage />} />
+                    <Route
+                        path="configuracion"
+                        element={<GuestSettingsPage />}
                     />
                     <Route path="perfil" element={<GuestProfilePage />} />
                 </Route>

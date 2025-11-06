@@ -88,3 +88,57 @@ export const useDeleteReport = () => {
         },
     });
 };
+
+export const useUploadReportFile = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, file }: { id: string; file: File }) =>
+            reportsService.uploadFile(id, file),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: reportKeys.lists() });
+            queryClient.invalidateQueries({
+                queryKey: reportKeys.detail(variables.id),
+            });
+        },
+    });
+};
+
+export const useDownloadReportFile = () => {
+    return useMutation({
+        mutationFn: ({ id, format }: { id: string; format?: 'pdf' | 'docx' }) =>
+            reportsService.downloadFile(id, format),
+    });
+};
+
+export const useApproveReport = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            id,
+            data,
+        }: {
+            id: string;
+            data: { status: string; rejectionReason?: string };
+        }) => reportsService.approveReport(id, data),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: reportKeys.lists() });
+            queryClient.invalidateQueries({
+                queryKey: reportKeys.detail(variables.id),
+            });
+        },
+    });
+};
+
+export const useGenerateReport = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (workerProcessId: string) =>
+            reportsService.generateReport(workerProcessId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: reportKeys.lists() });
+        },
+    });
+};

@@ -169,8 +169,8 @@ class ProcessesService {
 
     async addTest(id: string, testId: string): Promise<SelectionProcess> {
         const response = await apiService.post<SelectionProcess>(
-            `${this.basePath}/${id}/tests`,
-            { testId }
+            `${this.basePath}/${id}/tests/${testId}`,
+            {}
         );
         return response.data;
     }
@@ -178,6 +178,21 @@ class ProcessesService {
     async removeTest(id: string, testId: string): Promise<SelectionProcess> {
         const response = await apiService.delete<SelectionProcess>(
             `${this.basePath}/${id}/tests/${testId}`
+        );
+        return response.data;
+    }
+
+    async addFixedTest(id: string, fixedTestId: string): Promise<SelectionProcess> {
+        const response = await apiService.post<SelectionProcess>(
+            `${this.basePath}/${id}/fixed-tests/${fixedTestId}`,
+            {}
+        );
+        return response.data;
+    }
+
+    async removeFixedTest(id: string, fixedTestId: string): Promise<SelectionProcess> {
+        const response = await apiService.delete<SelectionProcess>(
+            `${this.basePath}/${id}/fixed-tests/${fixedTestId}`
         );
         return response.data;
     }

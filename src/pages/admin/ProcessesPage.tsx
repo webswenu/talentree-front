@@ -34,16 +34,24 @@ export default function ProcessesPage() {
     const [statusFilter, setStatusFilter] = useState("");
     const [companyFilter, setCompanyFilter] = useState("");
 
-    const { data: companiesData } = useCompanies();
+    // Solo cargar empresas si NO es un usuario de tipo COMPANY o GUEST
+    const shouldLoadCompanies = user?.role !== UserRole.COMPANY && user?.role !== UserRole.GUEST;
+    const { data: companiesData } = shouldLoadCompanies ? useCompanies() : { data: null };
     const companies = companiesData?.data || [];
 
-    // Initialize company filter from URL params
+    // Initialize company filter from URL params or user company
     useEffect(() => {
         const companyIdFromUrl = searchParams.get("companyId");
         if (companyIdFromUrl) {
             setCompanyFilter(companyIdFromUrl);
+        } else if (user?.role === UserRole.COMPANY || user?.role === UserRole.GUEST) {
+            // Auto-filtrar por la empresa del usuario
+            const userCompanyId = user?.company?.id || user?.belongsToCompany?.id;
+            if (userCompanyId) {
+                setCompanyFilter(userCompanyId);
+            }
         }
-    }, [searchParams]);
+    }, [searchParams, user]);
 
     // Memoizar filtros para evitar re-fetches innecesarios
     const filters = useMemo<ProcessFilters>(
@@ -162,7 +170,7 @@ export default function ProcessesPage() {
 
             {/* Filtros */}
             <div className="bg-white p-4 rounded-lg shadow mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className={`grid grid-cols-1 ${shouldLoadCompanies ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Buscar
@@ -178,26 +186,28 @@ export default function ProcessesPage() {
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Empresa
-                        </label>
-                        <select
-                            value={companyFilter}
-                            onChange={(e) => {
-                                setCompanyFilter(e.target.value);
-                                setPage(1);
-                            }}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">Todas las empresas</option>
-                            {companies.map((company) => (
-                                <option key={company.id} value={company.id}>
-                                    {company.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                    {shouldLoadCompanies && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Empresa
+                            </label>
+                            <select
+                                value={companyFilter}
+                                onChange={(e) => {
+                                    setCompanyFilter(e.target.value);
+                                    setPage(1);
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">Todas las empresas</option>
+                                {companies.map((company) => (
+                                    <option key={company.id} value={company.id}>
+                                        {company.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Estado
