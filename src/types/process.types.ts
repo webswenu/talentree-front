@@ -111,3 +111,36 @@ export interface ProcessStats {
     byStatus: Record<string, number>;
     byMonth: Array<{ month: string; count: number }>;
 }
+
+// Video Requirements Types
+
+export interface VideoQuestion {
+    order: number;
+    question: string;
+    displayAtSecond: number;
+}
+
+export interface ProcessVideoRequirement {
+    id: string;
+    processId: string;
+    isRequired: boolean;
+    maxDuration?: number; // in seconds
+    questions?: VideoQuestion[];
+    instructions?: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface CreateProcessVideoRequirementDto {
+    isRequired: boolean;
+    maxDuration?: number;
+    questions?: VideoQuestion[];
+    instructions?: string;
+}
+
+export interface UpdateProcessVideoRequirementDto {
+    isRequired?: boolean;
+    maxDuration?: number;
+    questions?: VideoQuestion[];
+    instructions?: string;
+}

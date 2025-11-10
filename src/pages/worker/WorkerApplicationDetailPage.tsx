@@ -1,23 +1,39 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useWorkerProcess } from "../../hooks/useWorkers";
 import { useProcessTests } from "../../hooks/useProcesses";
 import { useStartTest } from "../../hooks/useTestResponses";
+import { useAuthStore } from "../../store/authStore";
 import {
     WorkerStatusColors,
     WorkerStatusLabels,
 } from "../../types/worker.types";
+import { VideoRequirementGate } from "../../components/worker/VideoRequirementGate";
+import { videoService } from "../../services/video.service";
 
 export const WorkerApplicationDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [startingTestId, setStartingTestId] = useState<string | null>(null);
+    const { user } = useAuthStore();
 
     const { data: application, isLoading } = useWorkerProcess(id || "");
     const { data: processTests } = useProcessTests(
         application?.process.id || ""
     );
     const startTestMutation = useStartTest();
+
+    // Fetch video if exists
+    const { data: workerVideo } = useQuery({
+        queryKey: ["worker-video", user?.worker?.id, application?.process.id],
+        queryFn: () => 
+            videoService.getWorkerVideoForProcess(
+                user?.worker?.id || "",
+                application?.process.id || ""
+            ),
+        enabled: !!user?.worker?.id && !!application?.process.id,
+    });
 
     if (isLoading) {
         return (
@@ -225,16 +241,80 @@ export const WorkerApplicationDetailPage = () => {
                 )}
             </div>
 
-            {/* Available Tests Section */}
-            {processTests && (processTests.tests.length > 0 || processTests.fixedTests.length > 0) && (
+            {/* Video Player Section - Show if video exists */}
+            {workerVideo && workerVideo.videoUrl && (
                 <div className="bg-white rounded-lg shadow-lg p-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-6">
-                        Tests Disponibles
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">
+                        Tu Video Introductorio
                     </h2>
+                    <div className="space-y-4">
+                        <div className="bg-gray-900 rounded-lg overflow-hidden aspect-video">
+                            <video
+                                controls
+                                className="w-full h-full"
+                                style={{ maxHeight: "600px" }}
+                                src={`http://localhost:3002${workerVideo.videoUrl}`}
+                            >
+                                Tu navegador no soporta la reproducción de video.
+                            </video>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                            <p>
+                                <strong>Duración:</strong>{" "}
+                                {workerVideo.videoDuration
+                                    ? `${Math.floor(workerVideo.videoDuration / 60)}:${String(
+                                          workerVideo.videoDuration % 60
+                                      ).padStart(2, "0")}`
+                                    : "N/A"}
+                            </p>
+                            <p>
+                                <strong>Tamaño:</strong>{" "}
+                                {workerVideo.videoSize
+                                    ? `${(workerVideo.videoSize / (1024 * 1024)).toFixed(2)} MB`
+                                    : "N/A"}
+                            </p>
+                            <p>
+                                <strong>Estado:</strong>{" "}
+                                {workerVideo.status === "approved"
+                                    ? "✅ Aprobado"
+                                    : workerVideo.status === "pending_review"
+                                    ? "⏳ Pendiente de revisión"
+                                    : workerVideo.status}
+                            </p>
+                        </div>
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <p className="text-sm text-blue-800">
+                                💡 <strong>Nota:</strong> Si el video no se reproduce correctamente
+                                en tu reproductor de Ubuntu, prueba abrirlo directamente en Chrome
+                                usando esta URL:
+                            </p>
+                            <code className="block mt-2 p-2 bg-white rounded text-xs break-all">
+                                http://localhost:3002{workerVideo.videoUrl}
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Available Tests Section - Wrapped with Video Gate */}
+            {processTests && ((processTests as any).tests?.length > 0 || (processTests as any).fixedTests?.length > 0) && (
+                <VideoRequirementGate
+                    processId={process.id}
+                    workerId={user?.worker?.id || ""}
+                    workerProcessId={application.id}
+                    onVideoCompleted={() => {
+                        // Reload page or invalidate queries
+                        window.location.reload();
+                    }}
+                >
+                    <div className="bg-white rounded-lg shadow-lg p-6">
+                        <h2 className="text-xl font-bold text-gray-900 mb-6">
+                            Tests Disponibles
+                        </h2>
 
                     <div className="space-y-4">
                         {/* Custom Tests */}
-                        {processTests.tests.map((test: any) => (
+                        {(processTests as any).tests?.map((test: any) => (
                             <div
                                 key={test.id}
                                 className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
@@ -272,7 +352,7 @@ export const WorkerApplicationDetailPage = () => {
                         ))}
 
                         {/* Fixed Tests */}
-                        {processTests.fixedTests.map((fixedTest: any) => (
+                        {(processTests as any).fixedTests?.map((fixedTest: any) => (
                             <div
                                 key={fixedTest.id}
                                 className="border border-indigo-200 bg-indigo-50 rounded-lg p-4 hover:shadow-md transition"
@@ -313,172 +393,9 @@ export const WorkerApplicationDetailPage = () => {
                         ))}
                     </div>
                 </div>
+                </VideoRequirementGate>
             )}
 
-            {/* Tests Section */}
-            {hasTests && application.testResponses && (
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-6">
-                        Tests del Proceso
-                    </h2>
-
-                    <div className="space-y-4">
-                        {application.testResponses.map((testResponse) => {
-                            const isPending = !testResponse.isCompleted;
-                            const isPassed = testResponse.passed;
-
-                            return (
-                                <div
-                                    key={testResponse.id}
-                                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
-                                >
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <h3 className="text-lg font-semibold text-gray-900">
-                                                    {testResponse.test?.name ||
-                                                        "Test"}
-                                                </h3>
-                                                {testResponse.isCompleted && (
-                                                    <span
-                                                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                                            isPassed
-                                                                ? "bg-green-100 text-green-800"
-                                                                : "bg-red-100 text-red-800"
-                                                        }`}
-                                                    >
-                                                        {isPassed
-                                                            ? "Aprobado"
-                                                            : "No Aprobado"}
-                                                    </span>
-                                                )}
-                                                {isPending && (
-                                                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
-                                                        Pendiente
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            {testResponse.test?.description && (
-                                                <p className="text-gray-600 text-sm mb-3">
-                                                    {
-                                                        testResponse.test
-                                                            .description
-                                                    }
-                                                </p>
-                                            )}
-
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                {testResponse.isCompleted && (
-                                                    <>
-                                                        <div>
-                                                            <p className="text-xs text-gray-500">
-                                                                Puntaje
-                                                            </p>
-                                                            <p className="text-sm font-semibold text-gray-900">
-                                                                {
-                                                                    testResponse.score
-                                                                }{" "}
-                                                                /{" "}
-                                                                {
-                                                                    testResponse.maxScore
-                                                                }
-                                                            </p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs text-gray-500">
-                                                                Porcentaje
-                                                            </p>
-                                                            <p className="text-sm font-semibold text-gray-900">
-                                                                {(
-                                                                    ((testResponse.score ||
-                                                                        0) /
-                                                                        (testResponse.maxScore ||
-                                                                            1)) *
-                                                                    100
-                                                                ).toFixed(1)}
-                                                                %
-                                                            </p>
-                                                        </div>
-                                                    </>
-                                                )}
-                                                <div>
-                                                    <p className="text-xs text-gray-500">
-                                                        Iniciado
-                                                    </p>
-                                                    <p className="text-sm text-gray-900">
-                                                        {testResponse.startedAt
-                                                            ? new Date(
-                                                                  testResponse.startedAt
-                                                              ).toLocaleDateString(
-                                                                  "es-CL"
-                                                              )
-                                                            : "-"}
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs text-gray-500">
-                                                        Completado
-                                                    </p>
-                                                    <p className="text-sm text-gray-900">
-                                                        {testResponse.completedAt
-                                                            ? new Date(
-                                                                  testResponse.completedAt
-                                                              ).toLocaleDateString(
-                                                                  "es-CL"
-                                                              )
-                                                            : "-"}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            {testResponse.evaluatorNotes && (
-                                                <div className="mt-3 bg-blue-50 rounded p-3">
-                                                    <p className="text-xs font-medium text-blue-900 mb-1">
-                                                        Comentarios del
-                                                        Evaluador
-                                                    </p>
-                                                    <p className="text-sm text-blue-800">
-                                                        {
-                                                            testResponse.evaluatorNotes
-                                                        }
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="ml-4">
-                                            {testResponse.isCompleted ? (
-                                                <button
-                                                    onClick={() =>
-                                                        navigate(
-                                                            `/trabajador/resultados/${testResponse.id}`
-                                                        )
-                                                    }
-                                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-                                                >
-                                                    Ver Resultados
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() =>
-                                                        navigate(
-                                                            `/trabajador/test/${testResponse.id}`
-                                                        )
-                                                    }
-                                                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
-                                                >
-                                                    Realizar Test
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
 
             {/* Timeline Section */}
             <div className="bg-white rounded-lg shadow-lg p-6">

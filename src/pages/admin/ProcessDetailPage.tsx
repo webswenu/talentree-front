@@ -35,8 +35,9 @@ import { ApproveRejectModal } from "../../components/common/ApproveRejectModal";
 import { FormatSelectionModal } from "../../components/common/FormatSelectionModal";
 import { AssignTestsModal } from "../../components/common/AssignTestsModal";
 import ProcessModal from "../../components/admin/ProcessModal";
+import { VideoRequirementsConfig } from "../../components/admin/VideoRequirementsConfig";
 
-type TabType = "info" | "tests" | "candidates" | "approved" | "reports" | "timeline";
+type TabType = "info" | "tests" | "video" | "candidates" | "approved" | "reports" | "timeline";
 
 export const ProcessDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -309,6 +310,16 @@ export const ProcessDetailPage = () => {
                         }`}
                     >
                         Tests ({testsData?.tests?.length || 0} + {testsData?.fixedTests?.length || 0})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("video")}
+                        className={`py-4 px-1 text-sm font-medium border-b-2 ${
+                            activeTab === "video"
+                                ? "border-blue-500 text-blue-600"
+                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        }`}
+                    >
+                        Video
                     </button>
                     <button
                         onClick={() => setActiveTab("candidates")}
@@ -607,6 +618,13 @@ export const ProcessDetailPage = () => {
                                 )}
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Tab Video */}
+            {activeTab === "video" && (
+                <div className="mt-6">
+                    <VideoRequirementsConfig processId={id!} />
                 </div>
             )}
 

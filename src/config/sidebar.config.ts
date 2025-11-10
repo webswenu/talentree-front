@@ -105,13 +105,6 @@ export const sidebarSections: SidebarSection[] = [
     },
 
     {
-        path: "/trabajador/resultados",
-        label: "Mis Resultados",
-        icon: "📊",
-        roles: [UserRole.WORKER],
-    },
-
-    {
         path: "/admin/trabajadores",
         label: "Trabajadores",
         icon: "👥",
@@ -211,12 +204,6 @@ export const sidebarSections: SidebarSection[] = [
         label: "Mi Perfil",
         icon: "⚙️",
         roles: [UserRole.WORKER],
-    },
-    {
-        path: "/invitado/perfil",
-        label: "Mi Perfil",
-        icon: "⚙️",
-        roles: [UserRole.GUEST],
     },
 ];
 

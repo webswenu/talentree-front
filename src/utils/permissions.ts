@@ -145,10 +145,10 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     // ✅ SOLO LECTURA - Igual que COMPANY pero SIN invitar
     Permission.PROCESSES_VIEW,        // ✅ Ver procesos de la empresa
     Permission.WORKERS_VIEW,          // ✅ Ver trabajadores postulantes
+    Permission.REPORTS_VIEW,          // ✅ Ver reportes aprobados (igual que empresa)
     Permission.SETTINGS_VIEW          // ✅ Ver configuración (solo lectura)
     // ❌ NO puede: invitar trabajadores
     // ❌ NO puede: editar nada
-    // ❌ NO puede: ver reportes ni tests
   ]
 };
 

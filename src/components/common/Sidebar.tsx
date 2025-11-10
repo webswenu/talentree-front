@@ -16,10 +16,12 @@ export const Sidebar = () => {
     if (!user) return null;
 
     const sections = getSectionsForRole(user.role);
-    const logo = getLogoForRole(user.role, user.company?.logo);
+    const companyLogo = user.company?.logo || user.belongsToCompany?.logo;
+    const companyName = user.company?.name || user.belongsToCompany?.name;
+    const logo = getLogoForRole(user.role, companyLogo);
     const title = getTitleForRole(
         user.role,
-        user.company?.name,
+        companyName,
         `${user.firstName} ${user.lastName}`
     );
 

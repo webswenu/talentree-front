@@ -22,7 +22,10 @@ type WorkerInProcess = {
 export const CompanyDashboard = () => {
     const { user } = useAuthStore();
     const navigate = useNavigate();
-    const companyId = user?.company?.id;
+
+    // Para empresa: user.company.id (cuando el user ES dueño de la empresa)
+    // Para invitado: user.belongsToCompany.id (cuando el user pertenece a una empresa)
+    const companyId = user?.company?.id || user?.belongsToCompany?.id;
 
     const getBaseUrl = () => {
         if (user?.role === "guest") return "/invitado";
@@ -147,12 +150,14 @@ export const CompanyDashboard = () => {
         }
     };
 
+    const companyName = user?.company?.name || user?.belongsToCompany?.name || "Empresa";
+
     return (
         <div className="space-y-6">
             {/* Header */}
             <div>
                 <h1 className="text-3xl font-bold text-gray-900">
-                    Bienvenido, {user?.company?.name || "Empresa"}
+                    Bienvenido, {companyName}
                 </h1>
                 <p className="text-gray-600 mt-1">
                     Gestiona tus procesos de selección y candidatos

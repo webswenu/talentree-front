@@ -5,6 +5,9 @@ import {
     UpdateProcessDto,
     AssignEvaluatorsDto,
     ProcessStats,
+    ProcessVideoRequirement,
+    CreateProcessVideoRequirementDto,
+    UpdateProcessVideoRequirementDto,
 } from "../types/process.types";
 
 export interface ProcessFilters {
@@ -210,6 +213,50 @@ class ProcessesService {
             {}
         );
         return response.data;
+    }
+
+    // Video Requirements Methods
+
+    async createVideoRequirement(
+        processId: string,
+        data: CreateProcessVideoRequirementDto
+    ): Promise<ProcessVideoRequirement> {
+        const response = await apiService.post<ProcessVideoRequirement>(
+            `${this.basePath}/${processId}/video-requirements`,
+            data
+        );
+        return response.data;
+    }
+
+    async getVideoRequirement(
+        processId: string
+    ): Promise<ProcessVideoRequirement | null> {
+        try {
+            const response = await apiService.get<ProcessVideoRequirement>(
+                `${this.basePath}/${processId}/video-requirements`
+            );
+            return response.data;
+        } catch (error: any) {
+            if (error.response?.status === 404) {
+                return null;
+            }
+            throw error;
+        }
+    }
+
+    async updateVideoRequirement(
+        processId: string,
+        data: UpdateProcessVideoRequirementDto
+    ): Promise<ProcessVideoRequirement> {
+        const response = await apiService.put<ProcessVideoRequirement>(
+            `${this.basePath}/${processId}/video-requirements`,
+            data
+        );
+        return response.data;
+    }
+
+    async deleteVideoRequirement(processId: string): Promise<void> {
+        await apiService.delete(`${this.basePath}/${processId}/video-requirements`);
     }
 }
 
