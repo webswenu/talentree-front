@@ -157,13 +157,15 @@ export const VideoRecorder = ({
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
-                    width: { ideal: 640 },
-                    height: { ideal: 480 },
+                    width: { ideal: 1280, min: 640 },
+                    height: { ideal: 720, min: 480 },
                     facingMode: "user",
+                    frameRate: { ideal: 30 },
                 },
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
+                    sampleRate: 44100,
                 },
             });
 
@@ -209,11 +211,16 @@ export const VideoRecorder = ({
         }
 
         try {
-            // SIMPLIFIED: Basic recording settings - no fancy options
-            let options: MediaRecorderOptions = {};
+            // Recording settings with better quality
+            const options: MediaRecorderOptions = {
+                videoBitsPerSecond: 2500000,  // 2.5 Mbps for good quality
+                audioBitsPerSecond: 128000,   // 128 kbps audio
+            };
 
-            // Use the most basic supported format
-            if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8")) {
+            // Use VP8 with Opus for best quality/compatibility balance
+            if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")) {
+                options.mimeType = "video/webm;codecs=vp8,opus";
+            } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8")) {
                 options.mimeType = "video/webm;codecs=vp8";
             } else if (MediaRecorder.isTypeSupported("video/webm")) {
                 options.mimeType = "video/webm";

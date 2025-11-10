@@ -1,6 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useWorkerProcess } from "../../hooks/useWorkers";
 import { useProcessTests } from "../../hooks/useProcesses";
 import { useStartTest } from "../../hooks/useTestResponses";
@@ -10,7 +9,6 @@ import {
     WorkerStatusLabels,
 } from "../../types/worker.types";
 import { VideoRequirementGate } from "../../components/worker/VideoRequirementGate";
-import { videoService } from "../../services/video.service";
 
 export const WorkerApplicationDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -23,17 +21,6 @@ export const WorkerApplicationDetailPage = () => {
         application?.process.id || ""
     );
     const startTestMutation = useStartTest();
-
-    // Fetch video if exists
-    const { data: workerVideo } = useQuery({
-        queryKey: ["worker-video", user?.worker?.id, application?.process.id],
-        queryFn: () => 
-            videoService.getWorkerVideoForProcess(
-                user?.worker?.id || "",
-                application?.process.id || ""
-            ),
-        enabled: !!user?.worker?.id && !!application?.process.id,
-    });
 
     if (isLoading) {
         return (
@@ -240,61 +227,6 @@ export const WorkerApplicationDetailPage = () => {
                     </div>
                 )}
             </div>
-
-            {/* Video Player Section - Show if video exists */}
-            {workerVideo && workerVideo.videoUrl && (
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-4">
-                        Tu Video Introductorio
-                    </h2>
-                    <div className="space-y-4">
-                        <div className="bg-gray-900 rounded-lg overflow-hidden aspect-video">
-                            <video
-                                controls
-                                className="w-full h-full"
-                                style={{ maxHeight: "600px" }}
-                                src={`http://localhost:3002${workerVideo.videoUrl}`}
-                            >
-                                Tu navegador no soporta la reproducción de video.
-                            </video>
-                        </div>
-                        <div className="text-sm text-gray-600">
-                            <p>
-                                <strong>Duración:</strong>{" "}
-                                {workerVideo.videoDuration
-                                    ? `${Math.floor(workerVideo.videoDuration / 60)}:${String(
-                                          workerVideo.videoDuration % 60
-                                      ).padStart(2, "0")}`
-                                    : "N/A"}
-                            </p>
-                            <p>
-                                <strong>Tamaño:</strong>{" "}
-                                {workerVideo.videoSize
-                                    ? `${(workerVideo.videoSize / (1024 * 1024)).toFixed(2)} MB`
-                                    : "N/A"}
-                            </p>
-                            <p>
-                                <strong>Estado:</strong>{" "}
-                                {workerVideo.status === "approved"
-                                    ? "✅ Aprobado"
-                                    : workerVideo.status === "pending_review"
-                                    ? "⏳ Pendiente de revisión"
-                                    : workerVideo.status}
-                            </p>
-                        </div>
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <p className="text-sm text-blue-800">
-                                💡 <strong>Nota:</strong> Si el video no se reproduce correctamente
-                                en tu reproductor de Ubuntu, prueba abrirlo directamente en Chrome
-                                usando esta URL:
-                            </p>
-                            <code className="block mt-2 p-2 bg-white rounded text-xs break-all">
-                                http://localhost:3002{workerVideo.videoUrl}
-                            </code>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Available Tests Section - Wrapped with Video Gate */}
             {processTests && ((processTests as any).tests?.length > 0 || (processTests as any).fixedTests?.length > 0) && (
