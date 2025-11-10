@@ -157,17 +157,13 @@ export const VideoRecorder = ({
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
-                    width: { ideal: 1280, min: 640 },
-                    height: { ideal: 720, min: 480 },
+                    width: { ideal: 640 },
+                    height: { ideal: 480 },
                     facingMode: "user",
-                    frameRate: { ideal: 30, max: 30 },
                 },
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
-                    autoGainControl: true,
-                    sampleRate: 44100,
-                    channelCount: 2, // Stereo for better quality
                 },
             });
 
@@ -213,22 +209,13 @@ export const VideoRecorder = ({
         }
 
         try {
-            // Optimize recording settings for better quality and compatibility
-            // Use lower bitrate to avoid corruption issues, will be converted to MP4 on backend
-            let options: MediaRecorderOptions = {
-                videoBitsPerSecond: 2000000,  // 2 Mbps - more stable
-                audioBitsPerSecond: 128000,   // 128 kbps audio
-            };
+            // SIMPLIFIED: Basic recording settings - no fancy options
+            let options: MediaRecorderOptions = {};
 
-            // Prefer VP8 with Opus - most compatible combination
-            if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")) {
-                options.mimeType = "video/webm;codecs=vp8,opus";
-            } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8,vorbis")) {
-                options.mimeType = "video/webm;codecs=vp8,vorbis";
-            } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")) {
-                options.mimeType = "video/webm;codecs=vp9,opus";
-            } else {
-                // Fallback to default
+            // Use the most basic supported format
+            if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8")) {
+                options.mimeType = "video/webm;codecs=vp8";
+            } else if (MediaRecorder.isTypeSupported("video/webm")) {
                 options.mimeType = "video/webm";
             }
 
@@ -265,8 +252,8 @@ export const VideoRecorder = ({
                 setState("review");
             };
 
-            // Start recording - collect data more frequently to avoid corruption
-            mediaRecorder.start(250); // Collect data every 250ms for better stability
+            // Start recording - use default timeslice (browser decides)
+            mediaRecorder.start();
             mediaRecorderRef.current = mediaRecorder;
 
             setState("recording");
