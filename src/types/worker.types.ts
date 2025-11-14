@@ -5,6 +5,7 @@ import { TestResponse } from "./test-response.types";
 export enum WorkerStatus {
     PENDING = "pending",
     IN_PROCESS = "in_process",
+    COMPLETED = "completed",
     APPROVED = "approved",
     REJECTED = "rejected",
     HIRED = "hired",
@@ -54,6 +55,7 @@ export interface CreateWorkerDto {
     lastName: string;
     rut: string;
     email: string;
+    password?: string;
     phone?: string;
     birthDate?: string;
     address?: string;
@@ -82,6 +84,7 @@ export interface UpdateWorkerProcessStatusDto {
 export const WorkerStatusLabels: Record<WorkerStatus, string> = {
     [WorkerStatus.PENDING]: "Pendiente",
     [WorkerStatus.IN_PROCESS]: "En Proceso",
+    [WorkerStatus.COMPLETED]: "Completado",
     [WorkerStatus.APPROVED]: "Aprobado",
     [WorkerStatus.REJECTED]: "Rechazado",
     [WorkerStatus.HIRED]: "Contratado",
@@ -90,6 +93,7 @@ export const WorkerStatusLabels: Record<WorkerStatus, string> = {
 export const WorkerStatusColors: Record<WorkerStatus, string> = {
     [WorkerStatus.PENDING]: "bg-yellow-100 text-yellow-800",
     [WorkerStatus.IN_PROCESS]: "bg-blue-100 text-blue-800",
+    [WorkerStatus.COMPLETED]: "bg-green-100 text-green-800",
     [WorkerStatus.APPROVED]: "bg-green-100 text-green-800",
     [WorkerStatus.REJECTED]: "bg-red-100 text-red-800",
     [WorkerStatus.HIRED]: "bg-purple-100 text-purple-800",

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useRef, useEffect } from "react";
 import { VideoQuestion } from "../../types/process.types";
 
@@ -16,7 +17,7 @@ export const VideoRecorder = ({
     maxDuration,
     questions = [],
     instructions,
-    workerId,
+    workerId: _workerId, // eslint-disable-line @typescript-eslint/no-unused-vars
     onVideoRecorded,
     onCancel,
 }: VideoRecorderProps) => {
@@ -31,7 +32,6 @@ export const VideoRecorder = ({
     const [videoPreviewUrl, setVideoPreviewUrl] = useState<string>("");
 
     const videoRef = useRef<HTMLVideoElement>(null);
-    const previewVideoRef = useRef<HTMLVideoElement>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const chunksRef = useRef<Blob[]>([]);
@@ -50,6 +50,7 @@ export const VideoRecorder = ({
         return () => {
             cleanup();
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Cleanup blob URL on unmount
@@ -65,11 +66,11 @@ export const VideoRecorder = ({
     useEffect(() => {
         if (streamRef.current && videoRef.current && !videoRef.current.srcObject) {
             videoRef.current.srcObject = streamRef.current;
-            videoRef.current.play().catch((playError) => {
-                console.error("Error al reproducir video:", playError);
+            videoRef.current.play().catch(() => {
+                // Error al reproducir video - se maneja silenciosamente
             });
         }
-    }, [streamRef.current, videoRef.current]);
+    }, [hasPermission]);
 
     // Timer for recording
     useEffect(() => {
@@ -108,6 +109,7 @@ export const VideoRecorder = ({
                 clearInterval(timerRef.current);
             }
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state, maxDuration, questions]);
 
     const setupAudioAnalyser = (stream: MediaStream) => {
@@ -124,8 +126,8 @@ export const VideoRecorder = ({
 
             // Start monitoring audio level
             monitorAudioLevel();
-        } catch (error) {
-            console.error("Error setting up audio analyser:", error);
+        } catch {
+            // Error setting up audio analyser - se maneja silenciosamente
         }
     };
 
@@ -177,11 +179,21 @@ export const VideoRecorder = ({
             setupAudioAnalyser(stream);
 
             // El useEffect se encargará de asignar el stream cuando el videoRef esté listo
-        } catch (error: any) {
-            console.error("Error accessing media devices:", error);
-            setErrorMessage(
-                "No se pudo acceder a la cámara y micrófono. Por favor verifica los permisos."
-            );
+        } catch (error: unknown) {
+            let errorMsg = "No se pudo acceder a la cámara y micrófono. Por favor verifica los permisos.";
+            
+            if (error instanceof Error) {
+                errorMsg = error.message || errorMsg;
+            } else if (error && typeof error === "object" && "name" in error) {
+                const mediaError = error as { name?: string };
+                if (mediaError.name === "NotAllowedError") {
+                    errorMsg = "Permisos de cámara y micrófono denegados. Por favor permite el acceso en la configuración del navegador.";
+                } else if (mediaError.name === "NotFoundError") {
+                    errorMsg = "No se encontró cámara o micrófono. Por favor verifica que estén conectados.";
+                }
+            }
+            
+            setErrorMessage(errorMsg);
             setState("error");
             setHasPermission(false);
         }
@@ -265,9 +277,14 @@ export const VideoRecorder = ({
 
             setState("recording");
             setElapsedTime(0);
-        } catch (error) {
-            console.error("Error starting recording:", error);
-            setErrorMessage("Error al iniciar la grabación");
+        } catch (error: unknown) {
+            let errorMsg = "Error al iniciar la grabación";
+            
+            if (error instanceof Error) {
+                errorMsg = error.message || errorMsg;
+            }
+            
+            setErrorMessage(errorMsg);
             setState("error");
         }
     };
@@ -309,22 +326,6 @@ export const VideoRecorder = ({
     const handleCancel = () => {
         cleanup();
         onCancel();
-    };
-
-    const handleDownload = () => {
-        if (!recordedBlob) return;
-
-        // Determine file extension based on mime type
-        const extension = recordedBlob.type.includes("mp4") ? "mp4" : "webm";
-
-        const url = URL.createObjectURL(recordedBlob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `video-${workerId || "test"}-${Date.now()}.${extension}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
     };
 
     const handleConfirmUpload = () => {

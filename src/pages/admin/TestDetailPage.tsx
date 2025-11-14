@@ -44,8 +44,8 @@ export const TestDetailPage = () => {
         );
     }
 
-    const dimensions = test.configuration?.dimensions || [];
-    const instructions = test.configuration?.instructions || [];
+    const dimensions = (test.configuration?.dimensions as Array<{ code: string; name: string; description?: string; questionCount?: number }> | undefined) || [];
+    const instructions = (test.configuration?.instructions as string[] | undefined) || [];
 
     return (
         <div className="p-6">
@@ -199,7 +199,7 @@ export const TestDetailPage = () => {
                     </h2>
                     {dimensions.length > 0 ? (
                         <div className="space-y-4">
-                            {dimensions.map((dim: any, index: number) => (
+                            {dimensions.map((dim, index: number) => (
                                 <div
                                     key={index}
                                     className="border rounded-lg p-4 hover:bg-gray-50"

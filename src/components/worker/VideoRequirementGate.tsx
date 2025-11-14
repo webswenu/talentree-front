@@ -33,10 +33,10 @@ export const VideoRequirementGate = ({
         queryFn: () => processesService.getVideoRequirement(processId),
     });
 
-    // Fetch worker's video status for this process
+    // Fetch worker's video status for this specific workerProcess
     const { data: videoStatus, isLoading: statusLoading } = useQuery({
-        queryKey: ["worker-video-status", workerId, processId],
-        queryFn: () => videoService.getWorkerVideoStatus(workerId, processId),
+        queryKey: ["worker-video-status", workerId, processId, workerProcessId],
+        queryFn: () => videoService.getWorkerVideoStatus(workerId, processId, workerProcessId),
         enabled: !!videoConfig?.isRequired,
     });
 
@@ -60,7 +60,7 @@ export const VideoRequirementGate = ({
             setTimeout(() => {
                 // Invalidate query to refresh video status
                 queryClient.invalidateQueries({
-                    queryKey: ["worker-video-status", workerId, processId],
+                    queryKey: ["worker-video-status", workerId, processId, workerProcessId],
                 });
 
                 // Reload page to show tests
@@ -69,19 +69,35 @@ export const VideoRequirementGate = ({
                 }, 500);
             }, 2000);
         },
-        onError: (error: any) => {
+        onError: (error: unknown) => {
             setUploadState("error");
-            setErrorMessage(
-                error.response?.data?.message || "Error al subir el video"
-            );
+            let errorMsg = "Error al subir el video";
+            
+            if (error && typeof error === "object" && "response" in error) {
+                const axiosError = error as {
+                    response?: {
+                        data?: {
+                            message?: string | string[];
+                        };
+                    };
+                };
+                
+                const message = axiosError.response?.data?.message;
+                
+                if (typeof message === "string") {
+                    errorMsg = message;
+                } else if (Array.isArray(message) && message.length > 0) {
+                    errorMsg = message[0];
+                }
+            } else if (error instanceof Error) {
+                errorMsg = error.message;
+            }
+            
+            setErrorMessage(errorMsg);
         },
     });
 
-    const [videoDuration, setVideoDuration] = useState(0);
-
     const handleVideoRecorded = async (blob: Blob, duration: number) => {
-        console.log("[VideoRequirementGate] Video recorded:", { blobSize: blob.size, duration });
-        setVideoDuration(duration);
         setUploadState("uploading");
         setShowRecorder(false);
 
@@ -97,12 +113,10 @@ export const VideoRequirementGate = ({
         }, 500);
 
         try {
-            console.log("[VideoRequirementGate] Starting upload mutation...");
             await uploadMutation.mutateAsync({ videoBlob: blob, duration });
-            console.log("[VideoRequirementGate] Upload successful!");
             setUploadProgress(100);
-        } catch (error) {
-            console.error("[VideoRequirementGate] Upload error:", error);
+        } catch {
+            // Error is handled by mutation's onError callback
         } finally {
             clearInterval(progressInterval);
         }
@@ -131,7 +145,7 @@ export const VideoRequirementGate = ({
     }
 
     // Show recorder
-    if (showRecorder) {
+    if (showRecorder && videoConfig) {
         return (
             <VideoRecorder
                 maxDuration={videoConfig.maxDuration || 180}
@@ -251,6 +265,16 @@ export const VideoRequirementGate = ({
     }
 
     // Show video requirement notice
+    if (!videoConfig) {
+        return (
+            <div className="max-w-2xl mx-auto p-6">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
+                    <p className="text-yellow-800">No se pudo cargar la configuración del video.</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-4xl mx-auto p-6">
             <div className="bg-white rounded-lg shadow-lg p-8">

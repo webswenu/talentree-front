@@ -236,8 +236,16 @@ class ProcessesService {
                 `${this.basePath}/${processId}/video-requirements`
             );
             return response.data;
-        } catch (error: any) {
-            if (error.response?.status === 404) {
+        } catch (error: unknown) {
+            if (
+                error &&
+                typeof error === 'object' &&
+                'response' in error &&
+                error.response &&
+                typeof error.response === 'object' &&
+                'status' in error.response &&
+                error.response.status === 404
+            ) {
                 return null;
             }
             throw error;

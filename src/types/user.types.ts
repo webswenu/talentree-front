@@ -38,9 +38,12 @@ export interface User {
     birthDate?: string | Date;
     notificationPreferences?: {
         emailNotifications?: boolean;
+        newProcesses?: boolean;
+        applicationUpdates?: boolean;
+        testReminders?: boolean;
+        newEvaluations?: boolean;
         candidateUpdates?: boolean;
         processReminders?: boolean;
-        newEvaluations?: boolean;
     };
 }
 

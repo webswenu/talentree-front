@@ -96,3 +96,15 @@ export const useUpdateNotificationPreferences = () => {
         },
     });
 };
+
+export const useResetPassword = () => {
+    return useMutation({
+        mutationFn: ({
+            userId,
+            newPassword,
+        }: {
+            userId: string;
+            newPassword: string;
+        }) => usersService.resetPassword(userId, newPassword),
+    });
+};

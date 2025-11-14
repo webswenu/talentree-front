@@ -80,3 +80,32 @@ export const useCompanyDashboardStats = (companyId: string | undefined) => {
         enabled: !!companyId && companyId.length > 0,
     });
 };
+
+export const useUploadCompanyLogo = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, file }: { id: string; file: File }) =>
+            companiesService.uploadLogo(id, file),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: companyKeys.detail(variables.id),
+            });
+            queryClient.invalidateQueries({ queryKey: companyKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+        },
+    });
+};
+
+export const useDeleteCompanyLogo = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: string) => companiesService.deleteLogo(id),
+        onSuccess: (_, id) => {
+            queryClient.invalidateQueries({ queryKey: companyKeys.detail(id) });
+            queryClient.invalidateQueries({ queryKey: companyKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+        },
+    });
+};

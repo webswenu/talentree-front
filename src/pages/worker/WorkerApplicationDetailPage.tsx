@@ -9,6 +9,14 @@ import {
     WorkerStatusLabels,
 } from "../../types/worker.types";
 import { VideoRequirementGate } from "../../components/worker/VideoRequirementGate";
+import { Test, FixedTest } from "../../types/test.types";
+import { TestResponse } from "../../types/test-response.types";
+import { toast } from "../../utils/toast";
+
+interface ProcessTestsData {
+    tests?: Test[];
+    fixedTests?: FixedTest[];
+}
 
 export const WorkerApplicationDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -55,10 +63,21 @@ export const WorkerApplicationDetailPage = () => {
     }
 
     const process = application.process;
-    const hasTests =
-        application.testResponses && application.testResponses.length > 0;
 
-    const handleStartTest = async (testId: string, isFixedTest: boolean = false) => {
+    // Helper to check if a test is completed
+    const isTestCompleted = (testId: string, isFixedTest: boolean) => {
+        if (!application.testResponses) return false;
+        return application.testResponses.some((response: TestResponse) => {
+            if (isFixedTest) {
+                // For fixed tests, check metadata or other fields
+                return (response.metadata as { fixedTestId?: string })?.fixedTestId === testId && response.isCompleted;
+            } else {
+                return response.test?.id === testId && response.isCompleted;
+            }
+        });
+    };
+
+    const handleStartTest = async (testId: string) => {
         if (!application?.id) return;
 
         setStartingTestId(testId);
@@ -66,14 +85,12 @@ export const WorkerApplicationDetailPage = () => {
             const response = await startTestMutation.mutateAsync({
                 testId,
                 workerProcessId: application.id,
-                isFixedTest,
             });
 
             // Navigate to test taking page with the response ID
             navigate(`/trabajador/test/${response.id}`);
-        } catch (error) {
-            console.error("Error starting test:", error);
-            alert("Error al iniciar el test. Por favor intenta nuevamente.");
+        } catch {
+            toast.error("Error al iniciar el test. Por favor intenta nuevamente.");
         } finally {
             setStartingTestId(null);
         }
@@ -184,7 +201,7 @@ export const WorkerApplicationDetailPage = () => {
                     Estado de tu Postulación
                 </h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="border-l-4 border-blue-500 pl-4">
                         <h3 className="text-sm font-medium text-gray-500 mb-1">
                             Fecha de Postulación
@@ -204,18 +221,6 @@ export const WorkerApplicationDetailPage = () => {
                             </p>
                         </div>
                     )}
-
-                    {application.totalScore !== null &&
-                        application.totalScore !== undefined && (
-                            <div className="border-l-4 border-purple-500 pl-4">
-                                <h3 className="text-sm font-medium text-gray-500 mb-1">
-                                    Puntaje Total
-                                </h3>
-                                <p className="text-2xl font-bold text-gray-900">
-                                    {application.totalScore}%
-                                </p>
-                            </div>
-                        )}
                 </div>
 
                 {application.notes && (
@@ -229,7 +234,7 @@ export const WorkerApplicationDetailPage = () => {
             </div>
 
             {/* Available Tests Section - Wrapped with Video Gate */}
-            {processTests && ((processTests as any).tests?.length > 0 || (processTests as any).fixedTests?.length > 0) && (
+            {processTests && (((processTests as ProcessTestsData).tests?.length ?? 0) > 0 || ((processTests as ProcessTestsData).fixedTests?.length ?? 0) > 0) && (
                 <VideoRequirementGate
                     processId={process.id}
                     workerId={user?.worker?.id || ""}
@@ -246,7 +251,7 @@ export const WorkerApplicationDetailPage = () => {
 
                     <div className="space-y-4">
                         {/* Custom Tests */}
-                        {(processTests as any).tests?.map((test: any) => (
+                        {(processTests as ProcessTestsData).tests?.map((test) => (
                             <div
                                 key={test.id}
                                 className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
@@ -270,21 +275,30 @@ export const WorkerApplicationDetailPage = () => {
                                             )}
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => handleStartTest(test.id, false)}
-                                        disabled={startingTestId === test.id}
-                                        className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {startingTestId === test.id
-                                            ? "Iniciando..."
-                                            : "Iniciar Test"}
-                                    </button>
+                                    {isTestCompleted(test.id, false) ? (
+                                        <div className="ml-4 px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-semibold flex items-center gap-2">
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            Completado
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => handleStartTest(test.id)}
+                                            disabled={startingTestId === test.id}
+                                            className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {startingTestId === test.id
+                                                ? "Iniciando..."
+                                                : "Iniciar Test"}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}
 
                         {/* Fixed Tests */}
-                        {(processTests as any).fixedTests?.map((fixedTest: any) => (
+                        {(processTests as ProcessTestsData).fixedTests?.map((fixedTest) => (
                             <div
                                 key={fixedTest.id}
                                 className="border border-indigo-200 bg-indigo-50 rounded-lg p-4 hover:shadow-md transition"
@@ -311,15 +325,24 @@ export const WorkerApplicationDetailPage = () => {
                                             <span>🎯 {fixedTest.code}</span>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => handleStartTest(fixedTest.id, true)}
-                                        disabled={startingTestId === fixedTest.id}
-                                        className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {startingTestId === fixedTest.id
-                                            ? "Iniciando..."
-                                            : "Iniciar Test"}
-                                    </button>
+                                    {isTestCompleted(fixedTest.id, true) ? (
+                                        <div className="ml-4 px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-semibold flex items-center gap-2">
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            Completado
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => handleStartTest(fixedTest.id)}
+                                            disabled={startingTestId === fixedTest.id}
+                                            className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {startingTestId === fixedTest.id
+                                                ? "Iniciando..."
+                                                : "Iniciar Test"}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}

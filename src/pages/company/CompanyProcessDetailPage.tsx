@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useProcess, useProcessTests } from "../../hooks/useProcesses";
 import { useProcessWorkers } from "../../hooks/useWorkers";
@@ -7,11 +7,9 @@ import {
     useDownloadReportFile,
 } from "../../hooks/useReports";
 import { useAuthStore } from "../../store/authStore";
-import { UserRole } from "../../types/user.types";
 import { Permission, hasPermission } from "../../utils/permissions";
 import {
     ProcessStatusLabels,
-    ProcessStatusColors,
 } from "../../types/process.types";
 import {
     Report,
@@ -22,6 +20,8 @@ import {
     ReportStatusLabels,
     ReportStatusColors,
 } from "../../types/report.types";
+import { WorkerProcess } from "../../types/worker.types";
+import { Test, FixedTest } from "../../types/test.types";
 import {
     WorkerStatus,
     WorkerStatusLabels,
@@ -31,6 +31,11 @@ import { FormatSelectionModal } from "../../components/common/FormatSelectionMod
 import { InviteWorkersModal } from "../../components/company/InviteWorkersModal";
 
 type TabType = "info" | "tests" | "candidates" | "approved" | "reports" | "timeline";
+
+interface ProcessTestsData {
+    tests?: Test[];
+    fixedTests?: FixedTest[];
+}
 
 export const CompanyProcessDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -44,8 +49,8 @@ export const CompanyProcessDetailPage = () => {
     const [showInviteModal, setShowInviteModal] = useState(false);
 
     const { data: process, isLoading, error } = useProcess(id!);
-    const { data: testsData } = useProcessTests(id!);
-    const { data: workersData } = useProcessWorkers(id!);
+    const { data: testsData } = useProcessTests(id!) as { data?: ProcessTestsData };
+    const { data: workersData } = useProcessWorkers(id!) as { data?: WorkerProcess[] };
     const { data: reportsData } = useReportsByProcess(id!);
     const downloadMutation = useDownloadReportFile();
     const { user } = useAuthStore();
@@ -55,12 +60,14 @@ export const CompanyProcessDetailPage = () => {
     // Company can invite, guest cannot
     const canInvite = user && hasPermission(user.role, Permission.WORKERS_INVITE);
 
-    // Helper functions
-    const isPDF = (fileName: string | null | undefined) => {
-        if (!fileName) return false;
-        return fileName.toLowerCase().endsWith('.pdf');
-    };
+    // Redirigir a un tab válido si el usuario está en un tab no permitido para invitados
+    useEffect(() => {
+        if (isGuest && (activeTab === "approved" || activeTab === "reports")) {
+            setActiveTab("info");
+        }
+    }, [isGuest, activeTab]);
 
+    // Helper functions
     const isDOCX = (fileName: string | null | undefined) => {
         if (!fileName) return false;
         return fileName.toLowerCase().endsWith('.docx') || fileName.toLowerCase().endsWith('.doc');
@@ -112,8 +119,8 @@ export const CompanyProcessDetailPage = () => {
 
             // Close modal if open
             setFormatSelectionModal({ isOpen: false, report: null });
-        } catch (error) {
-            console.error("Download error:", error);
+        } catch {
+            // Error handled silently or by mutation error handler
         }
     };
 
@@ -233,30 +240,34 @@ export const CompanyProcessDetailPage = () => {
                     >
                         Candidatos ({workersData?.length || 0})
                     </button>
-                    <button
-                        onClick={() => setActiveTab("approved")}
-                        className={`py-4 px-1 text-sm font-medium border-b-2 ${
-                            activeTab === "approved"
-                                ? "border-blue-500 text-blue-600"
-                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                        }`}
-                    >
-                        Aprobados (
-                        {workersData?.filter(
-                            (wp: any) => wp.status === WorkerStatus.APPROVED || wp.status === WorkerStatus.HIRED
-                        ).length || 0}
-                        )
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("reports")}
-                        className={`py-4 px-1 text-sm font-medium border-b-2 ${
-                            activeTab === "reports"
-                                ? "border-blue-500 text-blue-600"
-                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                        }`}
-                    >
-                        Reportes
-                    </button>
+                    {!isGuest && (
+                        <button
+                            onClick={() => setActiveTab("approved")}
+                            className={`py-4 px-1 text-sm font-medium border-b-2 ${
+                                activeTab === "approved"
+                                    ? "border-blue-500 text-blue-600"
+                                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                            }`}
+                        >
+                            Aprobados (
+                            {workersData?.filter(
+                                (wp) => wp.status === WorkerStatus.APPROVED || wp.status === WorkerStatus.HIRED
+                            ).length || 0}
+                            )
+                        </button>
+                    )}
+                    {!isGuest && (
+                        <button
+                            onClick={() => setActiveTab("reports")}
+                            className={`py-4 px-1 text-sm font-medium border-b-2 ${
+                                activeTab === "reports"
+                                    ? "border-blue-500 text-blue-600"
+                                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                            }`}
+                        >
+                            Reportes
+                        </button>
+                    )}
                     <button
                         onClick={() => setActiveTab("timeline")}
                         className={`py-4 px-1 text-sm font-medium border-b-2 ${
@@ -375,15 +386,15 @@ export const CompanyProcessDetailPage = () => {
                                         En Evaluación
                                     </span>
                                     <span className="text-sm font-medium text-gray-900">
-                                        {workersData?.filter((w: any) => w.status === "in_process").length || 0}
+                                        {workersData?.filter((w) => w.status === WorkerStatus.IN_PROCESS).length || 0}
                                     </span>
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-2">
                                     <div
                                         className="bg-yellow-500 h-2 rounded-full"
                                         style={{
-                                            width: `${workersData?.length > 0
-                                                ? ((workersData.filter((w: any) => w.status === "in_process").length / workersData.length) * 100)
+                                            width: `${workersData && workersData.length > 0
+                                                ? ((workersData.filter((w) => w.status === WorkerStatus.IN_PROCESS).length / workersData.length) * 100)
                                                 : 0}%`
                                         }}
                                     ></div>
@@ -395,15 +406,15 @@ export const CompanyProcessDetailPage = () => {
                                         Aprobados
                                     </span>
                                     <span className="text-sm font-medium text-gray-900">
-                                        {workersData?.filter((w: any) => w.status === "approved").length || 0}
+                                        {workersData?.filter((w) => w.status === WorkerStatus.APPROVED).length || 0}
                                     </span>
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-2">
                                     <div
                                         className="bg-green-600 h-2 rounded-full"
                                         style={{
-                                            width: `${workersData?.length > 0
-                                                ? ((workersData.filter((w: any) => w.status === "approved").length / workersData.length) * 100)
+                                            width: `${workersData && workersData.length > 0
+                                                ? ((workersData.filter((w) => w.status === WorkerStatus.APPROVED).length / workersData.length) * 100)
                                                 : 0}%`
                                         }}
                                     ></div>
@@ -429,7 +440,7 @@ export const CompanyProcessDetailPage = () => {
                                         Tests Personalizados
                                     </h3>
                                     <div className="grid gap-3">
-                                        {testsData.tests.map((test: any) => (
+                                        {testsData.tests.map((test) => (
                                             <div
                                                 key={test.id}
                                                 className="border rounded-lg p-4 hover:bg-gray-50"
@@ -459,7 +470,7 @@ export const CompanyProcessDetailPage = () => {
                                         Tests Fijos (Psicométricos)
                                     </h3>
                                     <div className="grid gap-3">
-                                        {testsData.fixedTests.map((test: any) => (
+                                        {testsData.fixedTests.map((test) => (
                                             <div
                                                 key={test.id}
                                                 className="border rounded-lg p-4 bg-indigo-50 border-indigo-200"
@@ -520,23 +531,14 @@ export const CompanyProcessDetailPage = () => {
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                                 Fecha Postulación
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                                Puntaje
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                                Reportes
-                                            </th>
+                                            {/* Empresas e invitados no pueden ver puntaje ni reportes */}
                                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                                                 Acciones
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {workersData.map((workerProcess: any) => {
-                                            const workerReports = reportsData?.filter(
-                                                (r: any) => r.workerId === workerProcess.worker.id && r.processId === id
-                                            ) || [];
-
+                                        {workersData.map((workerProcess) => {
                                             return (
                                             <tr key={workerProcess.id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -566,20 +568,7 @@ export const CompanyProcessDetailPage = () => {
                                                         ? new Date(workerProcess.appliedAt).toLocaleDateString()
                                                         : "-"}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {workerProcess.totalScore || "-"}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {workerReports.length > 0 ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs text-green-600 font-medium">
-                                                                {workerReports.length} {workerReports.length === 1 ? "reporte" : "reportes"}
-                                                            </span>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-xs text-gray-400">Sin reportes</span>
-                                                    )}
-                                                </td>
+                                                {/* Empresas e invitados no pueden ver puntaje ni reportes */}
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <button
                                                         onClick={() =>
@@ -613,7 +602,7 @@ export const CompanyProcessDetailPage = () => {
                         </h2>
                         {(() => {
                             const approvedWorkers = workersData?.filter(
-                                (wp: any) => wp.status === WorkerStatus.APPROVED || wp.status === WorkerStatus.HIRED
+                                (wp) => wp.status === WorkerStatus.APPROVED || wp.status === WorkerStatus.HIRED
                             ) || [];
 
                             return approvedWorkers.length > 0 ? (
@@ -642,9 +631,9 @@ export const CompanyProcessDetailPage = () => {
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {approvedWorkers.map((workerProcess: any) => {
+                                            {approvedWorkers.map((workerProcess) => {
                                                 const workerReports = reportsData?.filter(
-                                                    (r: any) => r.workerId === workerProcess.worker.id && r.processId === id
+                                                    (r) => r.worker?.id === workerProcess.worker.id && r.process?.id === id
                                                 ) || [];
 
                                                 return (
@@ -746,7 +735,7 @@ export const CompanyProcessDetailPage = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {reportsData.map((report: any) => (
+                                        {reportsData.map((report) => (
                                             <tr key={report.id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center">
@@ -775,10 +764,10 @@ export const CompanyProcessDetailPage = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span
                                                         className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                                            ReportTypeColors[report.type]
+                                                            ReportTypeColors[report.type as ReportType]
                                                         }`}
                                                     >
-                                                        {ReportTypeLabels[report.type]}
+                                                        {ReportTypeLabels[report.type as ReportType]}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -892,7 +881,7 @@ export const CompanyProcessDetailPage = () => {
 
                             {/* Evento: Tests asignados */}
                             {testsData &&
-                                (testsData.tests?.length > 0 || testsData.fixedTests?.length > 0) && (
+                                ((testsData.tests?.length ?? 0) > 0 || (testsData.fixedTests?.length ?? 0) > 0) && (
                                     <div className="relative flex items-start mb-6">
                                         <div className="absolute left-0 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
                                             <svg
@@ -957,7 +946,7 @@ export const CompanyProcessDetailPage = () => {
                             {/* Evento: Candidatos aprobados */}
                             {workersData &&
                                 workersData.filter(
-                                    (wp: any) =>
+                                    (wp) =>
                                         wp.status === WorkerStatus.APPROVED ||
                                         wp.status === WorkerStatus.HIRED
                                                 ).length > 0 && (
@@ -982,7 +971,7 @@ export const CompanyProcessDetailPage = () => {
                                             <p className="text-sm text-gray-600 mt-1">
                                                 {
                                                     workersData.filter(
-                                                        (wp: any) =>
+                                                        (wp) =>
                                                             wp.status === WorkerStatus.APPROVED ||
                                                             wp.status === WorkerStatus.HIRED
                                                     ).length

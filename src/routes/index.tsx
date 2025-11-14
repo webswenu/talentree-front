@@ -48,10 +48,8 @@ import { CompanyInvitationsPage } from "../pages/company/CompanyInvitationsPage"
 // Evaluator Pages
 import { EvaluatorDashboard } from "../pages/evaluator/EvaluatorDashboard";
 import { EvaluatorProcessesPage } from "../pages/evaluator/EvaluatorProcessesPage";
-import { EvaluatorProcessDetailPage } from "../pages/evaluator/EvaluatorProcessDetailPage";
 import { EvaluatorTestReviewPage } from "../pages/evaluator/EvaluatorTestReviewPage";
 import { EvaluatorWorkersPage } from "../pages/evaluator/EvaluatorWorkersPage";
-import { EvaluatorWorkerDetailPage } from "../pages/evaluator/EvaluatorWorkerDetailPage";
 
 // Worker Pages
 import { WorkerDashboard } from "../pages/worker/WorkerDashboard";

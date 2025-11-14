@@ -1,4 +1,5 @@
 import api from "./api.service";
+import { User } from "../types/user.types";
 
 export interface Invitation {
     id: string;
@@ -45,29 +46,29 @@ class InvitationsService {
     async createInvitation(
         data: CreateInvitationDto
     ): Promise<{ data: Invitation }> {
-        const response = await api.post("/invitations", data);
+        const response = await api.post<{ data: Invitation }>("/invitations", data);
         return response.data;
     }
 
     async getInvitations(companyId: string): Promise<InvitationsResponse> {
-        const response = await api.get(`/invitations/company/${companyId}`);
+        const response = await api.get<InvitationsResponse>(`/invitations/company/${companyId}`);
         return response.data;
     }
 
     async getInvitationByToken(token: string): Promise<{ data: Invitation }> {
-        const response = await api.get(`/invitations/token/${token}`);
+        const response = await api.get<{ data: Invitation }>(`/invitations/token/${token}`);
         return response.data;
     }
 
     async acceptInvitation(
         data: AcceptInvitationDto
-    ): Promise<{ message: string; user: any }> {
-        const response = await api.post("/invitations/accept", data);
+    ): Promise<{ message: string; user: User }> {
+        const response = await api.post<{ message: string; user: User }>("/invitations/accept", data);
         return response.data;
     }
 
     async resendInvitation(id: string): Promise<{ data: Invitation }> {
-        const response = await api.patch(`/invitations/${id}/resend`);
+        const response = await api.patch<{ data: Invitation }>(`/invitations/${id}/resend`);
         return response.data;
     }
 

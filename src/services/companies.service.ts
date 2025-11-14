@@ -155,6 +155,13 @@ class CompaniesService {
         );
         return data;
     }
+
+    async deleteLogo(id: string): Promise<Company> {
+        const { data } = await apiService.delete<Company>(
+            `/companies/${id}/logo`
+        );
+        return data;
+    }
 }
 
 export const companiesService = new CompaniesService();

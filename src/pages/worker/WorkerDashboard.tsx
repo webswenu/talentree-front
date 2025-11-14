@@ -14,6 +14,7 @@ import { SearchInput } from "../../components/common/SearchInput";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useFilter } from "../../hooks/useFilter";
 import { Modal } from "../../components/common/Modal";
+import { toast } from "../../utils/toast";
 
 export const WorkerDashboard = () => {
     const { user } = useAuthStore();
@@ -40,18 +41,9 @@ export const WorkerDashboard = () => {
     const {
         data: stats,
         isLoading: loadingStats,
-        error: statsError,
     } = useWorkerDashboardStats(workerId);
 
     const { data: myApplications } = useWorkerProcesses(workerId || "");
-
-    console.log("Worker Dashboard Debug:", {
-        workerId,
-        stats,
-        loadingStats,
-        statsError,
-        user: user?.worker,
-    });
 
     const { data: processesData } = useProcesses();
     const availableProcesses = useMemo(
@@ -59,34 +51,7 @@ export const WorkerDashboard = () => {
         [processesData]
     );
 
-    const testsPendientes =
-        myApplications
-            ?.filter((app) => {
-                const hasIncompleteTests = app.testResponses?.some(
-                    (tr) => !tr.isCompleted
-                );
-                return (
-                    hasIncompleteTests && app.status === WorkerStatus.IN_PROCESS
-                );
-            })
-            .flatMap(
-                (app) =>
-                    app.testResponses
-                        ?.filter((tr) => !tr.isCompleted)
-                        .map((tr) => ({
-                            id: tr.id,
-                            testResponseId: tr.id,
-                            nombre: tr.test?.name || "Test sin nombre",
-                            proceso: app.process?.name || "Proceso",
-                            empresa: app.process?.company?.name || "Empresa",
-                            duracion: tr.test?.duration || 0,
-                            preguntas: tr.test?.questions?.length || 0,
-                            urgente: false,
-                            vence: "Sin fecha límite",
-                        })) || []
-            ) || [];
-
-    const misAplicaciones =
+    const misAplicacionesCompletas =
         myApplications?.map((app) => {
             const testsTotal = app.process?.tests?.length || 0;
             const testsCompletados =
@@ -102,12 +67,22 @@ export const WorkerDashboard = () => {
                 fechaAplicacion: app.appliedAt
                     ? new Date(app.appliedAt).toLocaleDateString("es-CL")
                     : "N/A",
+                fechaAplicacionRaw: app.appliedAt
+                    ? new Date(app.appliedAt).getTime()
+                    : app.createdAt
+                    ? new Date(app.createdAt).getTime()
+                    : 0,
                 testsCompletados,
                 testsTotal,
                 mensaje: getStatusMessage(app.status),
                 puntaje: app.totalScore,
             };
         }) || [];
+
+    // Ordenar por fecha de aplicación (más reciente primero) y tomar las últimas 3
+    const misAplicaciones = misAplicacionesCompletas
+        .sort((a, b) => b.fechaAplicacionRaw - a.fechaAplicacionRaw)
+        .slice(0, 3);
 
     const appliedProcessIds = useMemo(
         () => new Set(myApplications?.map((app) => app.process?.id) || []),
@@ -190,41 +165,50 @@ export const WorkerDashboard = () => {
                         ? new Date(process.endDate).toLocaleDateString("es-CL")
                         : "Sin fecha límite",
                     nuevo: false,
+                    createdAt: process.createdAt
+                        ? new Date(process.createdAt).getTime()
+                        : 0,
                 })) || []
         );
     }, [availableProcesses, appliedProcessIds, debouncedSearch, filters]);
 
-    const ofertasDisponibles = ofertasDisponiblesFiltradas.slice(0, 3);
+    // Ordenar por fecha de creación (más reciente primero) y tomar las últimas 3
+    const ofertasDisponibles = ofertasDisponiblesFiltradas
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, 3);
 
     function getStatusLabel(status: WorkerStatus): string {
-        const labels = {
+        const labels: Record<WorkerStatus, string> = {
             [WorkerStatus.PENDING]: "PENDIENTE",
             [WorkerStatus.IN_PROCESS]: "EN PROCESO",
             [WorkerStatus.APPROVED]: "APROBADO",
             [WorkerStatus.REJECTED]: "RECHAZADO",
             [WorkerStatus.HIRED]: "CONTRATADO",
+            [WorkerStatus.COMPLETED]: "COMPLETADO",
         };
         return labels[status] || "DESCONOCIDO";
     }
 
     function getStatusColor(status: WorkerStatus): string {
-        const colors = {
+        const colors: Record<WorkerStatus, string> = {
             [WorkerStatus.PENDING]: "blue",
             [WorkerStatus.IN_PROCESS]: "yellow",
             [WorkerStatus.APPROVED]: "green",
             [WorkerStatus.REJECTED]: "red",
             [WorkerStatus.HIRED]: "green",
+            [WorkerStatus.COMPLETED]: "gray",
         };
         return colors[status] || "gray";
     }
 
     function getStatusMessage(status: WorkerStatus): string {
-        const messages = {
+        const messages: Record<WorkerStatus, string> = {
             [WorkerStatus.PENDING]: "Esperando revisión",
             [WorkerStatus.IN_PROCESS]: "En evaluación",
             [WorkerStatus.APPROVED]: "Aprobado para siguiente etapa",
             [WorkerStatus.REJECTED]: "No seleccionado",
             [WorkerStatus.HIRED]: "Felicitaciones!",
+            [WorkerStatus.COMPLETED]: "Completado",
         };
         return messages[status] || "";
     }
@@ -251,23 +235,16 @@ export const WorkerDashboard = () => {
 
     const handleConfirmApply = async () => {
         if (!selectedProcessId) {
-            console.error("No hay proceso seleccionado");
+            toast.error("No hay proceso seleccionado");
             return;
         }
 
         if (!workerId) {
-            console.error("No hay workerId. User:", user);
-            alert(
-                "Error: No tienes un perfil de trabajador asociado. Por favor contacta al administrador."
-            );
+            toast.error("Error: No tienes un perfil de trabajador asociado. Por favor contacta al administrador.");
             return;
         }
 
         try {
-            console.log("Aplicando a proceso:", {
-                workerId,
-                processId: selectedProcessId,
-            });
             await applyMutation.mutateAsync({
                 workerId,
                 processId: selectedProcessId,
@@ -275,9 +252,8 @@ export const WorkerDashboard = () => {
             setIsConfirmOpen(false);
             setSelectedProcessId(null);
             setIsSuccessModalOpen(true);
-        } catch (err) {
-            console.error("Error al postular:", err);
-            alert("Error al postular. Por favor intenta nuevamente.");
+        } catch {
+            toast.error("Error al postular. Por favor intenta nuevamente.");
         }
     };
 
@@ -375,71 +351,6 @@ export const WorkerDashboard = () => {
                 </div>
             </div>
 
-            {/* Tests Pendientes */}
-            {testsPendientes.length > 0 && (
-                <div className="bg-white rounded-lg shadow">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                        <h2 className="text-xl font-semibold text-gray-900">
-                            Tests Pendientes
-                        </h2>
-                        <p className="text-sm text-gray-600 mt-1">
-                            Completa estos tests para avanzar en los procesos
-                        </p>
-                    </div>
-                    <div className="divide-y divide-gray-200">
-                        {testsPendientes.map((test) => (
-                            <div
-                                key={test.id}
-                                className={`px-6 py-4 hover:bg-gray-50 transition-colors ${
-                                    test.urgente
-                                        ? "bg-orange-50 border-l-4 border-orange-500"
-                                        : ""
-                                }`}
-                            >
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            {test.urgente && (
-                                                <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-bold rounded">
-                                                    ⏰ VENCE PRONTO
-                                                </span>
-                                            )}
-                                            <h3 className="text-lg font-semibold text-gray-900">
-                                                {test.nombre}
-                                            </h3>
-                                        </div>
-                                        <p className="text-sm text-gray-600 mt-1">
-                                            {test.proceso} ({test.empresa})
-                                        </p>
-                                        <div className="flex items-center gap-6 mt-2 text-sm text-gray-600">
-                                            <span>
-                                                ⏱️ Duración: {test.duracion} min
-                                            </span>
-                                            <span>
-                                                • {test.preguntas} preguntas
-                                            </span>
-                                            <span className="text-orange-600 font-medium">
-                                                • Vence en {test.vence}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() =>
-                                            navigate(
-                                                `/trabajador/test/${test.testResponseId}`
-                                            )
-                                        }
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-2"
-                                    >
-                                        Iniciar Test ⏱️
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
             {/* Mis Aplicaciones */}
             <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
@@ -492,24 +403,30 @@ export const WorkerDashboard = () => {
                                 </div>
                                 <button
                                     onClick={() =>
-                                        app.puntaje
-                                            ? navigate(
-                                                  `/trabajador/aplicaciones`
-                                              )
-                                            : navigate(
-                                                  `/trabajador/aplicaciones`
-                                              )
+                                        navigate(
+                                            `/trabajador/postulaciones/${app.id}`
+                                        )
                                     }
                                     className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
                                 >
-                                    {app.puntaje
-                                        ? "Ver Resultado"
-                                        : "Ver Detalle"}
+                                    Ver Detalle
                                 </button>
                             </div>
                         </div>
                     ))}
                 </div>
+                {/* Footer - Ver todas las aplicaciones */}
+                {misAplicacionesCompletas.length > 3 && (
+                    <div className="px-6 py-3 border-t border-gray-200 text-center">
+                        <button
+                            onClick={() => navigate("/trabajador/postulaciones")}
+                            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                            Ver todas las aplicaciones (
+                            {misAplicacionesCompletas.length}) →
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Ofertas Disponibles */}

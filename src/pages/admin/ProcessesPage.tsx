@@ -36,8 +36,8 @@ export default function ProcessesPage() {
 
     // Solo cargar empresas si NO es un usuario de tipo COMPANY o GUEST
     const shouldLoadCompanies = user?.role !== UserRole.COMPANY && user?.role !== UserRole.GUEST;
-    const { data: companiesData } = shouldLoadCompanies ? useCompanies() : { data: null };
-    const companies = companiesData?.data || [];
+    const companiesQuery = useCompanies();
+    const companies = shouldLoadCompanies ? (companiesQuery.data?.data || []) : [];
 
     // Initialize company filter from URL params or user company
     useEffect(() => {
@@ -92,8 +92,8 @@ export default function ProcessesPage() {
             await deleteMutation.mutateAsync(processToDelete.id);
             setIsConfirmDeleteOpen(false);
             setProcessToDelete(null);
-        } catch (err) {
-            console.error(err);
+        } catch {
+            // Error handled silently or by mutation error handler
         }
     };
 

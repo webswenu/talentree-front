@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useProcess, useProcessTests } from "../../hooks/useProcesses";
 import { useProcessWorkers } from "../../hooks/useWorkers";
+import { videoService } from "../../services/video.service";
 import {
     useReportsByProcess,
-    useCreateReport,
-    useUploadReportFile,
     useDownloadReportFile,
     useApproveReport,
     useDeleteReport,
@@ -15,7 +15,6 @@ import { useAuthStore } from "../../store/authStore";
 import { UserRole } from "../../types/user.types";
 import {
     ProcessStatusLabels,
-    ProcessStatusColors,
 } from "../../types/process.types";
 import {
     Report,
@@ -30,7 +29,9 @@ import {
     WorkerStatus,
     WorkerStatusLabels,
     WorkerStatusColors,
+    WorkerProcess,
 } from "../../types/worker.types";
+import { Test, FixedTest } from "../../types/test.types";
 import { ApproveRejectModal } from "../../components/common/ApproveRejectModal";
 import { FormatSelectionModal } from "../../components/common/FormatSelectionModal";
 import { AssignTestsModal } from "../../components/common/AssignTestsModal";
@@ -38,6 +39,11 @@ import ProcessModal from "../../components/admin/ProcessModal";
 import { VideoRequirementsConfig } from "../../components/admin/VideoRequirementsConfig";
 
 type TabType = "info" | "tests" | "video" | "candidates" | "approved" | "reports" | "timeline";
+
+interface ProcessTestsData {
+    tests?: Test[];
+    fixedTests?: FixedTest[];
+}
 
 export const ProcessDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -54,19 +60,40 @@ export const ProcessDetailPage = () => {
     }>({ isOpen: false, report: null });
     const [assignTestsModal, setAssignTestsModal] = useState(false);
     const [editProcessModal, setEditProcessModal] = useState(false);
+    const [selectedVideo, setSelectedVideo] = useState<{ videoId: string; processName: string; videoUrl: string; workerName: string } | null>(null);
+    const [downloadingVideo, setDownloadingVideo] = useState(false);
 
     const { data: process, isLoading, error } = useProcess(id!);
-    const { data: testsData } = useProcessTests(id!);
-    const { data: workersData } = useProcessWorkers(id!);
+    const { data: testsData } = useProcessTests(id!) as { data?: ProcessTestsData };
+    const { data: workersData } = useProcessWorkers(id!) as { data?: WorkerProcess[] };
     const { data: reportsData } = useReportsByProcess(id!);
-    const createReportMutation = useCreateReport();
-    const uploadMutation = useUploadReportFile();
     const downloadMutation = useDownloadReportFile();
     const approveMutation = useApproveReport();
     const deleteMutation = useDeleteReport();
     const removeTestMutation = useRemoveTest();
     const removeFixedTestMutation = useRemoveFixedTest();
     const { user } = useAuthStore();
+
+    // Get videos for each worker
+    const { data: videos = {} } = useQuery({
+        queryKey: ["process-videos", id, workersData?.map(wp => wp.worker?.id)],
+        queryFn: async () => {
+            if (!workersData || !id) return {};
+            const videoPromises = workersData.map(async (wp) => {
+                if (!wp.worker?.id) return null;
+                const video = await videoService.getWorkerVideoForProcess(wp.worker.id, id);
+                return { workerId: wp.worker.id, video };
+            });
+            const results = await Promise.all(videoPromises);
+            return results.reduce((acc, result) => {
+                if (result && result.video) {
+                    acc[result.workerId] = result.video;
+                }
+                return acc;
+            }, {} as Record<string, { id: string; videoUrl: string }>);
+        },
+        enabled: !!workersData && !!id,
+    });
     const isAdmin = user?.role === UserRole.ADMIN_TALENTREE;
     const isEvaluator = location.pathname.includes("/evaluador");
     const isCompany = location.pathname.includes("/empresa");
@@ -74,6 +101,13 @@ export const ProcessDetailPage = () => {
 
     // Solo admin puede editar/asignar/eliminar
     const canEdit = isAdmin && !isEvaluator && !isCompany;
+
+    // Redirigir a un tab válido si el usuario está en un tab no permitido para empresas
+    useEffect(() => {
+        if (isCompany && (activeTab === "video" || activeTab === "approved" || activeTab === "reports")) {
+            setActiveTab("info");
+        }
+    }, [isCompany, activeTab]);
 
     // Helper functions
     const isPDF = (fileName: string | null | undefined) => {
@@ -132,8 +166,8 @@ export const ProcessDetailPage = () => {
 
             // Close modal if open
             setFormatSelectionModal({ isOpen: false, report: null });
-        } catch (error) {
-            console.error("Download error:", error);
+        } catch {
+            // Error handled silently or by mutation error handler
         }
     };
 
@@ -150,8 +184,8 @@ export const ProcessDetailPage = () => {
                 data: { status: ReportStatus.APPROVED },
             });
             setApproveRejectModal({ isOpen: false, report: null });
-        } catch (error) {
-            console.error("Approve error:", error);
+        } catch {
+            // Error handled silently or by mutation error handler
         }
     };
 
@@ -167,16 +201,16 @@ export const ProcessDetailPage = () => {
                 },
             });
             setApproveRejectModal({ isOpen: false, report: null });
-        } catch (error) {
-            console.error("Reject error:", error);
+        } catch {
+            // Error handled silently or by mutation error handler
         }
     };
 
     const handleDelete = async (reportId: string) => {
         try {
             await deleteMutation.mutateAsync(reportId);
-        } catch (error) {
-            console.error("Delete error:", error);
+        } catch {
+            // Error handled silently or by mutation error handler
         }
     };
 
@@ -184,8 +218,8 @@ export const ProcessDetailPage = () => {
         if (!id) return;
         try {
             await removeTestMutation.mutateAsync({ processId: id, testId });
-        } catch (error) {
-            console.error("Remove test error:", error);
+        } catch {
+            // Error handled silently or by mutation error handler
         }
     };
 
@@ -193,8 +227,8 @@ export const ProcessDetailPage = () => {
         if (!id) return;
         try {
             await removeFixedTestMutation.mutateAsync({ processId: id, fixedTestId });
-        } catch (error) {
-            console.error("Remove fixed test error:", error);
+        } catch {
+            // Error handled silently or by mutation error handler
         }
     };
 
@@ -311,16 +345,18 @@ export const ProcessDetailPage = () => {
                     >
                         Tests ({testsData?.tests?.length || 0} + {testsData?.fixedTests?.length || 0})
                     </button>
-                    <button
-                        onClick={() => setActiveTab("video")}
-                        className={`py-4 px-1 text-sm font-medium border-b-2 ${
-                            activeTab === "video"
-                                ? "border-blue-500 text-blue-600"
-                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                        }`}
-                    >
-                        Video
-                    </button>
+                    {!isCompany && (
+                        <button
+                            onClick={() => setActiveTab("video")}
+                            className={`py-4 px-1 text-sm font-medium border-b-2 ${
+                                activeTab === "video"
+                                    ? "border-blue-500 text-blue-600"
+                                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                            }`}
+                        >
+                            Video
+                        </button>
+                    )}
                     <button
                         onClick={() => setActiveTab("candidates")}
                         className={`py-4 px-1 text-sm font-medium border-b-2 ${
@@ -331,30 +367,34 @@ export const ProcessDetailPage = () => {
                     >
                         Candidatos ({workersData?.length || 0})
                     </button>
-                    <button
-                        onClick={() => setActiveTab("approved")}
-                        className={`py-4 px-1 text-sm font-medium border-b-2 ${
-                            activeTab === "approved"
-                                ? "border-blue-500 text-blue-600"
-                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                        }`}
-                    >
-                        Aprobados (
-                        {workersData?.filter(
-                            (wp: any) => wp.status === WorkerStatus.APPROVED || wp.status === WorkerStatus.HIRED
-                        ).length || 0}
-                        )
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("reports")}
-                        className={`py-4 px-1 text-sm font-medium border-b-2 ${
-                            activeTab === "reports"
-                                ? "border-blue-500 text-blue-600"
-                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                        }`}
-                    >
-                        Reportes
-                    </button>
+                    {!isCompany && (
+                        <button
+                            onClick={() => setActiveTab("approved")}
+                            className={`py-4 px-1 text-sm font-medium border-b-2 ${
+                                activeTab === "approved"
+                                    ? "border-blue-500 text-blue-600"
+                                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                            }`}
+                        >
+                            Completados (
+                            {workersData?.filter(
+                                (wp) => wp.status === WorkerStatus.COMPLETED || wp.status === WorkerStatus.APPROVED || wp.status === WorkerStatus.HIRED
+                            ).length || 0}
+                            )
+                        </button>
+                    )}
+                    {!isCompany && (
+                        <button
+                            onClick={() => setActiveTab("reports")}
+                            className={`py-4 px-1 text-sm font-medium border-b-2 ${
+                                activeTab === "reports"
+                                    ? "border-blue-500 text-blue-600"
+                                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                            }`}
+                        >
+                            Reportes
+                        </button>
+                    )}
                     <button
                         onClick={() => setActiveTab("timeline")}
                         className={`py-4 px-1 text-sm font-medium border-b-2 ${
@@ -473,15 +513,15 @@ export const ProcessDetailPage = () => {
                                         En Evaluación
                                     </span>
                                     <span className="text-sm font-medium text-gray-900">
-                                        {workersData?.filter((w: any) => w.status === "in_process").length || 0}
+                                        {workersData?.filter((w) => w.status === WorkerStatus.IN_PROCESS).length || 0}
                                     </span>
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-2">
                                     <div
                                         className="bg-yellow-500 h-2 rounded-full"
                                         style={{
-                                            width: `${workersData?.length > 0
-                                                ? ((workersData.filter((w: any) => w.status === "in_process").length / workersData.length) * 100)
+                                            width: `${workersData && workersData.length > 0
+                                                ? ((workersData.filter((w) => w.status === WorkerStatus.IN_PROCESS).length / workersData.length) * 100)
                                                 : 0}%`
                                         }}
                                     ></div>
@@ -490,18 +530,18 @@ export const ProcessDetailPage = () => {
                             <div>
                                 <div className="flex items-center justify-between mb-1">
                                     <span className="text-sm text-gray-600">
-                                        Aprobados
+                                        Completados
                                     </span>
                                     <span className="text-sm font-medium text-gray-900">
-                                        {workersData?.filter((w: any) => w.status === "approved").length || 0}
+                                        {workersData?.filter((w) => w.status === WorkerStatus.COMPLETED || w.status === WorkerStatus.APPROVED).length || 0}
                                     </span>
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-2">
                                     <div
                                         className="bg-green-600 h-2 rounded-full"
                                         style={{
-                                            width: `${workersData?.length > 0
-                                                ? ((workersData.filter((w: any) => w.status === "approved").length / workersData.length) * 100)
+                                            width: `${workersData && workersData.length > 0
+                                                ? ((workersData.filter((w) => w.status === WorkerStatus.APPROVED).length / workersData.length) * 100)
                                                 : 0}%`
                                         }}
                                     ></div>
@@ -527,7 +567,7 @@ export const ProcessDetailPage = () => {
                                         Tests Personalizados
                                     </h3>
                                     <div className="grid gap-3">
-                                        {testsData.tests.map((test: any) => (
+                                        {testsData.tests.map((test) => (
                                             <div
                                                 key={test.id}
                                                 className="border rounded-lg p-4 hover:bg-gray-50"
@@ -569,7 +609,7 @@ export const ProcessDetailPage = () => {
                                         Tests Fijos (Psicométricos)
                                     </h3>
                                     <div className="grid gap-3">
-                                        {testsData.fixedTests.map((test: any) => (
+                                        {testsData.fixedTests.map((test) => (
                                             <div
                                                 key={test.id}
                                                 className="border rounded-lg p-4 bg-indigo-50 border-indigo-200"
@@ -624,7 +664,7 @@ export const ProcessDetailPage = () => {
             {/* Tab Video */}
             {activeTab === "video" && (
                 <div className="mt-6">
-                    <VideoRequirementsConfig processId={id!} />
+                    <VideoRequirementsConfig processId={id!} readOnly={!canEdit} />
                 </div>
             )}
 
@@ -649,21 +689,28 @@ export const ProcessDetailPage = () => {
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                                 Fecha Postulación
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                                Puntaje
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                                Reportes
-                                            </th>
+                                            {!isCompany && (
+                                                <>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                        Puntaje
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                        Video
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                        Reportes
+                                                    </th>
+                                                </>
+                                            )}
                                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                                                 Acciones
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {workersData.map((workerProcess: any) => {
+                                        {workersData.map((workerProcess) => {
                                             const workerReports = reportsData?.filter(
-                                                (r: any) => r.workerId === workerProcess.worker.id && r.processId === id
+                                                (r) => r.worker?.id === workerProcess.worker.id && r.process?.id === id
                                             ) || [];
 
                                             return (
@@ -695,20 +742,41 @@ export const ProcessDetailPage = () => {
                                                         ? new Date(workerProcess.appliedAt).toLocaleDateString()
                                                         : "-"}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {workerProcess.totalScore || "-"}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {workerReports.length > 0 ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs text-green-600 font-medium">
-                                                                {workerReports.length} {workerReports.length === 1 ? "reporte" : "reportes"}
-                                                            </span>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-xs text-gray-400">Sin reportes</span>
-                                                    )}
-                                                </td>
+                                                {!isCompany && (
+                                                    <>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                            {workerProcess.totalScore || "-"}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                            {workerProcess.worker?.id && videos[workerProcess.worker.id] ? (
+                                                                <button
+                                                                    onClick={() => setSelectedVideo({
+                                                                        videoId: videos[workerProcess.worker.id].id,
+                                                                        processName: process?.name || "Proceso",
+                                                                        videoUrl: videos[workerProcess.worker.id].videoUrl,
+                                                                        workerName: `${workerProcess.worker.firstName} ${workerProcess.worker.lastName}`
+                                                                    })}
+                                                                    className="text-green-600 hover:text-green-900"
+                                                                >
+                                                                    🎥 Ver Video
+                                                                </button>
+                                                            ) : (
+                                                                <span className="text-gray-400">-</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            {workerReports.length > 0 ? (
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-xs text-green-600 font-medium">
+                                                                        {workerReports.length} {workerReports.length === 1 ? "reporte" : "reportes"}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-xs text-gray-400">Sin reportes</span>
+                                                            )}
+                                                        </td>
+                                                    </>
+                                                )}
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <button
                                                         onClick={() =>
@@ -733,16 +801,16 @@ export const ProcessDetailPage = () => {
                 </div>
             )}
 
-            {/* Tab Aprobados */}
+            {/* Tab Completados */}
             {activeTab === "approved" && (
                 <div className="bg-white rounded-lg shadow">
                     <div className="p-6">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                            Candidatos Aprobados
+                            Candidatos Completados
                         </h2>
                         {(() => {
                             const approvedWorkers = workersData?.filter(
-                                (wp: any) => wp.status === WorkerStatus.APPROVED || wp.status === WorkerStatus.HIRED
+                                (wp) => wp.status === WorkerStatus.COMPLETED || wp.status === WorkerStatus.APPROVED || wp.status === WorkerStatus.HIRED
                             ) || [];
 
                             return approvedWorkers.length > 0 ? (
@@ -763,6 +831,9 @@ export const ProcessDetailPage = () => {
                                                     Puntaje Final
                                                 </th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                    Video
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                                     Reportes
                                                 </th>
                                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
@@ -771,9 +842,9 @@ export const ProcessDetailPage = () => {
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {approvedWorkers.map((workerProcess: any) => {
+                                            {approvedWorkers.map((workerProcess) => {
                                                 const workerReports = reportsData?.filter(
-                                                    (r: any) => r.workerId === workerProcess.worker.id && r.processId === id
+                                                    (r) => r.worker?.id === workerProcess.worker.id && r.process?.id === id
                                                 ) || [];
 
                                                 return (
@@ -807,6 +878,23 @@ export const ProcessDetailPage = () => {
                                                         <span className="text-sm font-semibold text-green-600">
                                                             {workerProcess.totalScore || "-"}
                                                         </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                        {workerProcess.worker?.id && videos[workerProcess.worker.id] ? (
+                                                            <button
+                                                                onClick={() => setSelectedVideo({
+                                                                    videoId: videos[workerProcess.worker.id].id,
+                                                                    processName: process?.name || "Proceso",
+                                                                    videoUrl: videos[workerProcess.worker.id].videoUrl,
+                                                                    workerName: `${workerProcess.worker.firstName} ${workerProcess.worker.lastName}`
+                                                                })}
+                                                                className="text-green-600 hover:text-green-900"
+                                                            >
+                                                                🎥 Ver Video
+                                                            </button>
+                                                        ) : (
+                                                            <span className="text-gray-400">-</span>
+                                                        )}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         {workerReports.length > 0 ? (
@@ -891,7 +979,7 @@ export const ProcessDetailPage = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {reportsData.map((report: any) => (
+                                        {reportsData.map((report) => (
                                             <tr key={report.id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center">
@@ -920,10 +1008,10 @@ export const ProcessDetailPage = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span
                                                         className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                                            ReportTypeColors[report.type]
+                                                            ReportTypeColors[report.type as ReportType]
                                                         }`}
                                                     >
-                                                        {ReportTypeLabels[report.type]}
+                                                        {ReportTypeLabels[report.type as ReportType]}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -1071,7 +1159,7 @@ export const ProcessDetailPage = () => {
 
                             {/* Evento: Tests asignados */}
                             {testsData &&
-                                (testsData.tests?.length > 0 || testsData.fixedTests?.length > 0) && (
+                                ((testsData.tests?.length ?? 0) > 0 || (testsData.fixedTests?.length ?? 0) > 0) && (
                                     <div className="relative flex items-start mb-6">
                                         <div className="absolute left-0 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
                                             <svg
@@ -1092,13 +1180,13 @@ export const ProcessDetailPage = () => {
                                                 Tests Asignados
                                             </h3>
                                             <p className="text-sm text-gray-600 mt-1">
-                                                {(testsData.tests?.length || 0) +
-                                                    (testsData.fixedTests?.length || 0)}{" "}
+                                                {(testsData?.tests?.length || 0) +
+                                                    (testsData?.fixedTests?.length || 0)}{" "}
                                                 tests asignados al proceso
                                             </p>
                                             <p className="text-xs text-gray-400 mt-1">
-                                                {testsData.tests?.length || 0} personalizados +{" "}
-                                                {testsData.fixedTests?.length || 0} fijos
+                                                {testsData?.tests?.length || 0} personalizados +{" "}
+                                                {testsData?.fixedTests?.length || 0} fijos
                                             </p>
                                         </div>
                                     </div>
@@ -1136,7 +1224,7 @@ export const ProcessDetailPage = () => {
                             {/* Evento: Candidatos aprobados */}
                             {workersData &&
                                 workersData.filter(
-                                    (wp: any) =>
+                                    (wp) =>
                                         wp.status === WorkerStatus.APPROVED ||
                                         wp.status === WorkerStatus.HIRED
                                                 ).length > 0 && (
@@ -1156,17 +1244,18 @@ export const ProcessDetailPage = () => {
                                         </div>
                                         <div className="ml-12">
                                             <h3 className="text-sm font-semibold text-gray-900">
-                                                Candidatos Aprobados
+                                                Candidatos Completados
                                             </h3>
                                             <p className="text-sm text-gray-600 mt-1">
                                                 {
                                                     workersData.filter(
-                                                        (wp: any) =>
+                                                        (wp) =>
+                                                            wp.status === WorkerStatus.COMPLETED ||
                                                             wp.status === WorkerStatus.APPROVED ||
                                                             wp.status === WorkerStatus.HIRED
                                                     ).length
                                                 }{" "}
-                                                candidatos han sido aprobados
+                                                candidatos han completado sus evaluaciones
                                             </p>
                                         </div>
                                     </div>
@@ -1243,7 +1332,7 @@ export const ProcessDetailPage = () => {
                 isOpen={assignTestsModal}
                 onClose={() => setAssignTestsModal(false)}
                 processId={id!}
-                assignedTestIds={testsData?.fixedTests?.map((t: any) => t.id) || []}
+                assignedTestIds={testsData?.fixedTests?.map((t) => t.id) || []}
             />
 
             {editProcessModal && (
@@ -1251,6 +1340,108 @@ export const ProcessDetailPage = () => {
                     process={process}
                     onClose={() => setEditProcessModal(false)}
                 />
+            )}
+
+            {selectedVideo && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+                    onClick={() => setSelectedVideo(null)}
+                >
+                    <div
+                        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-semibold text-gray-900">
+                                    Video - {selectedVideo.workerName}
+                                </h3>
+                                <button
+                                    onClick={() => setSelectedVideo(null)}
+                                    className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                                >
+                                    ×
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="bg-gray-100 rounded-lg overflow-hidden">
+                                    <video
+                                        controls
+                                        className="w-full"
+                                        src={selectedVideo.videoUrl}
+                                        style={{ maxHeight: "500px" }}
+                                    >
+                                        Tu navegador no soporta el elemento de video.
+                                    </video>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={async () => {
+                                            setDownloadingVideo(true);
+                                            try {
+                                                await videoService.downloadVideo(
+                                                    selectedVideo.videoId,
+                                                    `video-${selectedVideo.workerName.replace(/\s+/g, "-")}.webm`
+                                                );
+                                            } catch {
+                                                // Error handled silently - user can retry
+                                            } finally {
+                                                setDownloadingVideo(false);
+                                            }
+                                        }}
+                                        disabled={downloadingVideo}
+                                        className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                                            downloadingVideo
+                                                ? "bg-blue-400 cursor-not-allowed"
+                                                : "bg-blue-600 hover:bg-blue-700"
+                                        } text-white`}
+                                    >
+                                        {downloadingVideo ? (
+                                            <span className="flex items-center justify-center gap-2">
+                                                <svg
+                                                    className="animate-spin h-5 w-5 text-white"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <circle
+                                                        className="opacity-25"
+                                                        cx="12"
+                                                        cy="12"
+                                                        r="10"
+                                                        stroke="currentColor"
+                                                        strokeWidth="4"
+                                                    ></circle>
+                                                    <path
+                                                        className="opacity-75"
+                                                        fill="currentColor"
+                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                    ></path>
+                                                </svg>
+                                                Descargando...
+                                            </span>
+                                        ) : (
+                                            "📥 Descargar Video"
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectedVideo(null)}
+                                        disabled={downloadingVideo}
+                                        className={`px-4 py-2 border border-gray-300 rounded-lg font-medium transition-colors ${
+                                            downloadingVideo
+                                                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                                : "bg-white text-gray-700 hover:bg-gray-50"
+                                        }`}
+                                    >
+                                        Cerrar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

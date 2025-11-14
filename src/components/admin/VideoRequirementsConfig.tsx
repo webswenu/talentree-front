@@ -8,6 +8,7 @@ import {
 
 interface VideoRequirementsConfigProps {
     processId: string;
+    readOnly?: boolean;
 }
 
 type ModalType = "success" | "error" | "confirm" | null;
@@ -21,6 +22,7 @@ interface ModalState {
 
 export const VideoRequirementsConfig = ({
     processId,
+    readOnly = false,
 }: VideoRequirementsConfigProps) => {
     const queryClient = useQueryClient();
 
@@ -68,13 +70,34 @@ export const VideoRequirementsConfig = ({
                 message: "La configuración de video se ha creado exitosamente.",
             });
         },
-        onError: (error: any) => {
+        onError: (error: unknown) => {
+            let errorMessage =
+                "No se pudo crear la configuración de video. Por favor intenta nuevamente.";
+            
+            if (error && typeof error === "object" && "response" in error) {
+                const axiosError = error as {
+                    response?: {
+                        data?: {
+                            message?: string | string[];
+                        };
+                    };
+                };
+                
+                const message = axiosError.response?.data?.message;
+                
+                if (typeof message === "string") {
+                    errorMessage = message;
+                } else if (Array.isArray(message) && message.length > 0) {
+                    errorMessage = message[0];
+                }
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            
             setModal({
                 type: "error",
                 title: "Error al crear",
-                message:
-                    error.response?.data?.message ||
-                    "No se pudo crear la configuración de video. Por favor intenta nuevamente.",
+                message: errorMessage,
             });
         },
     });
@@ -93,13 +116,34 @@ export const VideoRequirementsConfig = ({
                 message: "Los cambios se han guardado exitosamente.",
             });
         },
-        onError: (error: any) => {
+        onError: (error: unknown) => {
+            let errorMessage =
+                "No se pudo actualizar la configuración. Por favor intenta nuevamente.";
+            
+            if (error && typeof error === "object" && "response" in error) {
+                const axiosError = error as {
+                    response?: {
+                        data?: {
+                            message?: string | string[];
+                        };
+                    };
+                };
+                
+                const message = axiosError.response?.data?.message;
+                
+                if (typeof message === "string") {
+                    errorMessage = message;
+                } else if (Array.isArray(message) && message.length > 0) {
+                    errorMessage = message[0];
+                }
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            
             setModal({
                 type: "error",
                 title: "Error al actualizar",
-                message:
-                    error.response?.data?.message ||
-                    "No se pudo actualizar la configuración. Por favor intenta nuevamente.",
+                message: errorMessage,
             });
         },
     });
@@ -121,13 +165,34 @@ export const VideoRequirementsConfig = ({
                 message: "La configuración de video ha sido eliminada exitosamente.",
             });
         },
-        onError: (error: any) => {
+        onError: (error: unknown) => {
+            let errorMessage =
+                "No se pudo eliminar la configuración. Por favor intenta nuevamente.";
+            
+            if (error && typeof error === "object" && "response" in error) {
+                const axiosError = error as {
+                    response?: {
+                        data?: {
+                            message?: string | string[];
+                        };
+                    };
+                };
+                
+                const message = axiosError.response?.data?.message;
+                
+                if (typeof message === "string") {
+                    errorMessage = message;
+                } else if (Array.isArray(message) && message.length > 0) {
+                    errorMessage = message[0];
+                }
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            
             setModal({
                 type: "error",
                 title: "Error al eliminar",
-                message:
-                    error.response?.data?.message ||
-                    "No se pudo eliminar la configuración. Por favor intenta nuevamente.",
+                message: errorMessage,
             });
         },
     });
@@ -211,12 +276,13 @@ export const VideoRequirementsConfig = ({
 
                 {/* Is Required Toggle */}
                 <div className="mb-6">
-                    <label className="flex items-center space-x-3 cursor-pointer">
+                    <label className={`flex items-center space-x-3 ${readOnly ? 'cursor-default' : 'cursor-pointer'}`}>
                         <input
                             type="checkbox"
                             checked={isRequired}
                             onChange={(e) => setIsRequired(e.target.checked)}
-                            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                            disabled={readOnly}
+                            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                         <span className="text-sm font-medium text-gray-700">
                             Requerir video introductorio para este proceso
@@ -242,7 +308,8 @@ export const VideoRequirementsConfig = ({
                                 onChange={(e) =>
                                     setMaxDuration(parseInt(e.target.value))
                                 }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                disabled={readOnly}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
                             />
                             <p className="text-xs text-gray-500 mt-1">
                                 El video se detendrá automáticamente al alcanzar esta duración ({Math.floor(maxDuration / 60)}:{String(maxDuration % 60).padStart(2, '0')} minutos)
@@ -259,7 +326,8 @@ export const VideoRequirementsConfig = ({
                                 onChange={(e) => setInstructions(e.target.value)}
                                 rows={4}
                                 placeholder="Ej: Preséntate brevemente, cuéntanos sobre tu experiencia laboral y por qué te interesa esta posición..."
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                disabled={readOnly}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
                             />
                         </div>
 
@@ -287,94 +355,100 @@ export const VideoRequirementsConfig = ({
                                                     Aparece a los {q.displayAtSecond}s
                                                 </p>
                                             </div>
-                                            <button
-                                                onClick={() => removeQuestion(index)}
-                                                className="ml-2 text-red-600 hover:text-red-800"
-                                            >
-                                                ✕
-                                            </button>
+                                            {!readOnly && (
+                                                <button
+                                                    onClick={() => removeQuestion(index)}
+                                                    className="ml-2 text-red-600 hover:text-red-800"
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
                             )}
 
                             {/* Add Question Form */}
-                            <div className="border border-gray-200 rounded-md p-4">
-                                <div className="space-y-3">
-                                    <input
-                                        type="text"
-                                        value={newQuestion.question}
-                                        onChange={(e) =>
-                                            setNewQuestion({
-                                                ...newQuestion,
-                                                question: e.target.value,
-                                            })
-                                        }
-                                        placeholder="Escribe una pregunta..."
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                    <div className="flex items-center space-x-3">
-                                        <label className="text-sm text-gray-700 whitespace-nowrap">
-                                            Mostrar a los:
-                                        </label>
+                            {!readOnly && (
+                                <div className="border border-gray-200 rounded-md p-4">
+                                    <div className="space-y-3">
                                         <input
-                                            type="number"
-                                            min="0"
-                                            max={maxDuration}
-                                            value={newQuestion.displayAtSecond}
+                                            type="text"
+                                            value={newQuestion.question}
                                             onChange={(e) =>
                                                 setNewQuestion({
                                                     ...newQuestion,
-                                                    displayAtSecond: parseInt(
-                                                        e.target.value
-                                                    ),
+                                                    question: e.target.value,
                                                 })
                                             }
-                                            className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Escribe una pregunta..."
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
-                                        <span className="text-sm text-gray-700">
-                                            segundos
-                                        </span>
-                                        <button
-                                            onClick={addQuestion}
-                                            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
-                                        >
-                                            Agregar
-                                        </button>
+                                        <div className="flex items-center space-x-3">
+                                            <label className="text-sm text-gray-700 whitespace-nowrap">
+                                                Mostrar a los:
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max={maxDuration}
+                                                value={newQuestion.displayAtSecond}
+                                                onChange={(e) =>
+                                                    setNewQuestion({
+                                                        ...newQuestion,
+                                                        displayAtSecond: parseInt(
+                                                            e.target.value
+                                                        ),
+                                                    })
+                                                }
+                                                className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <span className="text-sm text-gray-700">
+                                                segundos
+                                            </span>
+                                            <button
+                                                onClick={addQuestion}
+                                                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+                                            >
+                                                Agregar
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </>
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-                    <div>
-                        {existingConfig && (
-                            <button
-                                onClick={handleDelete}
-                                disabled={deleteMutation.isPending}
-                                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
-                            >
-                                {deleteMutation.isPending
-                                    ? "Eliminando..."
-                                    : "Eliminar configuración"}
-                            </button>
-                        )}
+                {!readOnly && (
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                        <div>
+                            {existingConfig && (
+                                <button
+                                    onClick={handleDelete}
+                                    disabled={deleteMutation.isPending}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                                >
+                                    {deleteMutation.isPending
+                                        ? "Eliminando..."
+                                        : "Eliminar configuración"}
+                                </button>
+                            )}
+                        </div>
+                        <button
+                            onClick={handleSave}
+                            disabled={
+                                createMutation.isPending || updateMutation.isPending
+                            }
+                            className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                        >
+                            {createMutation.isPending || updateMutation.isPending
+                                ? "Guardando..."
+                                : "Guardar configuración"}
+                        </button>
                     </div>
-                    <button
-                        onClick={handleSave}
-                        disabled={
-                            createMutation.isPending || updateMutation.isPending
-                        }
-                        className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-                    >
-                        {createMutation.isPending || updateMutation.isPending
-                            ? "Guardando..."
-                            : "Guardar configuración"}
-                    </button>
-                </div>
+                )}
             </div>
 
             {/* Modal */}

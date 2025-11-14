@@ -46,20 +46,26 @@ class VideoService {
 
     async getWorkerVideoStatus(
         workerId: string,
-        processId: string
+        processId: string,
+        workerProcessId?: string
     ): Promise<VideoStatusResponse> {
+        const params = workerProcessId ? { workerProcessId } : {};
         const response = await apiService.get<VideoStatusResponse>(
-            `${this.basePath}/worker/${workerId}/process/${processId}/status`
+            `${this.basePath}/worker/${workerId}/process/${processId}/status`,
+            { params }
         );
         return response.data;
     }
 
     async canAccessTests(
         workerId: string,
-        processId: string
+        processId: string,
+        workerProcessId?: string
     ): Promise<{ canAccess: boolean }> {
+        const params = workerProcessId ? { workerProcessId } : {};
         const response = await apiService.get<{ canAccess: boolean }>(
-            `${this.basePath}/worker/${workerId}/process/${processId}/can-access-tests`
+            `${this.basePath}/worker/${workerId}/process/${processId}/can-access-tests`,
+            { params }
         );
         return response.data;
     }
@@ -73,12 +79,42 @@ class VideoService {
                 `${this.basePath}/worker/${workerId}/process/${processId}`
             );
             return response.data;
-        } catch (error: any) {
-            if (error.response?.status === 404) {
+        } catch (error: unknown) {
+            if (
+                error &&
+                typeof error === 'object' &&
+                'response' in error &&
+                error.response &&
+                typeof error.response === 'object' &&
+                'status' in error.response &&
+                error.response.status === 404
+            ) {
                 return null;
             }
             throw error;
         }
+    }
+
+    getVideoDownloadUrl(videoId: string): string {
+        const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+        return `${API_URL}${this.basePath}/${videoId}/download`;
+    }
+
+    async downloadVideo(videoId: string, filename: string = "video.webm"): Promise<void> {
+        const response = await apiService.get<Blob>(`${this.basePath}/${videoId}/download`, {
+            responseType: "blob",
+        });
+
+        // Create blob link to download
+        const blob = response.data instanceof Blob ? response.data : new Blob([response.data as BlobPart]);
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode?.removeChild(link);
+        window.URL.revokeObjectURL(url);
     }
 }
 

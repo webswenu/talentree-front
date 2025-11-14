@@ -107,7 +107,7 @@ export default function ReportsPage() {
                     title: 'Archivo subido',
                     message: 'El archivo se ha subido exitosamente. Ya puedes aprobar el reporte si es PDF.'
                 });
-            } catch (error) {
+            } catch {
                 setAlertModal({
                     isOpen: true,
                     type: 'error',
@@ -167,7 +167,7 @@ export default function ReportsPage() {
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-        } catch (error) {
+        } catch {
             setAlertModal({
                 isOpen: true,
                 type: 'error',
@@ -181,7 +181,7 @@ export default function ReportsPage() {
         setApproveRejectModal({ isOpen: true, report });
     };
 
-    const handleApprove = async (rejectionReason?: string) => {
+    const handleApprove = async () => {
         if (!approveRejectModal.report) return;
 
         try {
@@ -195,7 +195,7 @@ export default function ReportsPage() {
                 title: 'Reporte aprobado',
                 message: 'El reporte ha sido aprobado exitosamente. La empresa ya puede verlo.'
             });
-        } catch (error) {
+        } catch {
             setAlertModal({
                 isOpen: true,
                 type: 'error',
@@ -222,7 +222,7 @@ export default function ReportsPage() {
                 title: 'Reporte rechazado',
                 message: 'El reporte ha sido rechazado exitosamente.'
             });
-        } catch (error) {
+        } catch {
             setAlertModal({
                 isOpen: true,
                 type: 'error',
@@ -442,6 +442,9 @@ export default function ReportsPage() {
                                 Trabajador
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Fecha
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Acciones
                             </th>
                         </tr>
@@ -449,7 +452,7 @@ export default function ReportsPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                         {filteredReports && filteredReports.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                                     No hay reportes con el filtro seleccionado
                                 </td>
                             </tr>
@@ -495,6 +498,15 @@ export default function ReportsPage() {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {report.worker
                                         ? `${report.worker.firstName} ${report.worker.lastName}`
+                                        : "-"}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {report.createdAt
+                                        ? new Date(report.createdAt).toLocaleDateString('es-CL', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                        })
                                         : "-"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

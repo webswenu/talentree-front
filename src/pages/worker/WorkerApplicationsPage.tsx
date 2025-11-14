@@ -30,9 +30,6 @@ export const WorkerApplicationsPage = () => {
         inProcess:
             applications?.filter((app) => app.status === "in_process").length ||
             0,
-        approved:
-            applications?.filter((app) => app.status === "approved").length ||
-            0,
     };
 
     return (
@@ -41,7 +38,7 @@ export const WorkerApplicationsPage = () => {
                 Mis Postulaciones
             </h1>
 
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-3 gap-4">
                 <div className="bg-white p-4 rounded-lg shadow">
                     <p className="text-gray-500 text-sm">Total</p>
                     <p className="text-2xl font-bold text-gray-800">
@@ -58,12 +55,6 @@ export const WorkerApplicationsPage = () => {
                     <p className="text-gray-500 text-sm">En Proceso</p>
                     <p className="text-2xl font-bold text-blue-600">
                         {stats.inProcess}
-                    </p>
-                </div>
-                <div className="bg-white p-4 rounded-lg shadow">
-                    <p className="text-gray-500 text-sm">Aprobadas</p>
-                    <p className="text-2xl font-bold text-green-600">
-                        {stats.approved}
                     </p>
                 </div>
             </div>
@@ -86,9 +77,6 @@ export const WorkerApplicationsPage = () => {
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Estado
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Puntaje
                             </th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Acciones
@@ -131,12 +119,6 @@ export const WorkerApplicationsPage = () => {
                                             {WorkerStatusLabels[app.status]}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {app.totalScore !== null &&
-                                        app.totalScore !== undefined
-                                            ? `${app.totalScore}%`
-                                            : "-"}
-                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <button
                                             onClick={() =>
@@ -154,7 +136,7 @@ export const WorkerApplicationsPage = () => {
                         ) : (
                             <tr>
                                 <td
-                                    colSpan={7}
+                                    colSpan={6}
                                     className="px-6 py-12 text-center text-gray-500"
                                 >
                                     No tienes postulaciones activas.{" "}

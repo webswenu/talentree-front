@@ -12,9 +12,11 @@ import {
     ReportStatus,
     ReportStatusLabels,
     ReportStatusColors,
+    ReportType,
     ReportTypeLabels,
     ReportTypeColors,
 } from "../../types/report.types";
+import { toast } from "../../utils/toast";
 import {
     useDownloadReportFile,
 } from "../../hooks/useReports";
@@ -29,17 +31,29 @@ export const CompanyWorkerDetailPage = () => {
         return "/empresa";
     };
 
+    // Get company ID from user
+    const userCompanyId = user?.company?.id || user?.belongsToCompany?.id;
+
     const { data: worker, isLoading } = useQuery({
         queryKey: ["worker", id],
         queryFn: () => workersService.getById(id!),
         enabled: !!id,
     });
 
-    const { data: reports = [] } = useQuery({
+    const { data: allReports = [] } = useQuery({
         queryKey: ["worker-reports", id],
         queryFn: () => reportsService.findByWorker(id!),
         enabled: !!id,
     });
+
+    // Filter processes and reports by company
+    const filteredWorkerProcesses = userCompanyId
+        ? worker?.workerProcesses?.filter(wp => wp.process?.company?.id === userCompanyId)
+        : worker?.workerProcesses;
+
+    const reports = userCompanyId
+        ? allReports.filter(report => report.process?.company?.id === userCompanyId)
+        : allReports;
 
     const downloadMutation = useDownloadReportFile();
 
@@ -101,7 +115,7 @@ export const CompanyWorkerDetailPage = () => {
                         Postulaciones
                     </p>
                     <p className="text-3xl font-bold text-gray-900 mt-2">
-                        {worker.workerProcesses?.length || 0}
+                        {filteredWorkerProcesses?.length || 0}
                     </p>
                 </div>
                 <div className="bg-white rounded-lg shadow p-6">
@@ -245,7 +259,7 @@ export const CompanyWorkerDetailPage = () => {
             )}
 
             {/* Procesos */}
-            {worker.workerProcesses && worker.workerProcesses.length > 0 && (
+            {filteredWorkerProcesses && filteredWorkerProcesses.length > 0 && (
                 <div className="bg-white rounded-lg shadow p-6">
                     <h2 className="text-lg font-semibold mb-6">
                         Procesos de Selección
@@ -272,9 +286,9 @@ export const CompanyWorkerDetailPage = () => {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {worker.workerProcesses.map((wp) => {
+                                {filteredWorkerProcesses.map((wp) => {
                                     const processReports = reports.filter(
-                                        (r) => r.processId === wp.process?.id
+                                        (r) => r.process?.id === wp.process?.id
                                     );
                                     return (
                                         <tr
@@ -406,7 +420,7 @@ export const CompanyWorkerDetailPage = () => {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {reports.map((report: any) => (
+                                {reports.map((report) => (
                                     <tr key={report.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4">
                                             <div className="text-sm font-medium text-gray-900">
@@ -422,7 +436,7 @@ export const CompanyWorkerDetailPage = () => {
                                             {report.process ? (
                                                 <button
                                                     onClick={() =>
-                                                        navigate(`${getBaseUrl()}/procesos/${report.process.id}`)
+                                                        navigate(`${getBaseUrl()}/procesos/${report.process?.id || ''}`)
                                                     }
                                                     className="text-sm text-blue-600 hover:text-blue-900"
                                                 >
@@ -444,10 +458,10 @@ export const CompanyWorkerDetailPage = () => {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span
                                                 className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                                    ReportTypeColors[report.type]
+                                                    ReportTypeColors[report.type as ReportType]
                                                 }`}
                                             >
-                                                {ReportTypeLabels[report.type]}
+                                                {ReportTypeLabels[report.type as ReportType]}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -459,7 +473,7 @@ export const CompanyWorkerDetailPage = () => {
                                                     <button
                                                         onClick={async () => {
                                                             try {
-                                                                const blob = await downloadMutation.mutateAsync(report.id);
+                                                                const blob = await downloadMutation.mutateAsync({ id: report.id });
                                                                 const url = window.URL.createObjectURL(blob);
                                                                 const a = document.createElement("a");
                                                                 a.href = url;
@@ -468,8 +482,8 @@ export const CompanyWorkerDetailPage = () => {
                                                                 a.click();
                                                                 window.URL.revokeObjectURL(url);
                                                                 document.body.removeChild(a);
-                                                            } catch (error) {
-                                                                alert("Error al descargar archivo");
+                                                            } catch {
+                                                                toast.error("Error al descargar archivo");
                                                             }
                                                         }}
                                                         disabled={downloadMutation.isPending}

@@ -12,6 +12,10 @@ import {
     WorkerStatusColors,
 } from "../../types/worker.types";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { videoService } from "../../services/video.service";
+import { VideoRequirementsConfig } from "../../components/admin/VideoRequirementsConfig";
+import { WorkerVideoRequirement } from "../../types/video.types";
+import { toast } from "../../utils/toast";
 
 export const EvaluatorProcessDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -28,7 +32,7 @@ export const EvaluatorProcessDetailPage = () => {
     const updateStatusMutation = useUpdateWorkerProcessStatus();
 
     const [activeTab, setActiveTab] = useState<
-        "info" | "candidates" | "pending"
+        "info" | "candidates" | "pending" | "video"
     >("candidates");
     type CandidateType = {
         id: string;
@@ -43,6 +47,29 @@ export const EvaluatorProcessDetailPage = () => {
     const [newStatus, setNewStatus] = useState<WorkerStatus | null>(null);
     const [isConfirmStatusOpen, setIsConfirmStatusOpen] = useState(false);
     const [statusNotes, setStatusNotes] = useState("");
+    const [selectedVideo, setSelectedVideo] = useState<{ videoId: string; processName: string; videoUrl: string; workerName: string } | null>(null);
+    const [downloadingVideo, setDownloadingVideo] = useState(false);
+
+    // Get videos for each candidate
+    const { data: videos = {} } = useQuery({
+        queryKey: ["process-videos", id, candidates?.map(c => c.worker?.id)],
+        queryFn: async () => {
+            if (!candidates || !id) return {};
+            const videoPromises = candidates.map(async (candidate) => {
+                if (!candidate.worker?.id) return null;
+                const video = await videoService.getWorkerVideoForProcess(candidate.worker.id, id);
+                return { workerId: candidate.worker.id, video };
+            });
+            const results = await Promise.all(videoPromises);
+            return results.reduce((acc, result) => {
+                if (result && result.video) {
+                    acc[result.workerId] = result.video;
+                }
+                return acc;
+            }, {} as Record<string, WorkerVideoRequirement>);
+        },
+        enabled: !!candidates && !!id,
+    });
 
     const handleStatusChange = (
         candidate: CandidateType,
@@ -69,8 +96,8 @@ export const EvaluatorProcessDetailPage = () => {
             setSelectedCandidate(null);
             setNewStatus(null);
             setStatusNotes("");
-        } catch (err) {
-            console.error(err);
+        } catch {
+            // Error handled silently or by mutation error handler
         }
     };
 
@@ -90,7 +117,7 @@ export const EvaluatorProcessDetailPage = () => {
             candidates?.filter((c) => c.status === WorkerStatus.IN_PROCESS)
                 .length || 0,
         approved:
-            candidates?.filter((c) => c.status === WorkerStatus.APPROVED)
+            candidates?.filter((c) => c.status === WorkerStatus.COMPLETED || c.status === WorkerStatus.APPROVED)
                 .length || 0,
         rejected:
             candidates?.filter((c) => c.status === WorkerStatus.REJECTED)
@@ -136,7 +163,7 @@ export const EvaluatorProcessDetailPage = () => {
                 </div>
                 <div className="bg-white rounded-lg shadow p-4">
                     <h3 className="text-sm font-medium text-gray-500">
-                        Aprobados
+                        Completados
                     </h3>
                     <p className="text-2xl font-bold text-green-600 mt-2">
                         {stats.approved}
@@ -181,6 +208,16 @@ export const EvaluatorProcessDetailPage = () => {
                         Pendientes ({stats.pending})
                     </button>
                     <button
+                        onClick={() => setActiveTab("video")}
+                        className={`py-4 px-1 text-sm font-medium ${
+                            activeTab === "video"
+                                ? "border-b-2 border-blue-500 text-blue-600"
+                                : "text-gray-500 hover:text-gray-700"
+                        }`}
+                    >
+                        Video
+                    </button>
+                    <button
                         onClick={() => setActiveTab("info")}
                         className={`py-4 px-1 text-sm font-medium ${
                             activeTab === "info"
@@ -192,6 +229,12 @@ export const EvaluatorProcessDetailPage = () => {
                     </button>
                 </nav>
             </div>
+
+            {activeTab === "video" && (
+                <div className="mt-6">
+                    <VideoRequirementsConfig processId={id!} readOnly={true} />
+                </div>
+            )}
 
             {activeTab === "info" && (
                 <div className="bg-white rounded-lg shadow p-6">
@@ -254,6 +297,9 @@ export const EvaluatorProcessDetailPage = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Puntaje
                                 </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Video
+                                </th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Acciones
                                 </th>
@@ -263,7 +309,7 @@ export const EvaluatorProcessDetailPage = () => {
                             {candidatesLoading ? (
                                 <tr>
                                     <td
-                                        colSpan={5}
+                                        colSpan={6}
                                         className="px-6 py-12 text-center text-gray-500"
                                     >
                                         Cargando candidatos...
@@ -329,6 +375,23 @@ export const EvaluatorProcessDetailPage = () => {
                                                     ? `${candidate.totalScore}%`
                                                     : "-"}
                                             </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                {candidate.worker?.id && videos[candidate.worker.id] ? (
+                                                    <button
+                                                        onClick={() => setSelectedVideo({
+                                                            videoId: videos[candidate.worker.id].id,
+                                                            processName: process?.name || "Proceso",
+                                                            videoUrl: videos[candidate.worker.id].videoUrl,
+                                                            workerName: `${candidate.worker.firstName} ${candidate.worker.lastName}`
+                                                        })}
+                                                        className="text-green-600 hover:text-green-900"
+                                                    >
+                                                        🎥 Ver Video
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-gray-400">-</span>
+                                                )}
+                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                                 {candidate.status ===
                                                     WorkerStatus.IN_PROCESS && (
@@ -386,7 +449,7 @@ export const EvaluatorProcessDetailPage = () => {
                             ) : (
                                 <tr>
                                     <td
-                                        colSpan={5}
+                                        colSpan={6}
                                         className="px-6 py-12 text-center text-gray-500"
                                     >
                                         {activeTab === "pending"
@@ -437,6 +500,108 @@ export const EvaluatorProcessDetailPage = () => {
                 cancelText="Cancelar"
                 isLoading={updateStatusMutation.isPending}
             />
+
+            {selectedVideo && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+                    onClick={() => setSelectedVideo(null)}
+                >
+                    <div
+                        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-semibold text-gray-900">
+                                    Video - {selectedVideo.workerName}
+                                </h3>
+                                <button
+                                    onClick={() => setSelectedVideo(null)}
+                                    className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                                >
+                                    ×
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="bg-gray-100 rounded-lg overflow-hidden">
+                                    <video
+                                        controls
+                                        className="w-full"
+                                        src={selectedVideo.videoUrl}
+                                        style={{ maxHeight: "500px" }}
+                                    >
+                                        Tu navegador no soporta el elemento de video.
+                                    </video>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={async () => {
+                                            setDownloadingVideo(true);
+                                            try {
+                                                await videoService.downloadVideo(
+                                                    selectedVideo.videoId,
+                                                    `video-${selectedVideo.workerName.replace(/\s+/g, "-")}.webm`
+                                                );
+                                            } catch {
+                                                toast.error("Error al descargar el video");
+                                            } finally {
+                                                setDownloadingVideo(false);
+                                            }
+                                        }}
+                                        disabled={downloadingVideo}
+                                        className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                                            downloadingVideo
+                                                ? "bg-blue-400 cursor-not-allowed"
+                                                : "bg-blue-600 hover:bg-blue-700"
+                                        } text-white`}
+                                    >
+                                        {downloadingVideo ? (
+                                            <span className="flex items-center justify-center gap-2">
+                                                <svg
+                                                    className="animate-spin h-5 w-5 text-white"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <circle
+                                                        className="opacity-25"
+                                                        cx="12"
+                                                        cy="12"
+                                                        r="10"
+                                                        stroke="currentColor"
+                                                        strokeWidth="4"
+                                                    ></circle>
+                                                    <path
+                                                        className="opacity-75"
+                                                        fill="currentColor"
+                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                    ></path>
+                                                </svg>
+                                                Descargando...
+                                            </span>
+                                        ) : (
+                                            "📥 Descargar Video"
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectedVideo(null)}
+                                        disabled={downloadingVideo}
+                                        className={`px-4 py-2 border border-gray-300 rounded-lg font-medium transition-colors ${
+                                            downloadingVideo
+                                                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                                : "bg-white text-gray-700 hover:bg-gray-50"
+                                        }`}
+                                    >
+                                        Cerrar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

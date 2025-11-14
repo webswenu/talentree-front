@@ -1,7 +1,10 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { workersService } from "../../services/workers.service";
 import { reportsService } from "../../services/reports.service";
+import { videoService } from "../../services/video.service";
+import { useAuthStore } from "../../store/authStore";
 import {
     WorkerStatus,
     WorkerStatusLabels,
@@ -11,11 +14,13 @@ import {
     ReportStatus,
     ReportStatusLabels,
     ReportStatusColors,
+    ReportType,
     ReportTypeLabels,
     ReportTypeColors,
 } from "../../types/report.types";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { toast } from "../../utils/toast";
 import {
-    useUploadReportFile,
     useDownloadReportFile,
     useApproveReport,
 } from "../../hooks/useReports";
@@ -24,9 +29,22 @@ export const WorkerDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const location = useLocation();
+    const [selectedVideo, setSelectedVideo] = useState<{ videoId: string; processName: string; videoUrl: string } | null>(null);
+    const [downloadingVideo, setDownloadingVideo] = useState(false);
+    const [rejectModal, setRejectModal] = useState<{ isOpen: boolean; reportId: string | null }>({ isOpen: false, reportId: null });
+    const [rejectionReason, setRejectionReason] = useState("");
+    const [approveModal, setApproveModal] = useState<{ isOpen: boolean; reportId: string | null }>({ isOpen: false, reportId: null });
 
-    // Detect if in admin or evaluador
-    const baseRoute = location.pathname.includes("/evaluador") ? "/evaluador" : "/admin";
+    // Detect user role and route
+    const { user } = useAuthStore();
+    const isEvaluator = location.pathname.includes("/evaluador");
+    const isCompany = location.pathname.includes("/empresa");
+    const isGuest = location.pathname.includes("/invitado");
+    const baseRoute = isEvaluator ? "/evaluador" : isCompany ? "/empresa" : isGuest ? "/invitado" : "/admin";
+    const isAdmin = !isEvaluator && !isCompany && !isGuest;
+
+    // Get company ID if user is company or guest
+    const userCompanyId = user?.company?.id || user?.belongsToCompany?.id;
 
     const { data: worker, isLoading } = useQuery({
         queryKey: ["worker", id],
@@ -34,13 +52,42 @@ export const WorkerDetailPage = () => {
         enabled: !!id,
     });
 
-    const { data: reports = [] } = useQuery({
+    const { data: allReports = [] } = useQuery({
         queryKey: ["worker-reports", id],
         queryFn: () => reportsService.findByWorker(id!),
         enabled: !!id,
     });
 
-    const uploadMutation = useUploadReportFile();
+    // Filter processes and reports by company if user is company/guest
+    const filteredWorkerProcesses = (isCompany || isGuest) && userCompanyId
+        ? worker?.workerProcesses?.filter(wp => wp.process?.company?.id === userCompanyId)
+        : worker?.workerProcesses;
+
+    const reports = (isCompany || isGuest) && userCompanyId
+        ? allReports.filter(report => report.process?.company?.id === userCompanyId)
+        : allReports;
+
+    // Get videos for each process
+    const { data: videos = {} } = useQuery({
+        queryKey: ["worker-videos", id, filteredWorkerProcesses?.map(wp => wp.process?.id)],
+        queryFn: async () => {
+            if (!filteredWorkerProcesses || !id) return {};
+            const videoPromises = filteredWorkerProcesses.map(async (wp) => {
+                if (!wp.process?.id) return null;
+                const video = await videoService.getWorkerVideoForProcess(id, wp.process.id);
+                return { processId: wp.process.id, video };
+            });
+            const results = await Promise.all(videoPromises);
+            return results.reduce((acc, result) => {
+                if (result && result.video) {
+                    acc[result.processId] = result.video;
+                }
+                return acc;
+            }, {} as Record<string, { id: string; videoUrl: string }>);
+        },
+        enabled: !!filteredWorkerProcesses && !!id,
+    });
+
     const downloadMutation = useDownloadReportFile();
     const approveMutation = useApproveReport();
 
@@ -102,7 +149,7 @@ export const WorkerDetailPage = () => {
                         Postulaciones
                     </p>
                     <p className="text-3xl font-bold text-gray-900 mt-2">
-                        {worker.workerProcesses?.length || 0}
+                        {filteredWorkerProcesses?.length || 0}
                     </p>
                 </div>
                 <div className="bg-white rounded-lg shadow p-6">
@@ -246,7 +293,7 @@ export const WorkerDetailPage = () => {
             )}
 
             {/* Procesos */}
-            {worker.workerProcesses && worker.workerProcesses.length > 0 && (
+            {filteredWorkerProcesses && filteredWorkerProcesses.length > 0 && (
                 <div className="bg-white rounded-lg shadow p-6">
                     <h2 className="text-lg font-semibold mb-6">
                         Procesos de Selección
@@ -265,18 +312,12 @@ export const WorkerDetailPage = () => {
                                         Fecha de Aplicación
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Reportes
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                         Acciones
                                     </th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {worker.workerProcesses.map((wp) => {
-                                    const processReports = reports.filter(
-                                        (r) => r.processId === wp.process?.id
-                                    );
+                                {filteredWorkerProcesses.map((wp) => {
                                     return (
                                         <tr
                                             key={wp.id}
@@ -318,52 +359,35 @@ export const WorkerDetailPage = () => {
                                                       )
                                                     : "-"}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {processReports.length > 0 ? (
-                                                    <div className="flex flex-col gap-1">
-                                                        {processReports.map(
-                                                            (report) => (
-                                                                <a
-                                                                    key={
-                                                                        report.id
-                                                                    }
-                                                                    href={
-                                                                        report.fileUrl ||
-                                                                        "#"
-                                                                    }
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                                                                >
-                                                                    <span>
-                                                                        📄
-                                                                    </span>
-                                                                    {
-                                                                        report.title
-                                                                    }
-                                                                </a>
-                                                            )
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-xs text-gray-400">
-                                                        Sin reportes
-                                                    </span>
-                                                )}
-                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                {wp.process && (
-                                                    <button
-                                                        onClick={() =>
-                                                            navigate(
-                                                                `${baseRoute}/procesos/${wp.process.id}`
-                                                            )
-                                                        }
-                                                        className="text-blue-600 hover:text-blue-900"
-                                                    >
-                                                        Ver Proceso
-                                                    </button>
-                                                )}
+                                                <div className="flex gap-3">
+                                                    {wp.process && (
+                                                        <button
+                                                            onClick={() =>
+                                                                navigate(
+                                                                    `${baseRoute}/procesos/${wp.process.id}`
+                                                                )
+                                                            }
+                                                            className="text-blue-600 hover:text-blue-900"
+                                                        >
+                                                            Ver Proceso
+                                                        </button>
+                                                    )}
+                                                    {wp.process?.id && videos[wp.process.id] && (
+                                                        <button
+                                                            onClick={() =>
+                                                                setSelectedVideo({
+                                                                    videoId: videos[wp.process.id].id,
+                                                                    processName: wp.process.name || "Proceso",
+                                                                    videoUrl: videos[wp.process.id].videoUrl
+                                                                })
+                                                            }
+                                                            className="text-green-600 hover:text-green-900"
+                                                        >
+                                                            🎥 Ver Video
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -407,7 +431,7 @@ export const WorkerDetailPage = () => {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {reports.map((report: any) => (
+                                {reports.map((report) => (
                                     <tr key={report.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4">
                                             <div className="text-sm font-medium text-gray-900">
@@ -423,7 +447,7 @@ export const WorkerDetailPage = () => {
                                             {report.process ? (
                                                 <button
                                                     onClick={() =>
-                                                        navigate(`/admin/procesos/${report.process.id}`)
+                                                        navigate(`/admin/procesos/${report.process?.id}`)
                                                     }
                                                     className="text-sm text-blue-600 hover:text-blue-900"
                                                 >
@@ -445,10 +469,10 @@ export const WorkerDetailPage = () => {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span
                                                 className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                                    ReportTypeColors[report.type]
+                                                    ReportTypeColors[report.type as ReportType]
                                                 }`}
                                             >
-                                                {ReportTypeLabels[report.type]}
+                                                {ReportTypeLabels[report.type as ReportType]}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -456,21 +480,30 @@ export const WorkerDetailPage = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div className="flex gap-2">
-                                                {report.fileUrl && (
+                                                {(report.pdfFileUrl || report.docxFileUrl) && (
                                                     <button
                                                         onClick={async () => {
                                                             try {
-                                                                const blob = await downloadMutation.mutateAsync(report.id);
+                                                                // Prefer PDF over DOCX
+                                                                const format = report.pdfFileUrl ? 'pdf' : 'docx';
+                                                                const fileName = report.pdfFileUrl
+                                                                    ? (report.pdfFileName || `reporte-${report.id}.pdf`)
+                                                                    : (report.docxFileName || `reporte-${report.id}.docx`);
+
+                                                                const blob = await downloadMutation.mutateAsync({
+                                                                    id: report.id,
+                                                                    format
+                                                                });
                                                                 const url = window.URL.createObjectURL(blob);
                                                                 const a = document.createElement("a");
                                                                 a.href = url;
-                                                                a.download = report.fileName || `reporte-${report.id}.pdf`;
+                                                                a.download = fileName;
                                                                 document.body.appendChild(a);
                                                                 a.click();
                                                                 window.URL.revokeObjectURL(url);
                                                                 document.body.removeChild(a);
-                                                            } catch (error) {
-                                                                alert("Error al descargar archivo");
+                                                            } catch {
+                                                                toast.error("Error al descargar archivo");
                                                             }
                                                         }}
                                                         disabled={downloadMutation.isPending}
@@ -479,25 +512,11 @@ export const WorkerDetailPage = () => {
                                                         Descargar
                                                     </button>
                                                 )}
-                                                {report.status === ReportStatus.PENDING_APPROVAL && (
+                                                {isAdmin && report.status === ReportStatus.PENDING_APPROVAL && (
                                                     <>
                                                         <button
-                                                            onClick={async () => {
-                                                                if (
-                                                                    window.confirm(
-                                                                        "¿Estás seguro de aprobar este reporte? La empresa podrá verlo."
-                                                                    )
-                                                                ) {
-                                                                    try {
-                                                                        await approveMutation.mutateAsync({
-                                                                            id: report.id,
-                                                                            data: { status: ReportStatus.APPROVED },
-                                                                        });
-                                                                        alert("Reporte aprobado exitosamente");
-                                                                    } catch (error) {
-                                                                        alert("Error al aprobar reporte");
-                                                                    }
-                                                                }
+                                                            onClick={() => {
+                                                                setApproveModal({ isOpen: true, reportId: report.id });
                                                             }}
                                                             disabled={approveMutation.isPending}
                                                             className="text-green-600 hover:text-green-900 disabled:opacity-50"
@@ -505,24 +524,9 @@ export const WorkerDetailPage = () => {
                                                             Aprobar
                                                         </button>
                                                         <button
-                                                            onClick={async () => {
-                                                                const reason = window.prompt(
-                                                                    "Ingrese el motivo del rechazo (opcional):"
-                                                                );
-                                                                if (reason !== null) {
-                                                                    try {
-                                                                        await approveMutation.mutateAsync({
-                                                                            id: report.id,
-                                                                            data: {
-                                                                                status: ReportStatus.REJECTED,
-                                                                                rejectionReason: reason,
-                                                                            },
-                                                                        });
-                                                                        alert("Reporte rechazado");
-                                                                    } catch (error) {
-                                                                        alert("Error al rechazar reporte");
-                                                                    }
-                                                                }
+                                                            onClick={() => {
+                                                                setRejectModal({ isOpen: true, reportId: report.id });
+                                                                setRejectionReason("");
                                                             }}
                                                             disabled={approveMutation.isPending}
                                                             className="text-red-600 hover:text-red-900 disabled:opacity-50"
@@ -544,6 +548,205 @@ export const WorkerDetailPage = () => {
                     </p>
                 )}
             </div>
+
+            {/* Video Modal */}
+            {selectedVideo && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+                    onClick={() => setSelectedVideo(null)}
+                >
+                    <div
+                        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-semibold text-gray-900">
+                                    Video - {selectedVideo.processName}
+                                </h3>
+                                <button
+                                    onClick={() => setSelectedVideo(null)}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="bg-gray-100 rounded-lg overflow-hidden">
+                                    <video
+                                        controls
+                                        className="w-full"
+                                        src={selectedVideo.videoUrl}
+                                        style={{ maxHeight: '500px' }}
+                                    >
+                                        Tu navegador no soporta el elemento de video.
+                                    </video>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={async () => {
+                                            setDownloadingVideo(true);
+                                            try {
+                                                await videoService.downloadVideo(
+                                                    selectedVideo.videoId,
+                                                    `video-${selectedVideo.processName.replace(/\s+/g, '-')}.webm`
+                                                );
+                                            } catch {
+                                                toast.error('Error al descargar el video');
+                                            } finally {
+                                                setDownloadingVideo(false);
+                                            }
+                                        }}
+                                        disabled={downloadingVideo}
+                                        className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                                            downloadingVideo
+                                                ? 'bg-blue-400 cursor-not-allowed'
+                                                : 'bg-blue-600 hover:bg-blue-700'
+                                        } text-white`}
+                                    >
+                                        {downloadingVideo ? (
+                                            <span className="flex items-center justify-center gap-2">
+                                                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Descargando...
+                                            </span>
+                                        ) : (
+                                            '📥 Descargar Video'
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectedVideo(null)}
+                                        disabled={downloadingVideo}
+                                        className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                                            downloadingVideo
+                                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                        }`}
+                                    >
+                                        Cerrar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Rechazo de Reporte */}
+            {rejectModal.isOpen && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+                    onClick={() => {
+                        setRejectModal({ isOpen: false, reportId: null });
+                        setRejectionReason("");
+                    }}
+                >
+                    <div
+                        className="bg-white rounded-lg shadow-xl max-w-md w-full"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-semibold text-gray-900">
+                                    Rechazar Reporte
+                                </h3>
+                                <button
+                                    onClick={() => {
+                                        setRejectModal({ isOpen: false, reportId: null });
+                                        setRejectionReason("");
+                                    }}
+                                    className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                                >
+                                    ×
+                                </button>
+                            </div>
+
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Motivo del rechazo (opcional):
+                                </label>
+                                <textarea
+                                    value={rejectionReason}
+                                    onChange={(e) => setRejectionReason(e.target.value)}
+                                    rows={4}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                    placeholder="Explica el motivo del rechazo del reporte..."
+                                />
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setRejectModal({ isOpen: false, reportId: null });
+                                        setRejectionReason("");
+                                    }}
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        if (!rejectModal.reportId) return;
+
+                                        try {
+                                            await approveMutation.mutateAsync({
+                                                id: rejectModal.reportId,
+                                                data: {
+                                                    status: ReportStatus.REJECTED,
+                                                    rejectionReason: rejectionReason || undefined,
+                                                },
+                                            });
+                                            setRejectModal({ isOpen: false, reportId: null });
+                                            setRejectionReason("");
+                                            toast.success("Reporte rechazado exitosamente");
+                                        } catch {
+                                            toast.error("Error al rechazar el reporte");
+                                        }
+                                    }}
+                                    disabled={approveMutation.isPending}
+                                    className={`flex-1 px-4 py-2 rounded-lg text-white font-medium transition-colors ${
+                                        approveMutation.isPending
+                                            ? 'bg-red-400 cursor-not-allowed'
+                                            : 'bg-red-600 hover:bg-red-700'
+                                    }`}
+                                >
+                                    {approveMutation.isPending ? 'Rechazando...' : 'Rechazar Reporte'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Confirmación de Aprobación */}
+            <ConfirmModal
+                isOpen={approveModal.isOpen}
+                onClose={() => setApproveModal({ isOpen: false, reportId: null })}
+                onConfirm={async () => {
+                    if (!approveModal.reportId) return;
+                    try {
+                        await approveMutation.mutateAsync({
+                            id: approveModal.reportId,
+                            data: { status: ReportStatus.APPROVED },
+                        });
+                        setApproveModal({ isOpen: false, reportId: null });
+                        toast.success("Reporte aprobado exitosamente");
+                    } catch {
+                        toast.error("Error al aprobar reporte");
+                    }
+                }}
+                title="Aprobar Reporte"
+                message="¿Estás seguro de aprobar este reporte? La empresa podrá verlo."
+                confirmText="Aprobar"
+                cancelText="Cancelar"
+                isLoading={approveMutation.isPending}
+            />
         </div>
     );
 };

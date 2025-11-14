@@ -1,9 +1,32 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTestResponse, useSubmitTest } from "../../hooks/useTestResponses";
-import { QuestionType } from "../../types/test.types";
-import { SubmitAnswerDto } from "../../types/test-response.types";
-import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { QuestionType, FixedTest } from "../../types/test.types";
+import { SubmitAnswerDto, TestResponse } from "../../types/test-response.types";
+
+interface ExtendedTestResponse extends TestResponse {
+    fixedTest?: FixedTest & {
+        questions?: Array<{
+            id: string;
+            questionText: string;
+            questionType: QuestionType;
+            questionNumber: number;
+            options?: unknown;
+        }>;
+    };
+}
+
+interface FixedTestQuestion {
+    id: string;
+    questionText: string;
+    questionType: QuestionType;
+    questionNumber: number;
+    options?: unknown;
+    question?: string;
+    text?: string;
+    type?: QuestionType;
+    order?: number;
+}
 
 export const WorkerTestTakingPage = () => {
     const { testResponseId } = useParams<{ testResponseId: string }>();
@@ -11,7 +34,7 @@ export const WorkerTestTakingPage = () => {
 
     const { data: testResponse, isLoading } = useTestResponse(
         testResponseId || ""
-    );
+    ) as { data?: ExtendedTestResponse; isLoading: boolean };
     const submitMutation = useSubmitTest();
 
     const [currentQuestion, setCurrentQuestion] = useState(() => {
@@ -20,34 +43,35 @@ export const WorkerTestTakingPage = () => {
         return saved ? parseInt(saved, 10) : 0;
     });
     const [answers, setAnswers] = useState<
-        Record<string, string | string[] | number | null>
+        Record<string, string | string[] | number | Record<string, unknown> | null>
     >({});
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
-    const [isConfirmSubmitOpen, setIsConfirmSubmitOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Support both regular tests and fixed tests
-    const isFixedTest = !!testResponse?.fixedTest;
-    const testData = isFixedTest ? testResponse?.fixedTest : testResponse?.test;
+    const isFixedTest = !!(testResponse as ExtendedTestResponse)?.fixedTest;
+    const testData = isFixedTest 
+        ? (testResponse as ExtendedTestResponse)?.fixedTest 
+        : testResponse?.test;
 
     const questions = useMemo(() => {
         if (isFixedTest) {
             // For fixed tests, questions come from fixedTest.questions
-            const fixedQuestions = testResponse?.fixedTest?.questions || [];
+            const fixedQuestions = (testResponse as ExtendedTestResponse)?.fixedTest?.questions || [];
             // Normalize fixed test questions to match regular test question structure
-            return fixedQuestions.map((q: any) => {
+            return fixedQuestions.map((q: FixedTestQuestion) => {
                 // Normalize options based on question type
-                let normalizedOptions = q.options;
+                let normalizedOptions: unknown = q.options;
 
-                if (q.questionType === 'forced_choice') {
-                    // For DISC test - keep the structure as is
+                if (q.questionType === QuestionType.FORCED_CHOICE || q.questionType === QuestionType.TABLE_CHECKBOX) {
+                    // For DISC test and IC test - keep the structure as is
                     normalizedOptions = q.options;
                 } else if (q.options && typeof q.options === 'object' && !Array.isArray(q.options)) {
                     // For objects like {A: "Si", B: "No", C: "Tal vez"}
                     // Convert to array format, excluding 'scoring' key
-                    normalizedOptions = Object.entries(q.options)
+                    normalizedOptions = Object.entries(q.options as Record<string, unknown>)
                         .filter(([key]) => key !== 'scoring' && key !== 'format')
-                        .map(([key, value]) => value);
+                        .map(([, value]) => value);
                 }
 
                 return {
@@ -84,7 +108,7 @@ export const WorkerTestTakingPage = () => {
             .filter((q) => answers[q.id] !== null && answers[q.id] !== undefined)
             .map((q) => ({
                 questionId: q.id,
-                answer: answers[q.id],
+                answer: answers[q.id] as string | string[] | number | null,
             }));
 
         try {
@@ -95,23 +119,16 @@ export const WorkerTestTakingPage = () => {
             // Clean up progress from localStorage after successful submit
             localStorage.removeItem(`test_progress_${testResponseId}`);
             navigate(`/trabajador/resultados/${testResponseId}`);
-        } catch (err) {
-            console.error("Error submitting test:", err);
+        } catch {
             setIsSubmitting(false);
         }
     }, [testResponseId, questions, answers, submitMutation, navigate, isSubmitting]);
-
-    const handleAutoSubmit = useCallback(async () => {
-        if (!isSubmitting) {
-            await handleSubmit();
-        }
-    }, [handleSubmit, isSubmitting]);
 
     useEffect(() => {
         if (!testData?.duration || testResponse?.isCompleted) return;
 
         const duration = testData.duration * 60;
-        const startedAt = testResponse.startedAt
+        const startedAt = testResponse?.startedAt
             ? new Date(testResponse.startedAt).getTime()
             : Date.now();
         const elapsed = Math.floor((Date.now() - startedAt) / 1000);
@@ -119,11 +136,19 @@ export const WorkerTestTakingPage = () => {
 
         setTimeLeft(remaining);
 
+        // Don't auto-submit if timer is already at 0 when component mounts
+        if (remaining <= 0) {
+            return;
+        }
+
         const interval = setInterval(() => {
             setTimeLeft((prev) => {
-                if (prev === null || prev <= 0) {
+                if (prev === null || prev <= 1) {
                     clearInterval(interval);
-                    handleAutoSubmit();
+                    // Only auto-submit when timer naturally reaches 0
+                    if (prev === 1 && !isSubmitting) {
+                        handleSubmit();
+                    }
                     return 0;
                 }
                 return prev - 1;
@@ -131,7 +156,7 @@ export const WorkerTestTakingPage = () => {
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [testResponse, testData, handleAutoSubmit]);
+    }, [testResponse, testData, handleSubmit, isSubmitting]);
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -140,7 +165,7 @@ export const WorkerTestTakingPage = () => {
     };
 
     const handleAnswerChange = (
-        value: string | string[] | number | null
+        value: string | string[] | number | Record<string, unknown> | null
     ) => {
         setAnswers((prev) => ({
             ...prev,
@@ -154,17 +179,45 @@ export const WorkerTestTakingPage = () => {
         }
     };
 
+    // Check if current question is answered
+    const isCurrentQuestionAnswered = () => {
+        const currentAnswer = answers[currentQ?.id];
+
+        if (!currentAnswer) return false;
+
+        if (currentQ.type === QuestionType.FORCED_CHOICE) {
+            // For forced choice, need both mas and menos
+            return currentAnswer &&
+                   typeof currentAnswer === 'object' &&
+                   !Array.isArray(currentAnswer) &&
+                   'mas' in currentAnswer &&
+                   'menos' in currentAnswer &&
+                   (currentAnswer as { mas?: unknown; menos?: unknown }).mas &&
+                   (currentAnswer as { mas?: unknown; menos?: unknown }).menos;
+        } else if (currentQ.type === QuestionType.MULTIPLE_RESPONSE) {
+            // For multiple response, need at least one selection
+            return Array.isArray(currentAnswer) && currentAnswer.length > 0;
+        } else if (currentQ.type === QuestionType.TABLE_CHECKBOX) {
+            // For table checkbox, need at least one checkbox selected
+            return currentAnswer &&
+                   typeof currentAnswer === 'object' &&
+                   !Array.isArray(currentAnswer) &&
+                   Object.values(currentAnswer).some((col) => Array.isArray(col) && col.length > 0);
+        } else {
+            // For other types, just check if value exists
+            return currentAnswer !== null &&
+                   currentAnswer !== undefined &&
+                   currentAnswer !== '';
+        }
+    };
+
     const handleNext = () => {
         if (currentQuestion < totalQuestions - 1) {
             setCurrentQuestion(currentQuestion + 1);
         } else {
-            setIsConfirmSubmitOpen(true);
+            // Submit directly without confirmation modal
+            handleSubmit();
         }
-    };
-
-    const handleConfirmSubmit = async () => {
-        setIsConfirmSubmitOpen(false);
-        await handleSubmit();
     };
 
     const renderQuestionInput = () => {
@@ -174,7 +227,7 @@ export const WorkerTestTakingPage = () => {
             case QuestionType.MULTIPLE_CHOICE:
                 return (
                     <div className="space-y-3">
-                        {currentQ.options?.map((option, idx) => (
+                        {(currentQ.options as string[])?.map((option: string, idx: number) => (
                             <label
                                 key={idx}
                                 className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-colors ${
@@ -230,7 +283,7 @@ export const WorkerTestTakingPage = () => {
             case QuestionType.MULTIPLE_RESPONSE:
                 return (
                     <div className="space-y-3">
-                        {currentQ.options?.map((option, idx) => {
+                        {(currentQ.options as string[])?.map((option: string, idx: number) => {
                             const selectedOptions =
                                 (currentAnswer as string[]) || [];
                             const isChecked = selectedOptions.includes(option);
@@ -305,7 +358,7 @@ export const WorkerTestTakingPage = () => {
             case QuestionType.OPEN_TEXT:
                 return (
                     <textarea
-                        value={currentAnswer || ""}
+                        value={typeof currentAnswer === 'string' ? currentAnswer : ""}
                         onChange={(e) => handleAnswerChange(e.target.value)}
                         rows={6}
                         className="w-full p-4 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-colors"
@@ -317,7 +370,7 @@ export const WorkerTestTakingPage = () => {
                 // Test 16PF - Opciones A, B, C
                 return (
                     <div className="space-y-3">
-                        {currentQ.options?.map((option, idx) => (
+                        {(currentQ.options as string[])?.map((option: string, idx: number) => (
                             <label
                                 key={idx}
                                 className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-colors ${
@@ -345,13 +398,16 @@ export const WorkerTestTakingPage = () => {
                     </div>
                 );
 
-            case QuestionType.FORCED_CHOICE:
+            case QuestionType.FORCED_CHOICE: {
                 // Test DISC - Elección forzada: elegir MÁS y MENOS descriptivo
-                const forcedAnswer = (currentAnswer as any) || { mas: null, menos: null };
+                const forcedAnswer = (currentAnswer as { mas?: string; menos?: string }) || { mas: null, menos: null };
 
                 // Extract words from options.words object for DISC test
-                const wordsObj = currentQ.options?.words || currentQ.options || {};
-                const words = Object.values(wordsObj);
+                const optionsObj = currentQ.options as { words?: Record<string, string> } | Record<string, string> | undefined;
+                const wordsObj = (optionsObj && typeof optionsObj === 'object' && 'words' in optionsObj) 
+                    ? optionsObj.words 
+                    : (optionsObj as Record<string, string> | undefined);
+                const words = wordsObj ? Object.values(wordsObj) as string[] : [];
 
                 return (
                     <div className="space-y-6">
@@ -415,6 +471,7 @@ export const WorkerTestTakingPage = () => {
                         </div>
                     </div>
                 );
+            }
 
             case QuestionType.LIKERT_SCALE:
                 // Test CFR - Escala Likert 1-5
@@ -458,10 +515,20 @@ export const WorkerTestTakingPage = () => {
                     </div>
                 );
 
-            case QuestionType.TABLE_CHECKBOX:
+            case QuestionType.TABLE_CHECKBOX: {
                 // Test IC - Tabla compleja con checkboxes
-                const tableData = currentQ.options as any;
-                const tableAnswer = (currentAnswer as any) || { column1: [], column2: [], column3: [] };
+                interface TableData {
+                    instructions?: Array<{ column: number; text: string }>;
+                    tableHeaders?: string[];
+                    tableData?: Array<{
+                        cantidadAsegurada: string;
+                        claseSeguro: string;
+                        fecha: string;
+                        rowId: number;
+                    }>;
+                }
+                const tableData = currentQ.options as TableData;
+                const tableAnswer = (currentAnswer as { column1?: number[]; column2?: number[]; column3?: number[] }) || { column1: [], column2: [], column3: [] };
 
                 return (
                     <div className="space-y-6">
@@ -470,7 +537,7 @@ export const WorkerTestTakingPage = () => {
                                 Instrucciones:
                             </p>
                             <div className="space-y-2 text-sm text-yellow-800">
-                                {tableData?.instructions?.map((instr: any, idx: number) => (
+                                {tableData?.instructions?.map((instr, idx: number) => (
                                     <div key={idx} className="flex items-start">
                                         <span className="font-semibold mr-2">
                                             Columna {instr.column}:
@@ -496,7 +563,7 @@ export const WorkerTestTakingPage = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {tableData?.tableData?.map((row: any, rowIdx: number) => (
+                                    {tableData?.tableData?.map((row, rowIdx: number) => (
                                         <tr key={rowIdx} className="hover:bg-gray-50">
                                             <td className="border border-gray-300 px-4 py-2 text-sm">
                                                 {row.cantidadAsegurada}
@@ -507,29 +574,31 @@ export const WorkerTestTakingPage = () => {
                                             <td className="border border-gray-300 px-4 py-2 text-sm">
                                                 {row.fecha}
                                             </td>
-                                            {[1, 2, 3].map((colNum) => (
-                                                <td
-                                                    key={colNum}
-                                                    className="border border-gray-300 px-4 py-2 text-center"
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={tableAnswer[`column${colNum}`]?.includes(row.rowId) || false}
-                                                        onChange={(e) => {
-                                                            const columnKey = `column${colNum}`;
-                                                            const currentColumn = tableAnswer[columnKey] || [];
-                                                            const newColumn = e.target.checked
-                                                                ? [...currentColumn, row.rowId]
-                                                                : currentColumn.filter((id: number) => id !== row.rowId);
-                                                            handleAnswerChange({
-                                                                ...tableAnswer,
-                                                                [columnKey]: newColumn,
-                                                            });
-                                                        }}
-                                                        className="w-5 h-5 text-blue-600"
-                                                    />
-                                                </td>
-                                            ))}
+                                            {[1, 2, 3].map((colNum) => {
+                                                const columnKey = `column${colNum}` as 'column1' | 'column2' | 'column3';
+                                                const currentColumn = tableAnswer[columnKey] || [];
+                                                return (
+                                                    <td
+                                                        key={colNum}
+                                                        className="border border-gray-300 px-4 py-2 text-center"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={currentColumn.includes(row.rowId)}
+                                                            onChange={(e) => {
+                                                                const newColumn = e.target.checked
+                                                                    ? [...currentColumn, row.rowId]
+                                                                    : currentColumn.filter((id: number) => id !== row.rowId);
+                                                                handleAnswerChange({
+                                                                    ...tableAnswer,
+                                                                    [columnKey]: newColumn,
+                                                                });
+                                                            }}
+                                                            className="w-5 h-5 text-blue-600"
+                                                        />
+                                                    </td>
+                                                );
+                                            })}
                                         </tr>
                                     ))}
                                 </tbody>
@@ -537,6 +606,7 @@ export const WorkerTestTakingPage = () => {
                         </div>
                     </div>
                 );
+            }
 
             default:
                 return null;
@@ -593,7 +663,19 @@ export const WorkerTestTakingPage = () => {
         );
     }
 
-    const answeredCount = Object.keys(answers).length;
+    // Count only questions with actual answers (not null/undefined/empty)
+    const answeredCount = Object.values(answers).filter(answer => {
+        if (answer === null || answer === undefined || answer === '') return false;
+        if (Array.isArray(answer) && answer.length === 0) return false;
+        if (typeof answer === 'object' && !Array.isArray(answer)) {
+            // For forced choice and table checkbox, check if has values
+            return Object.values(answer).some(val =>
+                val !== null && val !== undefined &&
+                (Array.isArray(val) ? val.length > 0 : true)
+            );
+        }
+        return true;
+    }).length;
     const progressPercent = ((currentQuestion + 1) / totalQuestions) * 100;
 
     return (
@@ -649,15 +731,17 @@ export const WorkerTestTakingPage = () => {
                             <h2 className="text-lg font-medium text-gray-800">
                                 {currentQuestion + 1}. {currentQ.question}
                             </h2>
-                            {currentQ.isRequired && (
+                            {'isRequired' in currentQ && currentQ.isRequired && (
                                 <span className="px-2 py-1 text-xs font-semibold rounded bg-red-100 text-red-800">
                                     Obligatoria
                                 </span>
                             )}
                         </div>
-                        <p className="text-sm text-gray-600">
-                            {currentQ.points} puntos
-                        </p>
+                        {'points' in currentQ && (
+                            <p className="text-sm text-gray-600">
+                                {currentQ.points} puntos
+                            </p>
+                        )}
                     </div>
 
                     {renderQuestionInput()}
@@ -672,7 +756,7 @@ export const WorkerTestTakingPage = () => {
                         </button>
                         <button
                             onClick={handleNext}
-                            disabled={submitMutation.isPending}
+                            disabled={!isCurrentQuestionAnswered() || submitMutation.isPending}
                             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             {currentQuestion === totalQuestions - 1
@@ -683,16 +767,6 @@ export const WorkerTestTakingPage = () => {
                 </div>
             </div>
 
-            <ConfirmModal
-                isOpen={isConfirmSubmitOpen}
-                onClose={() => setIsConfirmSubmitOpen(false)}
-                onConfirm={handleConfirmSubmit}
-                title="Confirmar Envío"
-                message={`¿Estás seguro de enviar el test? Has respondido ${answeredCount} de ${totalQuestions} preguntas. No podrás modificar tus respuestas después de enviar.`}
-                confirmText="Enviar Test"
-                cancelText="Revisar"
-                isLoading={submitMutation.isPending}
-            />
         </div>
     );
 };

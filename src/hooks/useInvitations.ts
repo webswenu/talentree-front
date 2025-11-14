@@ -24,10 +24,30 @@ export const useCreateInvitation = () => {
             queryClient.invalidateQueries({ queryKey: ["invitations"] });
             toast.success("Invitación enviada exitosamente");
         },
-        onError: (error: any) => {
-            toast.error(
-                error.response?.data?.message || "Error al enviar la invitación"
-            );
+        onError: (error: unknown) => {
+            let errorMessage = "Error al enviar la invitación";
+            
+            if (error && typeof error === "object" && "response" in error) {
+                const axiosError = error as {
+                    response?: {
+                        data?: {
+                            message?: string | string[];
+                        };
+                    };
+                };
+                
+                const message = axiosError.response?.data?.message;
+                
+                if (typeof message === "string") {
+                    errorMessage = message;
+                } else if (Array.isArray(message) && message.length > 0) {
+                    errorMessage = message[0];
+                }
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            
+            toast.error(errorMessage);
         },
     });
 };
@@ -41,11 +61,30 @@ export const useResendInvitation = () => {
             queryClient.invalidateQueries({ queryKey: ["invitations"] });
             toast.success("Invitación reenviada exitosamente");
         },
-        onError: (error: any) => {
-            toast.error(
-                error.response?.data?.message ||
-                    "Error al reenviar la invitación"
-            );
+        onError: (error: unknown) => {
+            let errorMessage = "Error al reenviar la invitación";
+            
+            if (error && typeof error === "object" && "response" in error) {
+                const axiosError = error as {
+                    response?: {
+                        data?: {
+                            message?: string | string[];
+                        };
+                    };
+                };
+                
+                const message = axiosError.response?.data?.message;
+                
+                if (typeof message === "string") {
+                    errorMessage = message;
+                } else if (Array.isArray(message) && message.length > 0) {
+                    errorMessage = message[0];
+                }
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            
+            toast.error(errorMessage);
         },
     });
 };
@@ -59,11 +98,30 @@ export const useCancelInvitation = () => {
             queryClient.invalidateQueries({ queryKey: ["invitations"] });
             toast.success("Invitación cancelada exitosamente");
         },
-        onError: (error: any) => {
-            toast.error(
-                error.response?.data?.message ||
-                    "Error al cancelar la invitación"
-            );
+        onError: (error: unknown) => {
+            let errorMessage = "Error al cancelar la invitación";
+            
+            if (error && typeof error === "object" && "response" in error) {
+                const axiosError = error as {
+                    response?: {
+                        data?: {
+                            message?: string | string[];
+                        };
+                    };
+                };
+                
+                const message = axiosError.response?.data?.message;
+                
+                if (typeof message === "string") {
+                    errorMessage = message;
+                } else if (Array.isArray(message) && message.length > 0) {
+                    errorMessage = message[0];
+                }
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            
+            toast.error(errorMessage);
         },
     });
 };
@@ -78,11 +136,30 @@ export const useDeactivateUser = () => {
             queryClient.invalidateQueries({ queryKey: ["invitations"] });
             toast.success("Usuario desactivado exitosamente");
         },
-        onError: (error: any) => {
-            toast.error(
-                error.response?.data?.message ||
-                    "Error al desactivar el usuario"
-            );
+        onError: (error: unknown) => {
+            let errorMessage = "Error al desactivar el usuario";
+            
+            if (error && typeof error === "object" && "response" in error) {
+                const axiosError = error as {
+                    response?: {
+                        data?: {
+                            message?: string | string[];
+                        };
+                    };
+                };
+                
+                const message = axiosError.response?.data?.message;
+                
+                if (typeof message === "string") {
+                    errorMessage = message;
+                } else if (Array.isArray(message) && message.length > 0) {
+                    errorMessage = message[0];
+                }
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            
+            toast.error(errorMessage);
         },
     });
 };
@@ -97,11 +174,30 @@ export const useReactivateUser = () => {
             queryClient.invalidateQueries({ queryKey: ["invitations"] });
             toast.success("Usuario reactivado exitosamente");
         },
-        onError: (error: any) => {
-            toast.error(
-                error.response?.data?.message ||
-                    "Error al reactivar el usuario"
-            );
+        onError: (error: unknown) => {
+            let errorMessage = "Error al reactivar el usuario";
+            
+            if (error && typeof error === "object" && "response" in error) {
+                const axiosError = error as {
+                    response?: {
+                        data?: {
+                            message?: string | string[];
+                        };
+                    };
+                };
+                
+                const message = axiosError.response?.data?.message;
+                
+                if (typeof message === "string") {
+                    errorMessage = message;
+                } else if (Array.isArray(message) && message.length > 0) {
+                    errorMessage = message[0];
+                }
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            
+            toast.error(errorMessage);
         },
     });
 };
@@ -113,11 +209,30 @@ export const useAcceptInvitation = () => {
         onSuccess: () => {
             toast.success("¡Cuenta creada exitosamente! Puedes iniciar sesión.");
         },
-        onError: (error: any) => {
-            toast.error(
-                error.response?.data?.message ||
-                    "Error al aceptar la invitación"
-            );
+        onError: (error: unknown) => {
+            let errorMessage = "Error al aceptar la invitación";
+            
+            if (error && typeof error === "object" && "response" in error) {
+                const axiosError = error as {
+                    response?: {
+                        data?: {
+                            message?: string | string[];
+                        };
+                    };
+                };
+                
+                const message = axiosError.response?.data?.message;
+                
+                if (typeof message === "string") {
+                    errorMessage = message;
+                } else if (Array.isArray(message) && message.length > 0) {
+                    errorMessage = message[0];
+                }
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            
+            toast.error(errorMessage);
         },
     });
 };

@@ -42,12 +42,6 @@ class UsersService {
         return data;
     }
 
-    async resetPassword(id: string, newPassword: string): Promise<void> {
-        await apiService.post(`/users/${id}/reset-password`, {
-            password: newPassword,
-        });
-    }
-
     async changePassword(
         currentPassword: string,
         newPassword: string
@@ -86,6 +80,14 @@ class UsersService {
         const { data } = await apiService.patch<User>(
             "/users/notification-preferences",
             preferences
+        );
+        return data;
+    }
+
+    async resetPassword(userId: string, newPassword: string): Promise<{ message: string }> {
+        const { data } = await apiService.patch<{ message: string }>(
+            `/users/${userId}/reset-password`,
+            { newPassword }
         );
         return data;
     }

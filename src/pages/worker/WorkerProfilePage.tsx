@@ -1,39 +1,60 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../../store/authStore";
 import {
     useChangePassword,
     useUpdateNotificationPreferences,
+    useUpdateUser,
 } from "../../hooks/useUsers";
-import { useWorker, useUploadCV, useDeleteCV } from "../../hooks/useWorkers";
+import { useWorker, useUploadCV, useDeleteCV, useUpdateWorker } from "../../hooks/useWorkers";
 import { FileUpload } from "../../components/common/FileUpload";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { workersService } from "../../services/workers.service";
+import usersService from "../../services/users.service";
 
 export const WorkerProfilePage = () => {
-    const { user } = useAuthStore();
+    const { user, setUser } = useAuthStore();
     const changePasswordMutation = useChangePassword();
     const updateNotificationsMutation = useUpdateNotificationPreferences();
+    const updateUserMutation = useUpdateUser();
+    const updateWorkerMutation = useUpdateWorker();
     const uploadCVMutation = useUploadCV();
     const deleteCVMutation = useDeleteCV();
 
-    const { data: worker } = useWorker(user?.worker?.id || "");
+    // Recargar usuario si no tiene la relación worker cargada
+    useEffect(() => {
+        if (user?.id && !user?.worker?.id && user?.role === "worker") {
+            // Recargar usuario completo con relaciones
+            usersService.getOne(user.id).then((updatedUser) => {
+                if (updatedUser) {
+                    setUser(updatedUser);
+                }
+            });
+        }
+    }, [user?.id, user?.worker?.id, user?.role, setUser]);
+
+    // Obtener worker por ID desde la relación del usuario
+    // El usuario debería tener la relación worker cargada desde el login
+    const workerId = user?.worker?.id;
+    const { data: worker } = useWorker(workerId || "");
+    
+    // Usar el worker obtenido
+    const currentWorker = worker;
 
     const [activeTab, setActiveTab] = useState<
         "profile" | "cv" | "notifications" | "account"
     >("profile");
     const [successMessage, setSuccessMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
     const [cvFile, setCvFile] = useState<File | null>(null);
+    const [showDeleteCVModal, setShowDeleteCVModal] = useState(false);
 
     const [profileForm, setProfileForm] = useState({
         firstName: user?.firstName || "",
         lastName: user?.lastName || "",
-        rut: user?.rut || "",
+        rut: "",
         email: user?.email || "",
         phone: user?.phone || "",
-        birthDate: user?.birthDate
-            ? typeof user.birthDate === "string"
-                ? user.birthDate
-                : new Date(user.birthDate).toISOString().split("T")[0]
-            : "",
+        birthDate: "",
     });
 
     const [cvForm, setCvForm] = useState({
@@ -47,10 +68,54 @@ export const WorkerProfilePage = () => {
     const [notificationsForm, setNotificationsForm] = useState({
         emailNotifications:
             user?.notificationPreferences?.emailNotifications ?? true,
-        newProcesses: true, // Esta propiedad no existe en el tipo, usar valor por defecto
-        applicationUpdates: true, // Esta propiedad no existe en el tipo, usar valor por defecto
-        testReminders: true, // Esta propiedad no existe en el tipo, usar valor por defecto
+        newProcesses: user?.notificationPreferences?.newProcesses ?? true,
+        applicationUpdates: user?.notificationPreferences?.applicationUpdates ?? true,
+        testReminders: user?.notificationPreferences?.testReminders ?? true,
     });
+
+    // Sincronizar formularios cuando cambia el usuario o el worker
+    useEffect(() => {
+        if (user) {
+            // Sincronizar formulario de perfil
+            // RUT y birthDate vienen del Worker, no del User
+            setProfileForm({
+                firstName: user.firstName || "",
+                lastName: user.lastName || "",
+                rut: currentWorker?.rut || "",
+                email: user.email || "",
+                phone: user.phone || "",
+                birthDate: currentWorker?.birthDate
+                    ? typeof currentWorker.birthDate === "string"
+                        ? currentWorker.birthDate
+                        : new Date(currentWorker.birthDate).toISOString().split("T")[0]
+                    : "",
+            });
+
+            // Sincronizar formulario de notificaciones
+            if (user.notificationPreferences) {
+                setNotificationsForm({
+                    emailNotifications:
+                        user.notificationPreferences.emailNotifications ?? true,
+                    newProcesses: user.notificationPreferences.newProcesses ?? true,
+                    applicationUpdates: user.notificationPreferences.applicationUpdates ?? true,
+                    testReminders: user.notificationPreferences.testReminders ?? true,
+                });
+            }
+        }
+    }, [user, currentWorker]);
+
+    // Sincronizar formulario de CV cuando cambia el worker
+    useEffect(() => {
+        if (currentWorker) {
+            setCvForm({
+                cvFile: null,
+                summary: "", // No hay campo summary en Worker
+                skills: currentWorker.skills?.join(", ") || "",
+                experience: currentWorker.experience || "",
+                education: currentWorker.education || "",
+            });
+        }
+    }, [currentWorker]);
 
     const [accountForm, setAccountForm] = useState({
         currentPassword: "",
@@ -58,85 +123,164 @@ export const WorkerProfilePage = () => {
         confirmPassword: "",
     });
 
-    const handleSaveProfile = (e: React.FormEvent) => {
+    const handleSaveProfile = async (e: React.FormEvent) => {
         e.preventDefault();
-        setSuccessMessage("Perfil actualizado correctamente");
-        setTimeout(() => setSuccessMessage(""), 3000);
+
+        if (!user?.id) {
+            setErrorMessage("No se encontró el usuario");
+            setTimeout(() => setErrorMessage(""), 5000);
+            return;
+        }
+
+        try {
+            // Actualizar User (firstName, lastName, phone)
+            await updateUserMutation.mutateAsync({
+                id: user.id,
+                data: {
+                    firstName: profileForm.firstName,
+                    lastName: profileForm.lastName,
+                    phone: profileForm.phone || undefined,
+                },
+            });
+
+            // Actualizar Worker (rut, birthDate) si existe
+            const workerIdToUpdate = user?.worker?.id || currentWorker?.id;
+            if (workerIdToUpdate) {
+                await updateWorkerMutation.mutateAsync({
+                    id: workerIdToUpdate,
+                    data: {
+                        rut: profileForm.rut || undefined,
+                        birthDate: profileForm.birthDate || undefined,
+                    },
+                });
+            }
+
+            // Recargar el usuario completo con relaciones para actualizar el store
+            const updatedUser = await usersService.getOne(user.id);
+            if (updatedUser) {
+                setUser(updatedUser);
+            }
+
+            setSuccessMessage("Perfil actualizado correctamente");
+            setTimeout(() => setSuccessMessage(""), 3000);
+        } catch {
+            setErrorMessage("Error al actualizar el perfil");
+            setTimeout(() => setErrorMessage(""), 5000);
+        }
     };
 
     const handleSaveCV = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!cvFile) {
-            alert("Por favor selecciona un archivo PDF");
-            return;
-        }
-
-        if (!user?.worker?.id) {
-            alert("No se encontró el perfil de trabajador");
+        const workerIdToUse = user?.worker?.id || currentWorker?.id;
+        if (!workerIdToUse || !user?.id) {
+            setErrorMessage("No se encontró el perfil de trabajador");
+            setTimeout(() => setErrorMessage(""), 5000);
             return;
         }
 
         try {
-            await uploadCVMutation.mutateAsync({
-                workerId: user.worker.id,
-                file: cvFile,
+            // Si hay archivo, subirlo primero
+            if (cvFile) {
+                await uploadCVMutation.mutateAsync({
+                    workerId: workerIdToUse,
+                    file: cvFile,
+                });
+            }
+
+            // Guardar los campos de texto del CV (summary, skills, experience, education)
+            // Convertir skills de string a array
+            const skillsArray = cvForm.skills
+                ? cvForm.skills.split(",").map((s) => s.trim()).filter(Boolean)
+                : undefined;
+
+            await updateWorkerMutation.mutateAsync({
+                id: workerIdToUse,
+                data: {
+                    education: cvForm.education || undefined,
+                    experience: cvForm.experience || undefined,
+                    skills: skillsArray,
+                },
             });
+
+            // Recargar el usuario completo con relaciones para actualizar el store
+            const updatedUser = await usersService.getOne(user.id);
+            if (updatedUser) {
+                setUser(updatedUser);
+            }
+
             setSuccessMessage("CV actualizado correctamente");
             setCvFile(null);
             setTimeout(() => setSuccessMessage(""), 3000);
         } catch (error) {
-            const errorMessage =
+            const errorMsg =
                 error instanceof Error ? error.message : "Error al subir el CV";
-            console.error("Error uploading CV:", errorMessage);
+            setErrorMessage(errorMsg);
+            setTimeout(() => setErrorMessage(""), 5000);
         }
     };
 
     const handleDownloadCV = async () => {
-        if (!user?.worker?.id) {
-            alert("No se encontró el perfil de trabajador");
+        const workerIdToUse = user?.worker?.id || currentWorker?.id;
+        if (!workerIdToUse) {
+            setErrorMessage("No se encontró el perfil de trabajador");
+            setTimeout(() => setErrorMessage(""), 5000);
             return;
         }
 
         try {
-            const blob = await workersService.downloadCV(user.worker.id);
+            const blob = await workersService.downloadCV(workerIdToUse);
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `CV_${user.firstName}_${user.lastName}.pdf`;
+            a.download = `CV_${user?.firstName || "user"}_${user?.lastName || ""}.pdf`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } catch (error) {
-            const errorMessage =
+            const errorMsg =
                 error instanceof Error
                     ? error.message
                     : "Error al descargar el CV";
-            console.error("Error downloading CV:", errorMessage);
+            setErrorMessage(errorMsg);
+            setTimeout(() => setErrorMessage(""), 5000);
         }
     };
 
-    const handleDeleteCV = async () => {
-        if (!user?.worker?.id) {
-            alert("No se encontró el perfil de trabajador");
+    const handleDeleteCV = () => {
+        const workerIdToUse = user?.worker?.id || currentWorker?.id;
+        if (!workerIdToUse) {
+            setErrorMessage("No se encontró el perfil de trabajador");
+            setTimeout(() => setErrorMessage(""), 5000);
             return;
         }
 
-        if (!confirm("¿Estás seguro de que deseas eliminar tu CV?")) {
+        setShowDeleteCVModal(true);
+    };
+
+    const handleConfirmDeleteCV = async () => {
+        const workerIdToUse = user?.worker?.id || currentWorker?.id;
+        if (!workerIdToUse) {
+            setShowDeleteCVModal(false);
+            setErrorMessage("No se encontró el perfil de trabajador");
+            setTimeout(() => setErrorMessage(""), 5000);
             return;
         }
 
         try {
-            await deleteCVMutation.mutateAsync(user.worker.id);
+            await deleteCVMutation.mutateAsync(workerIdToUse);
+            setShowDeleteCVModal(false);
             setSuccessMessage("CV eliminado correctamente");
             setTimeout(() => setSuccessMessage(""), 3000);
         } catch (error) {
-            const errorMessage =
+            const errorMsg =
                 error instanceof Error
                     ? error.message
                     : "Error al eliminar el CV";
-            console.error("Error deleting CV:", errorMessage);
+            setShowDeleteCVModal(false);
+            setErrorMessage(errorMsg);
+            setTimeout(() => setErrorMessage(""), 5000);
         }
     };
 
@@ -144,22 +288,26 @@ export const WorkerProfilePage = () => {
         e.preventDefault();
 
         try {
-            await updateNotificationsMutation.mutateAsync(notificationsForm);
+            const updatedUser = await updateNotificationsMutation.mutateAsync(notificationsForm);
+            
+            // Actualizar el usuario en el store (automáticamente persiste en localStorage)
+            if (updatedUser) {
+                setUser(updatedUser);
+            }
+
             setSuccessMessage("Preferencias guardadas");
             setTimeout(() => setSuccessMessage(""), 3000);
-        } catch (error) {
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : "Error al guardar las preferencias";
-            console.error("Error saving notifications:", errorMessage);
+        } catch {
+            setErrorMessage("Error al guardar las preferencias");
+            setTimeout(() => setErrorMessage(""), 5000);
         }
     };
 
     const handleChangePassword = async (e: React.FormEvent) => {
         e.preventDefault();
         if (accountForm.newPassword !== accountForm.confirmPassword) {
-            alert("Las contraseñas no coinciden");
+            setErrorMessage("Las contraseñas no coinciden");
+            setTimeout(() => setErrorMessage(""), 5000);
             return;
         }
 
@@ -175,12 +323,9 @@ export const WorkerProfilePage = () => {
                 confirmPassword: "",
             });
             setTimeout(() => setSuccessMessage(""), 3000);
-        } catch (error) {
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : "Error al cambiar la contraseña";
-            console.error("Error changing password:", errorMessage);
+        } catch {
+            setErrorMessage("Error al cambiar la contraseña");
+            setTimeout(() => setErrorMessage(""), 5000);
         }
     };
 
@@ -196,6 +341,12 @@ export const WorkerProfilePage = () => {
             {successMessage && (
                 <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
                     {successMessage}
+                </div>
+            )}
+
+            {errorMessage && (
+                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+                    {errorMessage}
                 </div>
             )}
 
@@ -369,7 +520,7 @@ export const WorkerProfilePage = () => {
                     </h2>
 
                     {/* CV actual si existe */}
-                    {worker?.cvUrl && (
+                    {currentWorker?.cvUrl && (
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-3">
@@ -506,11 +657,18 @@ export const WorkerProfilePage = () => {
                         <div className="flex justify-end">
                             <button
                                 type="submit"
-                                disabled={!cvFile || uploadCVMutation.isPending}
+                                disabled={
+                                    (!cvFile && 
+                                     !cvForm.skills && 
+                                     !cvForm.experience && 
+                                     !cvForm.education) || 
+                                    uploadCVMutation.isPending || 
+                                    updateWorkerMutation.isPending
+                                }
                                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                             >
-                                {uploadCVMutation.isPending
-                                    ? "Subiendo..."
+                                {(uploadCVMutation.isPending || updateWorkerMutation.isPending)
+                                    ? "Guardando..."
                                     : "Guardar CV"}
                             </button>
                         </div>
@@ -712,6 +870,19 @@ export const WorkerProfilePage = () => {
                     </div>
                 </form>
             )}
+
+            {/* Modal de confirmación para eliminar CV */}
+            <ConfirmModal
+                isOpen={showDeleteCVModal}
+                onClose={() => setShowDeleteCVModal(false)}
+                onConfirm={handleConfirmDeleteCV}
+                title="Eliminar CV"
+                message="¿Estás seguro de que deseas eliminar tu CV? Esta acción no se puede deshacer."
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+                confirmButtonClass="bg-red-600 hover:bg-red-700"
+                isLoading={deleteCVMutation.isPending}
+            />
         </div>
     );
 };

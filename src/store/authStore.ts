@@ -52,6 +52,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     setUser: (user: User | null) => {
         set({ user, isAuthenticated: !!user });
+        if (user) {
+            localStorage.setItem("user", JSON.stringify(user));
+        } else {
+            localStorage.removeItem("user");
+        }
     },
 
     clearError: () => {

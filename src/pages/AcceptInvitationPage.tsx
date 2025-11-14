@@ -1,14 +1,19 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { invitationsService } from "../services/invitations.service";
+import { invitationsService, Invitation } from "../services/invitations.service";
 import { toast } from "../utils/toast";
+import { Company } from "../types/company.types";
+
+interface InvitationWithCompany extends Invitation {
+    company?: Company;
+}
 
 export const AcceptInvitationPage = () => {
     const { token } = useParams<{ token: string }>();
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [invitation, setInvitation] = useState<any>(null);
+    const [invitation, setInvitation] = useState<InvitationWithCompany | null>(null);
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState("");
@@ -25,12 +30,18 @@ export const AcceptInvitationPage = () => {
                 const response = await invitationsService.getInvitationByToken(
                     token
                 );
-                setInvitation(response.data);
-            } catch (err: any) {
-                setError(
-                    err.response?.data?.message ||
-                        "Error al cargar la invitación"
-                );
+                setInvitation(response.data as InvitationWithCompany);
+            } catch (err: unknown) {
+                const errorMessage = 
+                    (err && typeof err === 'object' && 'response' in err && 
+                     err.response && typeof err.response === 'object' && 
+                     'data' in err.response && err.response.data && 
+                     typeof err.response.data === 'object' && 
+                     'message' in err.response.data &&
+                     typeof err.response.data.message === 'string')
+                        ? err.response.data.message
+                        : "Error al cargar la invitación";
+                setError(errorMessage);
             } finally {
                 setIsLoading(false);
             }
@@ -64,10 +75,17 @@ export const AcceptInvitationPage = () => {
             setTimeout(() => {
                 navigate("/login");
             }, 2000);
-        } catch (err: any) {
-            setError(
-                err.response?.data?.message || "Error al aceptar la invitación"
-            );
+        } catch (err: unknown) {
+            const errorMessage = 
+                (err && typeof err === 'object' && 'response' in err && 
+                 err.response && typeof err.response === 'object' && 
+                 'data' in err.response && err.response.data && 
+                 typeof err.response.data === 'object' && 
+                 'message' in err.response.data &&
+                 typeof err.response.data.message === 'string')
+                    ? err.response.data.message
+                    : "Error al aceptar la invitación";
+            setError(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
