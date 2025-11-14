@@ -3,7 +3,7 @@ import { io, Socket } from "socket.io-client";
 import { useAuthStore } from "../store/authStore";
 import { useQueryClient } from "@tanstack/react-query";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
 const SOCKET_URL = API_URL.replace("/api/v1", "");
 
 export const useWebSocket = () => {
