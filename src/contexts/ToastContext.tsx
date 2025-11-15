@@ -1,60 +1,81 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { Toast, ToastType } from '../components/common/Toast';
+import {
+    createContext,
+    useContext,
+    useState,
+    ReactNode,
+    useCallback,
+} from "react";
+import { Toast, ToastType } from "../components/common/Toast";
 
 interface ToastContextType {
-  showToast: (message: string, type: ToastType) => void;
-  success: (message: string) => void;
-  error: (message: string) => void;
-  warning: (message: string) => void;
-  info: (message: string) => void;
+    showToast: (message: string, type: ToastType) => void;
+    success: (message: string) => void;
+    error: (message: string) => void;
+    warning: (message: string) => void;
+    info: (message: string) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 interface ToastState {
-  id: number;
-  message: string;
-  type: ToastType;
+    id: number;
+    message: string;
+    type: ToastType;
 }
 
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
-  const [toasts, setToasts] = useState<ToastState[]>([]);
+    const [toasts, setToasts] = useState<ToastState[]>([]);
 
-  const showToast = useCallback((message: string, type: ToastType) => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
-  }, []);
+    const showToast = useCallback((message: string, type: ToastType) => {
+        const id = Date.now();
+        setToasts((prev) => [...prev, { id, message, type }]);
+    }, []);
 
-  const removeToast = useCallback((id: number) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  }, []);
+    const removeToast = useCallback((id: number) => {
+        setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, []);
 
-  const success = useCallback((message: string) => showToast(message, 'success'), [showToast]);
-  const error = useCallback((message: string) => showToast(message, 'error'), [showToast]);
-  const warning = useCallback((message: string) => showToast(message, 'warning'), [showToast]);
-  const info = useCallback((message: string) => showToast(message, 'info'), [showToast]);
+    const success = useCallback(
+        (message: string) => showToast(message, "success"),
+        [showToast]
+    );
+    const error = useCallback(
+        (message: string) => showToast(message, "error"),
+        [showToast]
+    );
+    const warning = useCallback(
+        (message: string) => showToast(message, "warning"),
+        [showToast]
+    );
+    const info = useCallback(
+        (message: string) => showToast(message, "info"),
+        [showToast]
+    );
 
-  return (
-    <ToastContext.Provider value={{ showToast, success, error, warning, info }}>
-      {children}
-      <div className="fixed top-4 right-4 z-50 space-y-2">
-        {toasts.map((toast) => (
-          <Toast
-            key={toast.id}
-            message={toast.message}
-            type={toast.type}
-            onClose={() => removeToast(toast.id)}
-          />
-        ))}
-      </div>
-    </ToastContext.Provider>
-  );
+    return (
+        <ToastContext.Provider
+            value={{ showToast, success, error, warning, info }}
+        >
+            {children}
+            <div className="fixed top-4 right-4 z-50 space-y-2">
+                {toasts.map((toast) => (
+                    <Toast
+                        key={toast.id}
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => removeToast(toast.id)}
+                    />
+                ))}
+            </div>
+        </ToastContext.Provider>
+    );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
+    const context = useContext(ToastContext);
+    if (!context) {
+        throw new Error("useToast must be used within a ToastProvider");
+    }
+    return context;
 };

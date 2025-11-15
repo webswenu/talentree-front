@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { useNavigate } from "react-router-dom";
 import { QuickStats } from "../../components/widgets/QuickStats";
@@ -5,159 +6,337 @@ import { ActivityFeed } from "../../components/widgets/ActivityFeed";
 import { RecentList } from "../../components/widgets/RecentList";
 import { BarChart } from "../../components/charts/BarChart";
 import { QuickActions } from "../../components/widgets/QuickActions";
+import { CompanyModal } from "../../components/admin/CompanyModal";
+import ProcessModal from "../../components/admin/ProcessModal";
+import { useCompaniesStats } from "../../hooks/useCompanies";
+import { useProcessesStats, useProcesses } from "../../hooks/useProcesses";
+import { useWorkersStats } from "../../hooks/useWorkers";
+import { useTestResponsesStats } from "../../hooks/useTestResponses";
+import { useAuditStats } from "../../hooks/useAudit";
+import { ProcessStatusLabels } from "../../types/process.types";
 
 export const AdminDashboard = () => {
-  const { user } = useAuthStore();
-  const navigate = useNavigate();
+    const { user } = useAuthStore();
+    const navigate = useNavigate();
+    const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
+    const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
 
-  const stats = [
-    { title: "Views", value: 7265, trend: { value: 110, isPositive: true } },
-    { title: "Visits", value: 3671, trend: { value: -0.8, isPositive: false } },
-    { title: "New Users", value: 156, trend: { value: 16, isPositive: true } },
-    { title: "Active Users", value: 2318, trend: { value: 6, isPositive: true } },
-  ];
+    const { data: companiesStats, isLoading: loadingCompanies } =
+        useCompaniesStats();
+    const { data: processesStats, isLoading: loadingProcesses } =
+        useProcessesStats();
+    const { data: workersStats, isLoading: loadingWorkers } = useWorkersStats();
+    const { data: testResponsesStats, isLoading: loadingTests } =
+        useTestResponsesStats();
+    const { data: auditStats, isLoading: loadingAudit } = useAuditStats();
+    const { data: processesData, isLoading: loadingRecentProcesses } =
+        useProcesses();
+    const recentProcesses = processesData?.data || [];
 
-  const processData = [
-    { label: "Linux", value: 25 },
-    { label: "Mac", value: 28 },
-    { label: "iOS", value: 21 },
-    { label: "Windows", value: 17 },
-    { label: "Android", value: 24 },
-  ];
+    const isLoading =
+        loadingCompanies ||
+        loadingProcesses ||
+        loadingWorkers ||
+        loadingTests ||
+        loadingAudit ||
+        loadingRecentProcesses;
 
-  const activities = [
-    { id: 1, user: "Juan Pérez", action: "creó un nuevo proceso", target: "Operadores Mina", time: "Hace 10 min" },
-    { id: 2, user: "María González", action: "actualizó empresa", target: "Minera Los Pelambres", time: "Hace 1 hora" },
-    { id: 3, user: "Carlos Soto", action: "eliminó test", target: "Test Psicométrico V2", time: "Hace 2 horas" },
-  ];
-
-  const documents = [
-    { name: "ByeWind", date: "Jun 24, 2025", amount: "$942.00", status: "In Progress" },
-    { name: "Natali Craig", date: "Mar 10, 2025", amount: "$881.00", status: "Complete" },
-    { name: "Drew Cano", date: "Nov 10, 2025", amount: "$409.00", status: "Pending" },
-    { name: "Orlando Diggs", date: "Dec 20, 2025", amount: "$953.00", status: "Approved" },
-    { name: "Andi Lane", date: "Jul 25, 2025", amount: "$907.00", status: "Rejected" },
-  ];
-
-  return (
-  <div className="space-y-10 min-h-full pb-16">
-    {/* Header */}
-    <header className="flex justify-between items-center">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Bienvenido, {user?.firstName}</p>
-      </div>
-      <div className="flex items-center gap-4">
-        <input
-          type="text"
-          placeholder="Buscar..."
-          className="border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-400 outline-none"
-        />
-        <button className="p-2 rounded-lg bg-white shadow hover:shadow-md transition">
-          🔔
-        </button>
-        <button className="p-2 rounded-lg bg-white shadow hover:shadow-md transition">
-          ⚙️
-        </button>
-      </div>
-    </header>
-
-    {/* Quick Stats */}
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {stats.map((stat, i) => (
-        <div
-          key={i}
-          className="bg-gradient-to-br from-teal-100 to-teal-50 rounded-2xl p-6 shadow hover:shadow-lg transition-all"
-        >
-          <div className="flex justify-between items-center">
-            <div>
-              <h4 className="text-sm text-gray-500">{stat.title}</h4>
-              <p className="text-3xl font-bold text-gray-800 mt-1">
-                {stat.value}
-              </p>
-            </div>
-            <span
-              className={`text-sm font-semibold ${
-                stat.trend.isPositive ? "text-teal-600" : "text-red-500"
-              }`}
-            >
-              {stat.trend.isPositive ? "+" : ""}
-              {stat.trend.value}%
-            </span>
-          </div>
-        </div>
-      ))}
-    </div>
-
-    {/* Charts */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* Procesos vs Trabajadores */}
-      <div className="bg-white p-6 rounded-2xl shadow">
-        <h2 className="text-lg font-semibold mb-4">Procesos vs Trabajadores</h2>
-        <BarChart data={processData} title="" height={260} />
-      </div>
-
-      {/* Procesos Completados */}
-      <div className="bg-white p-6 rounded-2xl shadow">
-        <h2 className="text-lg font-semibold mb-4">Procesos Completados</h2>
-        <div className="flex justify-center items-center h-[260px]">
-          <div className="w-48 h-48 rounded-full border-[14px] border-teal-400 relative">
-            <div className="absolute inset-4 bg-white rounded-full flex items-center justify-center">
-              <span className="font-semibold text-gray-700">
-                52% Completado
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {/* Documentos */}
-    <div className="bg-white p-6 rounded-2xl shadow">
-      <h2 className="text-lg font-semibold mb-6">Documentos</h2>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-gray-500 border-b">
-            <th className="text-left pb-3">Nombre</th>
-            <th className="text-left pb-3">Archivo</th>
-            <th className="text-left pb-3">Monto</th>
-            <th className="text-left pb-3">Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          {documents.map((doc, i) => (
-            <tr key={i} className="border-b last:border-none hover:bg-gray-50">
-              <td className="py-3">{doc.name}</td>
-              <td className="py-3">{doc.date}</td>
-              <td className="py-3 font-semibold">{doc.amount}</td>
-              <td className="py-3">
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    doc.status === "Complete"
-                      ? "bg-teal-100 text-teal-700"
-                      : doc.status === "Approved"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : doc.status === "Pending"
-                      ? "bg-blue-100 text-blue-700"
-                      : doc.status === "Rejected"
-                      ? "bg-red-100 text-red-700"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
+    const stats = [
+        {
+            title: "Empresas Activas",
+            value: companiesStats?.active ?? 0,
+            trend: companiesStats ? { value: 12, isPositive: true } : undefined,
+            color: "orange" as const,
+            icon: (
+                <svg
+                    className="w-8 h-8"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                 >
-                  {doc.status}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
+                </svg>
+            ),
+        },
+        {
+            title: "Procesos Activos",
+            value: processesStats?.byStatus?.active ?? 0,
+            trend: processesStats ? { value: 8, isPositive: true } : undefined,
+            color: "turquoise" as const,
+            icon: (
+                <svg
+                    className="w-8 h-8"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                </svg>
+            ),
+        },
+        {
+            title: "Candidatos",
+            value: workersStats?.total ?? 0,
+            trend: workersStats ? { value: 5, isPositive: false } : undefined,
+            color: "purple" as const,
+            icon: (
+                <svg
+                    className="w-8 h-8"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                    />
+                </svg>
+            ),
+        },
+        {
+            title: "Tests Completados",
+            value: testResponsesStats?.completed ?? 0,
+            trend: testResponsesStats
+                ? { value: 15, isPositive: true }
+                : undefined,
+            color: "pink" as const,
+            icon: (
+                <svg
+                    className="w-8 h-8"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                    />
+                </svg>
+            ),
+        },
+    ];
 
-    {/* Activity Feed */}
-    <div className="mt-10">
-      <ActivityFeed activities={activities} maxItems={5} />
-    </div>
-  </div>
-);
+    const recentProcessesList = (recentProcesses || [])
+        .slice(0, 5)
+        .map((process) => ({
+            id: process.id,
+            title: process.name,
+            subtitle: process.company?.name || "Sin empresa",
+            status: {
+                label: ProcessStatusLabels[process.status],
+                color: getStatusColor(process.status),
+            },
+            meta: `Creado el ${new Date(process.createdAt).toLocaleDateString(
+                "es-ES"
+            )}`,
+            onClick: () => navigate(`/admin/procesos/${process.id}`),
+        }));
 
+    const activities = (auditStats?.recentActivity || [])
+        .slice(0, 10)
+        .map((log) => ({
+            id: log.id,
+            user: log.user
+                ? `${log.user.firstName} ${log.user.lastName}`
+                : "Sistema",
+            action: getActionLabel(log.action),
+            target: log.entityType,
+            time: getTimeAgo(log.createdAt),
+            type: getActivityType(log.action),
+        }));
+
+    const processData = (processesStats?.byMonth || []).map((item) => ({
+        label: item.month,
+        value: item.count,
+        color: "bg-blue-600",
+    }));
+
+    const quickActions = [
+        {
+            id: "new-company",
+            label: "Nueva Empresa",
+            icon: (
+                <svg
+                    className="w-8 h-8"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                    />
+                </svg>
+            ),
+            onClick: () => setIsCompanyModalOpen(true),
+            color: "orange" as const,
+        },
+        {
+            id: "new-process",
+            label: "Nuevo Proceso",
+            icon: (
+                <svg
+                    className="w-8 h-8"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                </svg>
+            ),
+            onClick: () => setIsProcessModalOpen(true),
+            color: "turquoise" as const,
+        },
+    ];
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <div className="glass-white rounded-2xl p-8 text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent mb-4"></div>
+                    <div className="text-gray-700 font-bold">Cargando estadísticas...</div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6 animate-fade-in">
+            {/* Header */}
+            <div className="rounded-2xl p-8">
+                <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-primary-600/70 via-secondary-600/70 to-primary-600/70 bg-clip-text">
+                    Dashboard de Administración
+                </h1>
+                <p className="text-gray-800 mt-3 text-lg font-bold">
+                    Bienvenido, <span className="text-primary-600/80">{user?.firstName}</span>
+                </p>
+            </div>
+
+            {/* Quick Stats */}
+            <QuickStats stats={stats} />
+
+            {/* Quick Actions */}
+            <QuickActions actions={quickActions} columns={2} />
+
+            {/* Charts and Lists */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {processData.length > 0 && (
+                    <BarChart
+                        data={processData}
+                        title="Procesos por Mes"
+                        height={300}
+                    />
+                )}
+
+                {recentProcessesList.length > 0 && (
+                    <RecentList
+                        title="Procesos Recientes"
+                        items={recentProcessesList}
+                        viewAllLink={{
+                            label: "Ver todos",
+                            onClick: () => navigate("/admin/procesos"),
+                        }}
+                    />
+                )}
+            </div>
+
+            {/* Activity Feed */}
+            {activities.length > 0 && (
+                <ActivityFeed activities={activities} maxItems={10} />
+            )}
+
+            {/* Company Modal */}
+            {isCompanyModalOpen && (
+                <CompanyModal
+                    company={null}
+                    onClose={() => setIsCompanyModalOpen(false)}
+                />
+            )}
+
+            {/* Process Modal */}
+            {isProcessModalOpen && (
+                <ProcessModal onClose={() => setIsProcessModalOpen(false)} />
+            )}
+        </div>
+    );
 };
+
+function getStatusColor(
+    status: string
+): "blue" | "green" | "yellow" | "red" | "gray" {
+    const colorMap: Record<
+        string,
+        "blue" | "green" | "yellow" | "red" | "gray"
+    > = {
+        draft: "gray",
+        active: "green",
+        paused: "yellow",
+        completed: "blue",
+        archived: "red",
+        closed: "red",
+    };
+    return colorMap[status] || "gray";
+}
+
+function getActionLabel(action: string): string {
+    const actionLabels: Record<string, string> = {
+        created: "creó",
+        updated: "actualizó",
+        deleted: "eliminó",
+        login: "inició sesión",
+        logout: "cerró sesión",
+        view: "visualizó",
+    };
+    return actionLabels[action] || action;
+}
+
+function getActivityType(
+    action: string
+): "create" | "update" | "delete" | "info" {
+    const typeMap: Record<string, "create" | "update" | "delete" | "info"> = {
+        created: "create",
+        updated: "update",
+        deleted: "delete",
+        login: "info",
+        logout: "info",
+        view: "info",
+    };
+    return typeMap[action] || "info";
+}
+
+function getTimeAgo(date: Date | string): string {
+    const now = new Date();
+    const past = new Date(date);
+    const diffMs = now.getTime() - past.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Ahora";
+    if (diffMins < 60)
+        return `Hace ${diffMins} minuto${diffMins > 1 ? "s" : ""}`;
+    if (diffHours < 24)
+        return `Hace ${diffHours} hora${diffHours > 1 ? "s" : ""}`;
+    return `Hace ${diffDays} día${diffDays > 1 ? "s" : ""}`;
+}

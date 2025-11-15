@@ -1,1 +1,1 @@
-export { companiesService as companyService } from './companies.service';
+export { companiesService as companyService } from "./companies.service";

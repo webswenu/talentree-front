@@ -1,1 +1,1 @@
-export { workersService as workerService } from './workers.service';
+export { workersService as workerService } from "./workers.service";
