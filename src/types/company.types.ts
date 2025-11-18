@@ -29,13 +29,13 @@ export interface Company {
 
 export interface CreateCompanyDto {
     name: string;
-    rut: string;
+    rut?: string;
     industry?: string;
     address?: string;
     city?: string;
     country?: string;
     logo?: string;
-    userId: string;
+    userId?: string;
 }
 
 export interface UpdateCompanyDto {
@@ -51,6 +51,7 @@ export interface UpdateCompanyDto {
     rut?: string;
     email?: string;
     phone?: string;
+    userId?: string;
 }
 
 export interface CompanyStats {

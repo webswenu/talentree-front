@@ -194,7 +194,7 @@ export const UsersPage = () => {
                             industry: data.companyIndustry || undefined,
                         });
 
-                        const createData = {
+                        const createData: any = {
                             email: data.email,
                             password: data.password || "",
                             firstName: data.firstName,
