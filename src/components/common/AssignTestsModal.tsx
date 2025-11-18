@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFixedTests } from "../../hooks/useTests";
 import { useAddFixedTest, useRemoveFixedTest } from "../../hooks/useProcesses";
 import { FixedTest } from "../../types/test.types";
@@ -23,6 +23,11 @@ export const AssignTestsModal = ({
     const [selectedTests, setSelectedTests] = useState<Set<string>>(
         new Set(assignedTestIds)
     );
+
+    // Sincronizar el estado cuando assignedTestIds cambie
+    useEffect(() => {
+        setSelectedTests(new Set(assignedTestIds));
+    }, [assignedTestIds]);
 
     if (!isOpen) return null;
 

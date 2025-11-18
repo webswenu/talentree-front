@@ -31,6 +31,7 @@ export interface User {
     lastLogin?: Date;
     createdAt: Date;
     updatedAt: Date;
+    companyId?: string;
     company?: Company;
     belongsToCompany?: Company;
     worker?: { id: string };

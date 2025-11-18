@@ -237,12 +237,36 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                     id: company.id,
                     data: updateData,
                 });
+                toast.success("Empresa actualizada correctamente");
             } else {
                 await createMutation.mutateAsync(formData);
+                toast.success("Empresa creada correctamente");
             }
             onClose();
-        } catch (err) {
-            console.error("Error al guardar la empresa:", err);
+        } catch (err: unknown) {
+            let errorMessage = "Error al guardar la empresa";
+
+            if (err && typeof err === "object" && "response" in err) {
+                const axiosError = err as {
+                    response?: {
+                        data?: {
+                            message?: string | string[];
+                        };
+                    };
+                };
+
+                const message = axiosError.response?.data?.message;
+
+                if (typeof message === "string") {
+                    errorMessage = message;
+                } else if (Array.isArray(message) && message.length > 0) {
+                    errorMessage = message[0];
+                }
+            } else if (err instanceof Error) {
+                errorMessage = err.message;
+            }
+
+            toast.error(errorMessage);
         }
     };
 
@@ -252,8 +276,8 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
         users?.filter((u) => u.role === UserRole.COMPANY) || [];
 
     return (
-        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-lg max-w-2xl w-full my-8 shadow-xl max-h-[90vh] overflow-y-auto">
                 <div className="p-6 border-b">
                     <h2 className="text-2xl font-bold">
                         {isEditing ? "Editar Empresa" : "Nueva Empresa"}

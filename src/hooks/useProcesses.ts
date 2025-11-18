@@ -16,6 +16,8 @@ export const processKeys = {
     lists: () => [...processKeys.all, "list"] as const,
     list: (filters?: ProcessFilters) =>
         [...processKeys.lists(), filters] as const,
+    public: (filters?: ProcessFilters) =>
+        [...processKeys.all, "public", filters] as const,
     byCompany: (companyId: string) =>
         [...processKeys.all, "company", companyId] as const,
     detail: (id: string) => [...processKeys.all, "detail", id] as const,
@@ -37,6 +39,15 @@ export const useProcesses = (filters?: ProcessFilters) => {
         queryFn: () => processesService.findAll(finalFilters),
         enabled: !!user,
         // Mantener datos anteriores mientras se hace fetch para evitar re-renders que rompan inputs
+        placeholderData: (previousData) => previousData,
+    });
+};
+
+export const usePublicProcesses = (filters?: ProcessFilters) => {
+    return useQuery({
+        queryKey: processKeys.public(filters),
+        queryFn: () => processesService.findPublicProcesses(filters),
+        // Este hook no requiere autenticación
         placeholderData: (previousData) => previousData,
     });
 };

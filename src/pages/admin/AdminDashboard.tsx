@@ -45,7 +45,6 @@ export const AdminDashboard = () => {
         {
             title: "Empresas Activas",
             value: companiesStats?.active ?? 0,
-            trend: companiesStats ? { value: 12, isPositive: true } : undefined,
             color: "orange" as const,
             icon: (
                 <svg
@@ -66,7 +65,6 @@ export const AdminDashboard = () => {
         {
             title: "Procesos Activos",
             value: processesStats?.byStatus?.active ?? 0,
-            trend: processesStats ? { value: 8, isPositive: true } : undefined,
             color: "turquoise" as const,
             icon: (
                 <svg
@@ -87,7 +85,6 @@ export const AdminDashboard = () => {
         {
             title: "Candidatos",
             value: workersStats?.total ?? 0,
-            trend: workersStats ? { value: 5, isPositive: false } : undefined,
             color: "purple" as const,
             icon: (
                 <svg
@@ -108,9 +105,6 @@ export const AdminDashboard = () => {
         {
             title: "Tests Completados",
             value: testResponsesStats?.completed ?? 0,
-            trend: testResponsesStats
-                ? { value: 15, isPositive: true }
-                : undefined,
             color: "pink" as const,
             icon: (
                 <svg

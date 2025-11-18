@@ -59,6 +59,15 @@ class ProcessesService {
         return response.data;
     }
 
+    async findPublicProcesses(
+        params?: ProcessFilters
+    ): Promise<PaginatedResult<SelectionProcess>> {
+        const response = await apiService.get<
+            PaginatedResult<SelectionProcess>
+        >(`${this.basePath}/available`, { params });
+        return response.data;
+    }
+
     async findOne(id: string): Promise<SelectionProcess> {
         const response = await apiService.get<SelectionProcess>(
             `${this.basePath}/${id}`

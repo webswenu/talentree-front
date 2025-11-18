@@ -1,16 +1,36 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useLogin } from "../../hooks/useAuth";
+import { useAuthStore } from "../../store/authStore";
 
 export const LoginPage = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
+    const { user } = useAuthStore();
     const loginMutation = useLogin();
+
+    // Si ya está logueado y hay redirect, navegar allí
+    useEffect(() => {
+        if (user) {
+            const redirect = searchParams.get("redirect");
+            if (redirect) {
+                navigate(redirect);
+            }
+        }
+    }, [user, searchParams, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             await loginMutation.mutateAsync({ email, password });
+            // El hook useLogin ya maneja la navegación a /dashboard
+            // pero si hay parámetro redirect, navegamos allí en su lugar
+            const redirect = searchParams.get("redirect");
+            if (redirect) {
+                navigate(redirect);
+            }
         } catch (error) {
             console.error("Login error:", error);
             throw error;
@@ -26,6 +46,28 @@ export const LoginPage = () => {
             >
                 <div className="absolute inset-0 bg-black/40"></div>
             </div>
+
+            {/* Botón de volver */}
+            <Link
+                to="/"
+                className="absolute top-6 left-6 z-20 flex items-center gap-2 text-white hover:text-teal-400 transition-colors duration-300 group"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 transform group-hover:-translate-x-1 transition-transform duration-300"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                    />
+                </svg>
+                <span className="font-medium">Volver</span>
+            </Link>
 
             <div className="card max-w-md w-full m-4 relative z-10">
                 <div className="text-center mb-8">

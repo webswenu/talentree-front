@@ -29,8 +29,11 @@ export default function WorkersPage() {
     const isEvaluator = location.pathname.includes("/evaluador");
     const processBaseRoute = isEvaluator ? "/evaluador/procesos" : "/admin/procesos";
 
-    // Obtener el companyId si el usuario es de tipo COMPANY
-    const companyId = user?.role === UserRole.COMPANY ? user?.company?.id : undefined;
+    // Obtener el companyId si el usuario es de tipo COMPANY o GUEST
+    const companyId =
+        (user?.role === UserRole.COMPANY || user?.role === UserRole.GUEST)
+            ? (user?.companyId || user?.company?.id || user?.belongsToCompany?.id)
+            : undefined;
 
     // Memoizar filtros para evitar re-fetches innecesarios
     const filters = useMemo<WorkerFilters>(

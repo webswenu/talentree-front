@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuthStore } from "../../store/authStore";
 
 export const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { user } = useAuthStore();
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -30,17 +32,17 @@ export const Navbar = () => {
                     <a href="#services" className="hover:text-teal-500 transition">
                         Servicios
                     </a>
-                    <a href="#plans" className="hover:text-teal-500 transition">
-                        Planes
+                    <a href="#processes" className="hover:text-teal-500 transition">
+                        Procesos
                     </a>
                     <a href="#contact" className="hover:text-teal-500 transition">
                         Contacto
                     </a>
                     <Link
-                        to="/login"
+                        to={user ? "/dashboard" : "/login"}
                         className="bg-teal-500 text-white px-5 py-2 rounded-full hover:bg-teal-600 transition"
                     >
-                        Ingresa
+                        {user ? "Dashboard" : "Ingresa"}
                     </Link>
                 </div>
 
@@ -97,11 +99,11 @@ export const Navbar = () => {
                         Servicios
                     </a>
                     <a
-                        href="#plans"
+                        href="#processes"
                         className="hover:text-teal-500 transition"
                         onClick={() => setIsMenuOpen(false)}
                     >
-                        Planes
+                        Procesos
                     </a>
                     <a
                         href="#contact"
@@ -111,11 +113,11 @@ export const Navbar = () => {
                         Contacto
                     </a>
                     <Link
-                        to="/login"
+                        to={user ? "/dashboard" : "/login"}
                         className="bg-teal-500 text-white px-5 py-2 rounded-full hover:bg-teal-600 transition text-center"
                         onClick={() => setIsMenuOpen(false)}
                     >
-                        Ingresa
+                        {user ? "Dashboard" : "Ingresa"}
                     </Link>
                 </div>
             </div>

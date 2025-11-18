@@ -158,7 +158,11 @@ export const WorkerDashboard = () => {
                     id: process.id,
                     titulo: process.name,
                     empresa: process.company?.name || "Empresa",
-                    modalidad: "Tiempo completo",
+                    descripcion: process.description
+                        ? process.description.length > 100
+                            ? process.description.substring(0, 100) + "..."
+                            : process.description
+                        : null,
                     ubicacion: process.location || "No especificado",
                     salario: "A convenir",
                     vacantes: process.vacancies || 1,
@@ -557,9 +561,13 @@ export const WorkerDashboard = () => {
                                     <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold break-words">
                                         {oferta.empresa}
                                     </p>
+                                    {oferta.descripcion && (
+                                        <p className="text-xs sm:text-sm text-gray-500 mt-2 font-medium break-words">
+                                            {oferta.descripcion}
+                                        </p>
+                                    )}
                                     <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-2 text-xs sm:text-sm text-gray-600">
-                                        <span className="font-medium">{oferta.modalidad}</span>
-                                        <span className="font-medium">• {oferta.ubicacion}</span>
+                                        <span className="font-medium">{oferta.ubicacion}</span>
                                         <span className="text-green-600 font-bold">
                                             • {oferta.salario}
                                         </span>

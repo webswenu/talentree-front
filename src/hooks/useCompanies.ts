@@ -36,6 +36,8 @@ export const useCreateCompany = () => {
             companiesService.create(companyData),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: companyKeys.lists() });
+            // Invalidar usuarios porque pueden tener companyId actualizado
+            queryClient.invalidateQueries({ queryKey: ["users"] });
         },
     });
 };
@@ -51,6 +53,8 @@ export const useUpdateCompany = () => {
                 queryKey: companyKeys.detail(variables.id),
             });
             queryClient.invalidateQueries({ queryKey: companyKeys.lists() });
+            // Invalidar usuarios porque pueden tener companyId actualizado
+            queryClient.invalidateQueries({ queryKey: ["users"] });
         },
     });
 };

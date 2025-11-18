@@ -7,6 +7,7 @@ import {
 } from "../../types/process.types";
 import { useCreateProcess, useUpdateProcess } from "../../hooks/useProcesses";
 import { useCompanies } from "../../hooks/useCompanies";
+import { toast } from "../../utils/toast";
 
 interface ProcessModalProps {
     process?: SelectionProcess;
@@ -91,6 +92,7 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                     id: process.id,
                     data: updateData,
                 });
+                toast.success("Proceso actualizado correctamente");
             } else {
                 const createData: CreateProcessDto = {
                     name: formData.name,
@@ -111,10 +113,33 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                 };
 
                 await createMutation.mutateAsync(createData);
+                toast.success("Proceso creado correctamente");
             }
             onClose();
-        } catch (error) {
-            console.error("Error al guardar proceso:", error);
+        } catch (error: unknown) {
+            let errorMessage = "Error al guardar proceso";
+
+            if (error && typeof error === "object" && "response" in error) {
+                const axiosError = error as {
+                    response?: {
+                        data?: {
+                            message?: string | string[];
+                        };
+                    };
+                };
+
+                const message = axiosError.response?.data?.message;
+
+                if (typeof message === "string") {
+                    errorMessage = message;
+                } else if (Array.isArray(message) && message.length > 0) {
+                    errorMessage = message[0];
+                }
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+
+            toast.error(errorMessage);
         }
     };
 
@@ -140,8 +165,8 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl my-8 shadow-xl max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold text-gray-800">
                         {process ? "Editar Proceso" : "Nuevo Proceso"}

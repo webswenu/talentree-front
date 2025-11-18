@@ -48,6 +48,8 @@ export const useUpdateUser = () => {
                 queryKey: userKeys.detail(variables.id),
             });
             queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+            // Invalidar companies porque el usuario puede tener relación con empresa
+            queryClient.invalidateQueries({ queryKey: ["companies"] });
         },
     });
 };

@@ -46,8 +46,8 @@ export default function ProcessesPage() {
         if (companyIdFromUrl) {
             setCompanyFilter(companyIdFromUrl);
         } else if (user?.role === UserRole.COMPANY || user?.role === UserRole.GUEST) {
-            // Auto-filtrar por la empresa del usuario
-            const userCompanyId = user?.company?.id || user?.belongsToCompany?.id;
+            // Auto-filtrar por la empresa del usuario usando companyId directo
+            const userCompanyId = user?.companyId || user?.company?.id || user?.belongsToCompany?.id;
             if (userCompanyId) {
                 setCompanyFilter(userCompanyId);
             }

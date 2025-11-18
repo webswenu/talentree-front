@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { userService } from "../../services/user.service";
+import companiesService from "../../services/companies.service";
 import { Modal } from "../../components/common/Modal";
 import { ConfirmDialog } from "../../components/common/ConfirmDialog";
 import { SearchInput } from "../../components/common/SearchInput";
@@ -15,6 +16,8 @@ import { UserRole, User } from "../../types/user.types";
 import { useAuthStore } from "../../store/authStore";
 import { Permission, hasPermission } from "../../utils/permissions";
 import { EditIcon, TrashIcon } from "../../components/common/ActionIcons";
+import { useCompanies, useCreateCompany } from "../../hooks/useCompanies";
+import { useCreateInvitation } from "../../hooks/useInvitations";
 
 interface UserFormData extends Record<string, unknown> {
     firstName: string;
@@ -22,6 +25,10 @@ interface UserFormData extends Record<string, unknown> {
     email: string;
     password?: string;
     role: UserRole;
+    companyName?: string;
+    companyRut?: string;
+    companyIndustry?: string;
+    companyId?: string;
 }
 
 const ROLE_OPTIONS = [
@@ -45,7 +52,13 @@ export const UsersPage = () => {
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [deletingUser, setDeletingUser] = useState<User | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.WORKER);
     const debouncedSearch = useDebounce(searchTerm, 300);
+
+    const { data: companiesData } = useCompanies();
+    const companies = companiesData?.data || [];
+    const createCompanyMutation = useCreateCompany();
+    const createInvitationMutation = useCreateInvitation();
 
     const canCreate =
         currentUser && hasPermission(currentUser.role, Permission.USERS_CREATE);
@@ -159,8 +172,12 @@ export const UsersPage = () => {
             email: "",
             password: "",
             role: UserRole.WORKER,
+            companyName: "",
+            companyRut: "",
+            companyIndustry: "",
+            companyId: "",
         },
-        onSubmit: (data) => {
+        onSubmit: async (data) => {
             if (editingUser) {
                 const updateData = { ...data };
                 if (!updateData.password) {
@@ -168,11 +185,68 @@ export const UsersPage = () => {
                 }
                 updateMutation.mutate({ id: editingUser.id, data: updateData });
             } else {
-                if (!data.password) {
-                    toast.error("La contraseña es requerida");
-                    return;
+                // Si el rol es COMPANY, crear la empresa primero
+                if (data.role === UserRole.COMPANY) {
+                    try {
+                        const company = await createCompanyMutation.mutateAsync({
+                            name: data.companyName || "",
+                            rut: data.companyRut || undefined,
+                            industry: data.companyIndustry || undefined,
+                        });
+
+                        const createData = {
+                            email: data.email,
+                            password: data.password || "",
+                            firstName: data.firstName,
+                            lastName: data.lastName,
+                            role: data.role,
+                        };
+
+                        const createdUser = await createMutation.mutateAsync(createData);
+
+                        // Actualizar la empresa con el userId
+                        await companiesService.update(company.id, { userId: createdUser.id });
+
+                        queryClient.invalidateQueries({ queryKey: ["users"] });
+                        queryClient.invalidateQueries({ queryKey: ["companies"] });
+                        toast.success("Usuario y empresa creados correctamente");
+                        setShowModal(false);
+                        resetForm();
+                    } catch (error) {
+                        console.error(error);
+                        toast.error("Error al crear usuario y empresa");
+                    }
+                } else if (data.role === UserRole.GUEST) {
+                    // Crear invitación para GUEST
+                    const invitationData = {
+                        email: data.email,
+                        firstName: data.firstName,
+                        lastName: data.lastName,
+                        companyId: data.companyId,
+                    };
+
+                    console.log('Datos de invitación a enviar:', invitationData);
+                    console.log('companyId:', data.companyId);
+
+                    await createInvitationMutation.mutateAsync(invitationData);
+                    setShowModal(false);
+                    resetForm();
+                } else {
+                    // Para otros roles (EVALUATOR, ADMIN_TALENTREE, WORKER)
+                    if (!data.password) {
+                        toast.error("La contraseña es requerida");
+                        return;
+                    }
+                    const createData: any = {
+                        email: data.email,
+                        password: data.password,
+                        firstName: data.firstName,
+                        lastName: data.lastName,
+                        role: data.role,
+                    };
+                    // EVALUATOR no lleva companyId - es un evaluador global de admin talentree
+                    createMutation.mutate(createData);
                 }
-                createMutation.mutate(data as Required<UserFormData>);
             }
         },
         validate: (values) => {
@@ -192,11 +266,28 @@ export const UsersPage = () => {
                 errors.email = "Email inválido";
             }
 
-            if (!editingUser && !values.password) {
-                errors.password = "La contraseña es requerida";
+            if (!editingUser) {
+                // Validar según el rol
+                if (values.role === UserRole.COMPANY) {
+                    if (!values.companyName?.trim()) {
+                        errors.companyName = "El nombre de la empresa es requerido";
+                    }
+                } else if (values.role === UserRole.GUEST) {
+                    if (!values.companyId) {
+                        errors.companyId = "Debes seleccionar una empresa";
+                    }
+                }
+
+                // Validar contraseña solo para roles que NO sean GUEST
+                if (values.role !== UserRole.GUEST) {
+                    if (!values.password) {
+                        errors.password = "La contraseña es requerida";
+                    } else if (values.password.length < 6) {
+                        errors.password = "La contraseña debe tener al menos 6 caracteres";
+                    }
+                }
             } else if (values.password && values.password.length < 6) {
-                errors.password =
-                    "La contraseña debe tener al menos 6 caracteres";
+                errors.password = "La contraseña debe tener al menos 6 caracteres";
             }
 
             return errors;
@@ -205,12 +296,17 @@ export const UsersPage = () => {
 
     const handleEdit = (user: User) => {
         setEditingUser(user);
+        setSelectedRole(user.role);
         setValues({
             firstName: user.firstName,
             lastName: user.lastName,
             email: user.email,
             password: "",
             role: user.role,
+            companyName: "",
+            companyRut: "",
+            companyIndustry: "",
+            companyId: "",
         });
         setShowModal(true);
     };
@@ -228,7 +324,14 @@ export const UsersPage = () => {
     const handleCloseModal = () => {
         setShowModal(false);
         setEditingUser(null);
+        setSelectedRole(UserRole.WORKER);
         resetForm();
+    };
+
+    const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newRole = e.target.value as UserRole;
+        setSelectedRole(newRole);
+        handleChange(e);
     };
 
     const getRoleLabel = (role: string) => {
@@ -494,34 +597,107 @@ export const UsersPage = () => {
                         required
                     />
 
-                    <InputField
-                        label={
-                            editingUser
-                                ? "Nueva Contraseña (dejar en blanco para mantener)"
-                                : "Contraseña"
-                        }
-                        name="password"
-                        type="password"
-                        value={values.password || ""}
-                        onChange={handleChange}
-                        error={errors.password}
-                        required={!editingUser}
-                        helperText={
-                            editingUser
-                                ? "Solo completa si deseas cambiar la contraseña"
-                                : "Mínimo 6 caracteres"
-                        }
-                    />
-
                     <SelectField
                         label="Rol"
                         name="role"
                         value={values.role}
-                        onChange={handleChange}
+                        onChange={handleRoleChange}
                         error={errors.role}
                         options={ROLE_OPTIONS}
                         required
+                        disabled={!!editingUser}
                     />
+
+                    {/* Campos para COMPANY */}
+                    {!editingUser && selectedRole === UserRole.COMPANY && (
+                        <div className="border-t border-b border-blue-200 bg-blue-50 rounded-lg p-4 space-y-3">
+                            <h3 className="text-sm font-semibold text-blue-800 mb-2">
+                                Datos de la Empresa
+                            </h3>
+                            <InputField
+                                label="Nombre de la Empresa"
+                                name="companyName"
+                                value={values.companyName || ""}
+                                onChange={handleChange}
+                                error={errors.companyName}
+                                required
+                            />
+                            <div className="grid grid-cols-2 gap-3">
+                                <InputField
+                                    label="RUT"
+                                    name="companyRut"
+                                    value={values.companyRut || ""}
+                                    onChange={handleChange}
+                                    placeholder="12345678-9"
+                                />
+                                <InputField
+                                    label="Industria"
+                                    name="companyIndustry"
+                                    value={values.companyIndustry || ""}
+                                    onChange={handleChange}
+                                    placeholder="ej: Minería"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Select de empresa solo para GUEST */}
+                    {!editingUser && selectedRole === UserRole.GUEST && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Empresa *
+                            </label>
+                            <select
+                                name="companyId"
+                                value={values.companyId || ""}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">Seleccionar empresa...</option>
+                                {companies.map((company: { id: string; name: string }) => (
+                                    <option key={company.id} value={company.id}>
+                                        {company.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.companyId && (
+                                <p className="text-red-600 text-sm mt-1">
+                                    {errors.companyId}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Contraseña - Solo para roles que NO son GUEST o en modo edición */}
+                    {(editingUser || selectedRole !== UserRole.GUEST) && (
+                        <InputField
+                            label={
+                                editingUser
+                                    ? "Nueva Contraseña (dejar en blanco para mantener)"
+                                    : "Contraseña"
+                            }
+                            name="password"
+                            type="password"
+                            value={values.password || ""}
+                            onChange={handleChange}
+                            error={errors.password}
+                            required={!editingUser && selectedRole !== UserRole.GUEST}
+                            helperText={
+                                editingUser
+                                    ? "Solo completa si deseas cambiar la contraseña"
+                                    : "Mínimo 6 caracteres"
+                            }
+                        />
+                    )}
+
+                    {/* Mensaje informativo para GUEST */}
+                    {!editingUser && selectedRole === UserRole.GUEST && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <p className="text-sm text-yellow-800">
+                                ℹ️ Se enviará una invitación por correo electrónico al usuario invitado.
+                            </p>
+                        </div>
+                    )}
 
                     <div className="flex items-center justify-end gap-3 pt-4 border-t">
                         <button

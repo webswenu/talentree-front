@@ -1,13 +1,61 @@
 import { useScrollAnimation } from "../../hooks/useScrollAnimation";
 import { Navbar } from "../../components/public/Navbar";
 import { Footer } from "../../components/public/Footer";
+import { usePublicProcesses } from "../../hooks/useProcesses";
+import { useAuthStore } from "../../store/authStore";
+import { UserRole } from "../../types/user.types";
+import { useNavigate } from "react-router-dom";
+import { workersService } from "../../services/workers.service";
+import { useState } from "react";
+import { toast } from "react-hot-toast";
 
 export const LandingPage = () => {
-    
+    const navigate = useNavigate();
+    const { user } = useAuthStore();
+    const [applyingProcessId, setApplyingProcessId] = useState<string | null>(null);
+
     const about = useScrollAnimation();
     const services = useScrollAnimation();
+    const processes = useScrollAnimation();
     const testimonials = useScrollAnimation();
     const contact = useScrollAnimation();
+
+    const { data: processesData, isLoading: isLoadingProcesses } = usePublicProcesses({ page: 1, limit: 6 });
+    const publicProcesses = processesData?.data || [];
+
+    const handleApplyToProcess = async (processId: string) => {
+        // Si no está logueado, redirigir a login con el processId como parámetro
+        if (!user) {
+            navigate(`/login?redirect=/&process=${processId}`);
+            return;
+        }
+
+        // Si está logueado pero no es WORKER, mostrar error
+        if (user.role !== UserRole.WORKER) {
+            toast.error("Solo los trabajadores pueden postular a procesos");
+            return;
+        }
+
+        // Si es WORKER, postular directamente
+        if (!user.worker?.id) {
+            toast.error("No se encontró tu perfil de trabajador");
+            return;
+        }
+
+        try {
+            setApplyingProcessId(processId);
+            await workersService.applyToProcess({
+                workerId: user.worker.id,
+                processId: processId,
+            });
+            toast.success("¡Postulación exitosa! Puedes ver el estado en tu dashboard");
+        } catch (error: any) {
+            const message = error?.response?.data?.message || "Error al postular al proceso";
+            toast.error(message);
+        } finally {
+            setApplyingProcessId(null);
+        }
+    };
 
     return (
         <div className="font-sans text-gray-800">
@@ -176,6 +224,120 @@ export const LandingPage = () => {
                             </p>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            {/* ====== PROCESOS ACTIVOS ====== */}
+            <section
+                ref={processes.ref}
+                id="processes"
+                className="py-24 bg-white overflow-hidden"
+            >
+                <div className="max-w-6xl mx-auto px-6">
+                    <div className="text-center mb-12">
+                        <h2 className={`text-3xl font-bold mb-3 animate-on-scroll ${processes.isVisible ? 'visible' : ''}`}>
+                            Oportunidades Laborales
+                        </h2>
+                        <p
+                            className={`text-gray-500 mb-8 text-justify md:text-center animate-on-scroll ${processes.isVisible ? 'visible' : ''}`}
+                            style={{ transitionDelay: '100ms' }}
+                        >
+                            Descubre las oportunidades que tenemos disponibles para ti. Postula a los procesos que mejor se adapten a tu perfil.
+                        </p>
+                    </div>
+
+                    {isLoadingProcesses ? (
+                        <div className="text-center py-12">
+                            <div className="inline-block w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-gray-500 mt-4">Cargando oportunidades...</p>
+                        </div>
+                    ) : publicProcesses.length === 0 ? (
+                        <div className="text-center py-12 bg-gray-50 rounded-2xl">
+                            <p className="text-gray-500 text-lg">
+                                No hay procesos activos en este momento.
+                            </p>
+                            <p className="text-gray-400 text-sm mt-2">
+                                Vuelve pronto para ver nuevas oportunidades.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {publicProcesses.map((process: any, index: number) => (
+                                <div
+                                    key={process.id}
+                                    className={`bg-white border border-gray-200 p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-500 animate-on-scroll hover:-translate-y-2 ${processes.isVisible ? 'visible' : ''}`}
+                                    style={{ transitionDelay: `${(index + 1) * 100}ms` }}
+                                >
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="flex-1">
+                                            <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                                                {process.position}
+                                            </h3>
+                                            <p className="text-sm text-teal-600 font-medium">
+                                                {process.company?.name || "Empresa"}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {process.location && (
+                                        <div className="flex items-center text-sm text-gray-500 mb-3">
+                                            <span className="mr-1">📍</span>
+                                            <span>{process.location}</span>
+                                        </div>
+                                    )}
+
+                                    {process.description && (
+                                        <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+                                            {process.description}
+                                        </p>
+                                    )}
+
+                                    {process.department && (
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <span className="text-xs px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
+                                                {process.department}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={() => handleApplyToProcess(process.id)}
+                                        disabled={applyingProcessId === process.id}
+                                        className={`w-full py-2 px-4 rounded-lg font-medium transition-all duration-300 ${
+                                            applyingProcessId === process.id
+                                                ? "bg-gray-400 cursor-not-allowed"
+                                                : "bg-teal-500 hover:bg-teal-600 text-white hover:scale-105"
+                                        }`}
+                                    >
+                                        {applyingProcessId === process.id ? (
+                                            <span className="flex items-center justify-center gap-2">
+                                                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                                Postulando...
+                                            </span>
+                                        ) : (
+                                            "Postular →"
+                                        )}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {publicProcesses.length > 0 && (
+                        <div className="text-center mt-12">
+                            <p className="text-gray-500 text-sm">
+                                {user ? (
+                                    user.role === UserRole.WORKER ? (
+                                        "Ve a tu dashboard para ver todos tus procesos y postulaciones"
+                                    ) : (
+                                        "Regístrate como trabajador para postular a estos procesos"
+                                    )
+                                ) : (
+                                    "Inicia sesión o regístrate para postular a estos procesos"
+                                )}
+                            </p>
+                        </div>
+                    )}
                 </div>
             </section>
 

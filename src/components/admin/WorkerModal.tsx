@@ -3,7 +3,7 @@ import { Worker, CreateWorkerDto } from "../../types/worker.types";
 import { useCreateWorker, useUpdateWorker } from "../../hooks/useWorkers";
 import { useResetPassword } from "../../hooks/useUsers";
 import { workersService } from "../../services/workers.service";
-import { toast } from "react-hot-toast";
+import { toast } from "../../utils/toast";
 
 interface WorkerModalProps {
     worker?: Worker;
@@ -153,10 +153,32 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                 setIsUploadingCV(false);
             }
 
+            toast.success(worker ? "Trabajador actualizado correctamente" : "Trabajador creado correctamente");
             onClose();
-        } catch (error) {
-            console.error("Error al guardar trabajador:", error);
-            toast.error("Error al guardar el trabajador");
+        } catch (error: unknown) {
+            let errorMessage = "Error al guardar el trabajador";
+
+            if (error && typeof error === "object" && "response" in error) {
+                const axiosError = error as {
+                    response?: {
+                        data?: {
+                            message?: string | string[];
+                        };
+                    };
+                };
+
+                const message = axiosError.response?.data?.message;
+
+                if (typeof message === "string") {
+                    errorMessage = message;
+                } else if (Array.isArray(message) && message.length > 0) {
+                    errorMessage = message[0];
+                }
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+
+            toast.error(errorMessage);
         }
     };
 

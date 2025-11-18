@@ -6,6 +6,7 @@ import { useAuthStore } from "../../store/authStore";
 import { ProcessStatus } from "../../types/process.types";
 import { ApplyProcessModal } from "../../components/worker/ApplyProcessModal";
 import { Modal } from "../../components/common/Modal";
+import { toast } from "../../utils/toast";
 
 export const WorkerProcessesPage = () => {
     const { user } = useAuthStore();
@@ -31,23 +32,16 @@ export const WorkerProcessesPage = () => {
 
     const handleConfirmApply = async () => {
         if (!selectedProcessId) {
-            console.error("No hay proceso seleccionado");
+            toast.error("No hay proceso seleccionado");
             return;
         }
 
         if (!workerId) {
-            console.error("No hay workerId. User:", user);
-            alert(
-                "Error: No tienes un perfil de trabajador asociado. Por favor contacta al administrador."
-            );
+            toast.error("Error: No tienes un perfil de trabajador asociado. Por favor contacta al administrador.");
             return;
         }
 
         try {
-            console.log("Aplicando a proceso:", {
-                workerId,
-                processId: selectedProcessId,
-            });
             await applyMutation.mutateAsync({
                 workerId,
                 processId: selectedProcessId,
@@ -56,8 +50,7 @@ export const WorkerProcessesPage = () => {
             setSelectedProcessId(null);
             setIsSuccessModalOpen(true);
         } catch (err) {
-            console.error("Error al postular:", err);
-            alert("Error al postular. Por favor intenta nuevamente.");
+            toast.error("Error al postular. Por favor intenta nuevamente.");
         }
     };
 
