@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useRegisterWorker } from "../../hooks/useAuth";
 import { RegisterWorkerDto } from "../../types/user.types";
+import { processInvitationsService } from "../../services/process-invitations.service";
 
 const STEPS = [
     { id: 1, title: "Cuenta", description: "Datos de acceso" },
@@ -10,8 +11,12 @@ const STEPS = [
 ];
 
 export const RegisterWorkerPage = () => {
+    const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
+    const fromInvitation = searchParams.get("fromInvitation");
     const [currentStep, setCurrentStep] = useState(1);
-    const registerMutation = useRegisterWorker();
+    // Si hay invitación, no dejar que el hook navegue automáticamente
+    const registerMutation = useRegisterWorker(!!fromInvitation);
 
     const [formData, setFormData] = useState<RegisterWorkerDto>({
         email: "",
@@ -31,6 +36,27 @@ export const RegisterWorkerPage = () => {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [serverError, setServerError] = useState("");
+
+    // Pre-cargar email desde la invitación si existe
+    useEffect(() => {
+        if (fromInvitation) {
+            processInvitationsService
+                .findByToken(fromInvitation)
+                .then((invitation) => {
+                    if (invitation.email) {
+                        setFormData((prev) => ({
+                            ...prev,
+                            email: invitation.email,
+                            firstName: invitation.firstName || "",
+                            lastName: invitation.lastName || "",
+                        }));
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error loading invitation:", error);
+                });
+        }
+    }, [fromInvitation]);
 
     const validateStep1 = (): boolean => {
         const newErrors: Record<string, string> = {};
@@ -112,7 +138,14 @@ export const RegisterWorkerPage = () => {
     const handleSubmit = async () => {
         setServerError("");
         try {
+            // Primero registrar
             await registerMutation.mutateAsync(formData);
+
+            // Si hay un token de invitación, redirigir a la página de aceptación
+            if (fromInvitation) {
+                navigate(`/invitation-accepted?token=${fromInvitation}`);
+            }
+            // Si no hay invitación, el hook useRegisterWorker ya redirige
         } catch (error) {
             const message =
                 error instanceof Error

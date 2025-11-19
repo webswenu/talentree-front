@@ -14,6 +14,18 @@ import { useRemoveTest, useRemoveFixedTest } from "../../hooks/useProcesses";
 import { useAuthStore } from "../../store/authStore";
 import { UserRole } from "../../types/user.types";
 import {
+    useProcessInvitations,
+    useCreateProcessInvitation,
+    useCancelProcessInvitation,
+    useResendProcessInvitation,
+} from "../../hooks/useProcessInvitations";
+import {
+    ProcessInvitation,
+    ProcessInvitationStatus,
+    ProcessInvitationStatusLabels,
+    ProcessInvitationStatusColors,
+} from "../../types/process-invitation.types";
+import {
     ProcessStatusLabels,
 } from "../../types/process.types";
 import {
@@ -37,6 +49,7 @@ import { FormatSelectionModal } from "../../components/common/FormatSelectionMod
 import { AssignTestsModal } from "../../components/common/AssignTestsModal";
 import ProcessModal from "../../components/admin/ProcessModal";
 import { VideoRequirementsConfig } from "../../components/admin/VideoRequirementsConfig";
+import { BulkInviteModal } from "../../components/admin/BulkInviteModal";
 
 type TabType = "info" | "tests" | "video" | "candidates" | "approved" | "reports" | "timeline";
 
@@ -62,6 +75,12 @@ export const ProcessDetailPage = () => {
     const [editProcessModal, setEditProcessModal] = useState(false);
     const [selectedVideo, setSelectedVideo] = useState<{ videoId: string; processName: string; videoUrl: string; workerName: string } | null>(null);
     const [downloadingVideo, setDownloadingVideo] = useState(false);
+    const [invitationModal, setInvitationModal] = useState(false);
+    const [bulkInviteModal, setBulkInviteModal] = useState(false);
+    const [invitationEmail, setInvitationEmail] = useState("");
+    const [invitationFirstName, setInvitationFirstName] = useState("");
+    const [invitationLastName, setInvitationLastName] = useState("");
+    const [showInvitationsTable, setShowInvitationsTable] = useState(false);
 
     const { data: process, isLoading, error } = useProcess(id!);
     const { data: testsData } = useProcessTests(id!) as { data?: ProcessTestsData };
@@ -73,6 +92,12 @@ export const ProcessDetailPage = () => {
     const removeTestMutation = useRemoveTest();
     const removeFixedTestMutation = useRemoveFixedTest();
     const { user } = useAuthStore();
+
+    // Invitations hooks
+    const { data: invitationsData } = useProcessInvitations({ processId: id, page: 1, limit: 100 });
+    const createInvitationMutation = useCreateProcessInvitation();
+    const cancelInvitationMutation = useCancelProcessInvitation();
+    const resendInvitationMutation = useResendProcessInvitation();
 
     // Get videos for each worker
     const { data: videos = {} } = useQuery({
@@ -229,6 +254,43 @@ export const ProcessDetailPage = () => {
             await removeFixedTestMutation.mutateAsync({ processId: id, fixedTestId });
         } catch {
             // Error handled silently or by mutation error handler
+        }
+    };
+
+    // Invitation handlers
+    const handleCreateInvitation = async () => {
+        if (!id || !invitationEmail || !invitationFirstName || !invitationLastName) return;
+
+        try {
+            await createInvitationMutation.mutateAsync({
+                processId: id,
+                email: invitationEmail,
+                firstName: invitationFirstName,
+                lastName: invitationLastName,
+            });
+            // Reset form
+            setInvitationEmail("");
+            setInvitationFirstName("");
+            setInvitationLastName("");
+            setInvitationModal(false);
+        } catch {
+            // Error handled by mutation
+        }
+    };
+
+    const handleCancelInvitation = async (invitationId: string) => {
+        try {
+            await cancelInvitationMutation.mutateAsync(invitationId);
+        } catch {
+            // Error handled by mutation
+        }
+    };
+
+    const handleResendInvitation = async (invitationId: string) => {
+        try {
+            await resendInvitationMutation.mutateAsync(invitationId);
+        } catch {
+            // Error handled by mutation
         }
     };
 
@@ -670,12 +732,129 @@ export const ProcessDetailPage = () => {
 
             {/* Tab Candidatos */}
             {activeTab === "candidates" && (
-                <div className="bg-white rounded-lg shadow">
-                    <div className="p-6">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                            Candidatos del Proceso
-                        </h2>
-                        {workersData && workersData.length > 0 ? (
+                <div className="space-y-6">
+                    {/* Invitations Section */}
+                    {canEdit && (
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-semibold text-gray-900">
+                                    Invitar Candidatos
+                                </h2>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setShowInvitationsTable(!showInvitationsTable)}
+                                        className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                                    >
+                                        {showInvitationsTable ? "Ocultar" : "Ver"} Invitaciones ({invitationsData?.data?.length || 0})
+                                    </button>
+                                    <button
+                                        onClick={() => setBulkInviteModal(true)}
+                                        className="px-4 py-2 text-sm border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                                    >
+                                        📊 Carga Masiva Excel
+                                    </button>
+                                    <button
+                                        onClick={() => setInvitationModal(true)}
+                                        className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                    >
+                                        + Invitar Candidato
+                                    </button>
+                                </div>
+                            </div>
+
+                            {showInvitationsTable && invitationsData?.data && invitationsData.data.length > 0 && (
+                                <div className="mt-4 overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                    Candidato
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                    Email
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                    Estado
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                    Enviado
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                    Expira
+                                                </th>
+                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                                                    Acciones
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {invitationsData.data.map((invitation: ProcessInvitation) => (
+                                                <tr key={invitation.id} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-medium text-gray-900">
+                                                            {invitation.firstName} {invitation.lastName}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-500">
+                                                            {invitation.email}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span
+                                                            className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                                                ProcessInvitationStatusColors[invitation.status]
+                                                            }`}
+                                                        >
+                                                            {ProcessInvitationStatusLabels[invitation.status]}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {invitation.sentAt
+                                                            ? new Date(invitation.sentAt).toLocaleDateString()
+                                                            : new Date(invitation.createdAt).toLocaleDateString()}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {new Date(invitation.expiresAt).toLocaleDateString()}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                        <div className="flex justify-end gap-2">
+                                                            {invitation.status === ProcessInvitationStatus.PENDING && (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => handleResendInvitation(invitation.id)}
+                                                                        disabled={resendInvitationMutation.isPending}
+                                                                        className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
+                                                                    >
+                                                                        Reenviar
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleCancelInvitation(invitation.id)}
+                                                                        disabled={cancelInvitationMutation.isPending}
+                                                                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                                                                    >
+                                                                        Cancelar
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Candidates Table */}
+                    <div className="bg-white rounded-lg shadow">
+                        <div className="p-6">
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                                Candidatos del Proceso
+                            </h2>
+                            {workersData && workersData.length > 0 ? (
                             <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
@@ -799,6 +978,7 @@ export const ProcessDetailPage = () => {
                         )}
                     </div>
                 </div>
+            </div>
             )}
 
             {/* Tab Completados */}
@@ -1443,6 +1623,88 @@ export const ProcessDetailPage = () => {
                     </div>
                 </div>
             )}
+
+            {/* Invitation Modal */}
+            {invitationModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                            Invitar Candidato
+                        </h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Nombre
+                                </label>
+                                <input
+                                    type="text"
+                                    value={invitationFirstName}
+                                    onChange={(e) => setInvitationFirstName(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="Juan"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Apellido
+                                </label>
+                                <input
+                                    type="text"
+                                    value={invitationLastName}
+                                    onChange={(e) => setInvitationLastName(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="Pérez"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    value={invitationEmail}
+                                    onChange={(e) => setInvitationEmail(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="juan.perez@ejemplo.com"
+                                />
+                            </div>
+                        </div>
+                        <div className="mt-6 flex gap-3">
+                            <button
+                                onClick={handleCreateInvitation}
+                                disabled={
+                                    createInvitationMutation.isPending ||
+                                    !invitationEmail ||
+                                    !invitationFirstName ||
+                                    !invitationLastName
+                                }
+                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {createInvitationMutation.isPending ? "Enviando..." : "Enviar Invitación"}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setInvitationModal(false);
+                                    setInvitationEmail("");
+                                    setInvitationFirstName("");
+                                    setInvitationLastName("");
+                                }}
+                                disabled={createInvitationMutation.isPending}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Bulk Invite Modal */}
+            <BulkInviteModal
+                isOpen={bulkInviteModal}
+                processId={id!}
+                onClose={() => setBulkInviteModal(false)}
+            />
         </div>
     );
 };

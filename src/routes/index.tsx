@@ -17,7 +17,8 @@ import { LoginPage } from "../pages/public/LoginPage";
 import { RegisterWorkerPage } from "../pages/public/RegisterWorkerPage";
 import { UnauthorizedPage } from "../pages/public/UnauthorizedPage";
 import { NotFoundPage } from "../pages/public/NotFoundPage";
-import { AcceptInvitationPage } from "../pages/AcceptInvitationPage";
+import { AcceptInvitationPage } from "../pages/public/AcceptInvitationPage";
+import { InvitationAcceptedPage } from "../pages/public/InvitationAcceptedPage";
 
 // Admin Pages
 import { AdminDashboard } from "../pages/admin/AdminDashboard";
@@ -108,8 +109,12 @@ export const AppRoutes = () => {
                         element={<RegisterWorkerPage />}
                     />
                     <Route
-                        path="accept-invitation/:token"
+                        path="invitations/:token"
                         element={<AcceptInvitationPage />}
+                    />
+                    <Route
+                        path="invitation-accepted"
+                        element={<InvitationAcceptedPage />}
                     />
                     <Route path="unauthorized" element={<UnauthorizedPage />} />
                 </Route>

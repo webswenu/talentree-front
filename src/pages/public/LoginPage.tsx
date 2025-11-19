@@ -23,13 +23,22 @@ export const LoginPage = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
         try {
+            // Primero hacer login
             await loginMutation.mutateAsync({ email, password });
-            // El hook useLogin ya maneja la navegación a /dashboard
-            // pero si hay parámetro redirect, navegamos allí en su lugar
-            const redirect = searchParams.get("redirect");
-            if (redirect) {
-                navigate(redirect);
+
+            // Si hay invitación, redirigir a la página de aceptación
+            const fromInvitation = searchParams.get("fromInvitation");
+            if (fromInvitation) {
+                navigate(`/invitation-accepted?token=${fromInvitation}`);
+            } else {
+                // Si no hay invitación, verificar si hay redirect
+                const redirect = searchParams.get("redirect");
+                if (redirect) {
+                    navigate(redirect);
+                }
+                // Si no hay redirect, el hook useLogin ya navega a /dashboard
             }
         } catch (error) {
             console.error("Login error:", error);

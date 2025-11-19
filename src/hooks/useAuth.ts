@@ -24,7 +24,7 @@ export const useLogin = () => {
     });
 };
 
-export const useRegisterWorker = () => {
+export const useRegisterWorker = (skipNavigation: boolean = false) => {
     const navigate = useNavigate();
     const setUser = useAuthStore((state) => state.setUser);
     const queryClient = useQueryClient();
@@ -36,7 +36,10 @@ export const useRegisterWorker = () => {
             setUser(data.user);
             queryClient.invalidateQueries({ queryKey: ["currentUser"] });
 
-            navigate("/trabajador");
+            // Solo navegar si no se especifica skipNavigation
+            if (!skipNavigation) {
+                navigate("/trabajador");
+            }
         },
         onError: (error: Error) => {
             console.error("Register error:", error);
