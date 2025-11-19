@@ -77,7 +77,7 @@ export const WorkerApplicationDetailPage = () => {
         });
     };
 
-    const handleStartTest = async (testId: string) => {
+    const handleStartTest = async (testId: string, isFixedTest: boolean = false) => {
         if (!application?.id) return;
 
         setStartingTestId(testId);
@@ -85,6 +85,7 @@ export const WorkerApplicationDetailPage = () => {
             const response = await startTestMutation.mutateAsync({
                 testId,
                 workerProcessId: application.id,
+                isFixedTest,
             });
 
             // Navigate to test taking page with the response ID
@@ -334,7 +335,7 @@ export const WorkerApplicationDetailPage = () => {
                                         </div>
                                     ) : (
                                         <button
-                                            onClick={() => handleStartTest(fixedTest.id)}
+                                            onClick={() => handleStartTest(fixedTest.id, true)}
                                             disabled={startingTestId === fixedTest.id}
                                             className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                         >

@@ -36,6 +36,7 @@ export interface TestResponse {
 export interface StartTestDto {
     testId: string;
     workerProcessId: string;
+    isFixedTest?: boolean;
 }
 
 export interface SubmitAnswerDto {
