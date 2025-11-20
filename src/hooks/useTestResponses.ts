@@ -67,11 +67,18 @@ export const useSubmitTest = () => {
             responseId: string;
             data: SubmitTestDto;
         }) => testResponsesService.submitTest(responseId, data),
-        onSuccess: (_, variables) => {
+        onSuccess: (testResponse, variables) => {
             queryClient.invalidateQueries({
                 queryKey: testResponseKeys.detail(variables.responseId),
             });
             queryClient.invalidateQueries({ queryKey: testResponseKeys.all });
+
+            // Invalidate worker process to update test list
+            if (testResponse.workerProcess) {
+                queryClient.invalidateQueries({
+                    queryKey: ["workers", "worker-process", testResponse.workerProcess.id],
+                });
+            }
         },
     });
 };
