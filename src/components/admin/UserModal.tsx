@@ -39,6 +39,8 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                 companyId: "",
             },
             onSubmit: async (values) => {
+                console.log("🔵 onSubmit iniciado, values:", values);
+                console.log("🔵 isEditMode:", isEditMode, "role:", values.role);
                 if (isEditMode && user) {
                     const updateData: UpdateUserDto = {
                         firstName: values.firstName,
@@ -85,14 +87,24 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                         // TODO: Enviar invitación por email para GUEST
                         toast.info("Funcionalidad de invitación en desarrollo");
                     } else {
-                        const createData: CreateUserDto = {
-                            email: values.email,
-                            password: values.password,
-                            firstName: values.firstName,
-                            lastName: values.lastName,
-                            role: values.role as UserRole,
-                        };
-                        await createMutation.mutateAsync(createData);
+                        try {
+                            const createData: CreateUserDto = {
+                                email: values.email,
+                                password: values.password,
+                                firstName: values.firstName,
+                                lastName: values.lastName,
+                                role: values.role as UserRole,
+                            };
+                            await createMutation.mutateAsync(createData);
+                            toast.success("Usuario creado correctamente");
+                        } catch (error: any) {
+                            console.log("❌ Error completo:", error);
+                            console.log("❌ Error.response:", error?.response);
+                            console.log("❌ Error.response.data:", error?.response?.data);
+                            const errorMessage = error?.response?.data?.message || "Error al crear usuario";
+                            toast.error(errorMessage);
+                            throw error; // Re-throw to prevent onClose
+                        }
                     }
                 }
             },
@@ -128,6 +140,10 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["users"] });
             onClose();
+        },
+        onError: (error: any) => {
+            console.log("❌ createMutation.onError ejecutado");
+            console.log("❌ Error:", error);
         },
     });
 

@@ -121,8 +121,12 @@ export const UsersPage = () => {
             setShowModal(false);
             resetForm();
         },
-        onError: (error: Error) => {
-            toast.error(error.message || "Error al crear usuario");
+        onError: (error: any) => {
+            console.log("❌ Error completo:", error);
+            console.log("❌ Error.response:", error?.response);
+            console.log("❌ Error.response.data:", error?.response?.data);
+            const errorMessage = error?.response?.data?.message || error.message || "Error al crear usuario";
+            toast.error(errorMessage);
         },
     });
 
@@ -141,8 +145,9 @@ export const UsersPage = () => {
             setEditingUser(null);
             resetForm();
         },
-        onError: (error: Error) => {
-            toast.error(error.message || "Error al actualizar usuario");
+        onError: (error: any) => {
+            const errorMessage = error?.response?.data?.message || error.message || "Error al actualizar usuario";
+            toast.error(errorMessage);
         },
     });
 
@@ -179,10 +184,11 @@ export const UsersPage = () => {
         },
         onSubmit: async (data) => {
             if (editingUser) {
-                const updateData = { ...data };
-                if (!updateData.password) {
-                    delete updateData.password;
-                }
+                // Solo actualizar nombre y apellido (no cambiar rol, email, ni otros campos)
+                const updateData = {
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                };
                 updateMutation.mutate({ id: editingUser.id, data: updateData });
             } else {
                 // Si el rol es COMPANY, crear la empresa primero
@@ -595,6 +601,7 @@ export const UsersPage = () => {
                         onChange={handleChange}
                         error={errors.email}
                         required
+                        disabled={!!editingUser}
                     />
 
                     <SelectField
