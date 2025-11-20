@@ -1,9 +1,11 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useTestResponse } from "../../hooks/useTestResponses";
 
 export const WorkerTestResultsPage = () => {
     const { testResponseId } = useParams<{ testResponseId: string }>();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const processIdFromQuery = searchParams.get("processId");
 
     const { data: testResponse, isLoading } = useTestResponse(
         testResponseId || ""
@@ -93,10 +95,10 @@ export const WorkerTestResultsPage = () => {
 
                 <button
                     onClick={() => {
-                        // Navigate back to the process detail page
-                        const processId = testResponse.workerProcess?.process?.id;
+                        // Use query param first, then try from testResponse, fallback to postulaciones
+                        const processId = processIdFromQuery || testResponse.workerProcess?.id;
                         if (processId) {
-                            navigate(`/trabajador/procesos/${processId}`);
+                            navigate(`/trabajador/postulaciones/${processId}`);
                         } else {
                             navigate("/trabajador/postulaciones");
                         }

@@ -565,33 +565,36 @@ export const VideoRecorder = ({
                 )}
             </div>
 
-                {/* Instructions Box - Show on the right when recording */}
-                {state === "recording" && instructions && (
+                {/* Instructions Box and Stop Button - Show on the right when recording */}
+                {state === "recording" && (
                     <div className="w-1/3 flex flex-col space-y-4">
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 flex-1">
-                            <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                                📹 Instrucciones
-                            </h3>
-                            <p className="text-blue-800 whitespace-pre-wrap text-sm">{instructions}</p>
-                            <div className="mt-4 flex items-start space-x-2 text-sm text-blue-700">
-                                <span>⏱️</span>
-                                <p>
-                                    Duración máxima: {Math.floor(maxDuration / 60)} minutos y{" "}
-                                    {maxDuration % 60} segundos
-                                </p>
-                            </div>
-                            {questions.length > 0 && (
-                                <div className="mt-3 flex items-start space-x-2 text-sm text-blue-700">
-                                    <span>❓</span>
+                        {/* Instructions Box - Only show if instructions exist */}
+                        {instructions && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 flex-1">
+                                <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                                    📹 Instrucciones
+                                </h3>
+                                <p className="text-blue-800 whitespace-pre-wrap text-sm">{instructions}</p>
+                                <div className="mt-4 flex items-start space-x-2 text-sm text-blue-700">
+                                    <span>⏱️</span>
                                     <p>
-                                        Durante la grabación aparecerán {questions.length}{" "}
-                                        pregunta(s) que debes responder
+                                        Duración máxima: {Math.floor(maxDuration / 60)} minutos y{" "}
+                                        {maxDuration % 60} segundos
                                     </p>
                                 </div>
-                            )}
-                        </div>
+                                {questions.length > 0 && (
+                                    <div className="mt-3 flex items-start space-x-2 text-sm text-blue-700">
+                                        <span>❓</span>
+                                        <p>
+                                            Durante la grabación aparecerán {questions.length}{" "}
+                                            pregunta(s) que debes responder
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
-                        {/* Terminar Grabación button */}
+                        {/* Terminar Grabación button - ALWAYS show when recording */}
                         <button
                             onClick={stopRecording}
                             className="w-full px-6 py-4 bg-red-600 text-white text-lg font-semibold rounded-lg hover:bg-red-700 transition-colors"

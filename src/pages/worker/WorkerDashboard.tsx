@@ -54,7 +54,8 @@ export const WorkerDashboard = () => {
 
     const misAplicacionesCompletas =
         myApplications?.map((app) => {
-            const testsTotal = app.process?.tests?.length || 0;
+            // Contar tests regulares + fixed tests
+            const testsTotal = (app.process?.tests?.length || 0) + (app.process?.fixedTests?.length || 0);
             const testsCompletados =
                 app.testResponses?.filter((tr) => tr.isCompleted).length || 0;
 
@@ -343,7 +344,8 @@ export const WorkerDashboard = () => {
                     {misAplicaciones.map((app) => (
                         <div
                             key={app.id}
-                            className="p-3 sm:p-4 rounded-xl border border-white/15 bg-white/8 transition-all duration-300 hover:bg-white/12"
+                            onClick={() => navigate(`/trabajador/postulaciones/${app.id}`)}
+                            className="p-3 sm:p-4 rounded-xl border border-white/15 bg-white/8 transition-all duration-300 hover:bg-white/12 cursor-pointer"
                         >
                             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                                 <div className="flex-1 min-w-0">
@@ -362,35 +364,10 @@ export const WorkerDashboard = () => {
                                     <p className="text-xs sm:text-sm font-bold text-gray-600 mt-1">
                                         {app.empresa}
                                     </p>
-                                    <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-2 text-xs sm:text-sm">
-                                        <span className="font-medium text-gray-600">
-                                            Aplicado: {app.fechaAplicacion}
-                                        </span>
-                                        <span className="font-medium text-gray-600">
-                                            • Tests: {app.testsCompletados}/{app.testsTotal} completados
-                                        </span>
-                                        {app.puntaje && (
-                                            <span className="text-green-600 font-bold">
-                                                • Puntaje: {app.puntaje}/100
-                                            </span>
-                                        )}
-                                    </div>
-                                    {app.mensaje && (
-                                        <p className="text-xs sm:text-sm text-gray-500 mt-1 font-medium">
-                                            Estado: {app.mensaje}
-                                        </p>
-                                    )}
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                                        Aplicado: {app.fechaAplicacion}
+                                    </p>
                                 </div>
-                                <button
-                                    onClick={() =>
-                                        navigate(
-                                            `/trabajador/postulaciones/${app.id}`
-                                        )
-                                    }
-                                    className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text text-transparent hover:scale-110 transition-transform duration-300 self-start lg:self-center whitespace-nowrap"
-                                >
-                                    Ver Detalle →
-                                </button>
                             </div>
                         </div>
                     ))}

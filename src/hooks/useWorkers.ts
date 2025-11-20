@@ -59,6 +59,8 @@ export const useWorkerProcess = (id: string) => {
         queryKey: workerKeys.workerProcess(id),
         queryFn: () => workersService.getWorkerProcessById(id),
         enabled: !!id,
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: true,
     });
 };
 

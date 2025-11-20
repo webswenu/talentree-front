@@ -47,6 +47,7 @@ export interface Test {
     questions: TestQuestion[];
     createdAt: Date;
     updatedAt: Date;
+    testStatus?: 'available' | 'in_progress' | 'completed' | 'incomplete';
 }
 
 export interface FixedTest {
@@ -60,6 +61,7 @@ export interface FixedTest {
     configuration: Record<string, unknown>;
     createdAt: Date;
     updatedAt: Date;
+    testStatus?: 'available' | 'in_progress' | 'completed' | 'incomplete';
 }
 
 export interface CreateQuestionDto {

@@ -74,11 +74,26 @@ export const useSubmitTest = () => {
             queryClient.invalidateQueries({ queryKey: testResponseKeys.all });
 
             // Invalidate worker process to update test list
-            if (testResponse.workerProcess) {
+            const workerProcessId = typeof testResponse.workerProcess === 'string'
+                ? testResponse.workerProcess
+                : testResponse.workerProcess?.id;
+
+            if (workerProcessId) {
+                console.log('Invalidating worker process:', workerProcessId);
                 queryClient.invalidateQueries({
-                    queryKey: ["workers", "worker-process", testResponse.workerProcess.id],
+                    queryKey: ["workers", "worker-process", workerProcessId],
+                });
+                // Also invalidate all worker process queries to be safe
+                queryClient.invalidateQueries({
+                    queryKey: ["workers", "worker-process"],
                 });
             }
+
+            // Invalidate all process tests queries to update test status badges
+            console.log('Invalidating all process tests queries');
+            queryClient.invalidateQueries({
+                queryKey: ["processes", "tests"],
+            });
         },
     });
 };

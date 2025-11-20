@@ -81,6 +81,8 @@ export const useProcessTests = (id: string) => {
         queryKey: processKeys.tests(id),
         queryFn: () => processesService.getTests(id),
         enabled: !!id,
+        staleTime: 0, // Always consider data stale to refetch on mount
+        refetchOnMount: true, // Always refetch when component mounts
     });
 };
 

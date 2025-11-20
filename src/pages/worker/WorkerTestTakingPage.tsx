@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTestResponse, useSubmitTest } from "../../hooks/useTestResponses";
+import { useTestTimers } from "../../hooks/useTestTimers";
 import { QuestionType, FixedTest } from "../../types/test.types";
 import { SubmitAnswerDto, TestResponse } from "../../types/test-response.types";
 
@@ -36,6 +37,7 @@ export const WorkerTestTakingPage = () => {
         testResponseId || ""
     ) as { data?: ExtendedTestResponse; isLoading: boolean };
     const submitMutation = useSubmitTest();
+    const { registerTimer, removeTimer, getTimeLeft } = useTestTimers();
 
     const [currentQuestion, setCurrentQuestion] = useState(() => {
         // Restore current question from localStorage if exists
@@ -44,7 +46,11 @@ export const WorkerTestTakingPage = () => {
     });
     const [answers, setAnswers] = useState<
         Record<string, string | string[] | number | Record<string, unknown> | null>
-    >({});
+    >(() => {
+        // Restore answers from localStorage if exists
+        const saved = localStorage.getItem(`test_progress_answers_${testResponseId}`);
+        return saved ? JSON.parse(saved) : {};
+    });
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -98,6 +104,19 @@ export const WorkerTestTakingPage = () => {
         }
     }, [currentQuestion, testResponseId]);
 
+    // Save answers to localStorage whenever they change (for auto-submit)
+    useEffect(() => {
+        if (testResponseId && Object.keys(answers).length > 0) {
+            const submitAnswers: SubmitAnswerDto[] = questions
+                .filter((q) => answers[q.id] !== null && answers[q.id] !== undefined)
+                .map((q) => ({
+                    questionId: q.id,
+                    answer: answers[q.id] as string | string[] | number | null,
+                }));
+            localStorage.setItem(`test_progress_answers_${testResponseId}`, JSON.stringify(submitAnswers));
+        }
+    }, [answers, testResponseId, questions]);
+
     const handleSubmit = useCallback(async () => {
         if (!testResponseId || isSubmitting) return;
 
@@ -112,51 +131,78 @@ export const WorkerTestTakingPage = () => {
             }));
 
         try {
-            await submitMutation.mutateAsync({
+            const response = await submitMutation.mutateAsync({
                 responseId: testResponseId,
                 data: { answers: submitAnswers },
             });
             // Clean up progress from localStorage after successful submit
             localStorage.removeItem(`test_progress_${testResponseId}`);
-            navigate(`/trabajador/resultados/${testResponseId}`);
+            localStorage.removeItem(`test_progress_answers_${testResponseId}`);
+            // Remove timer
+            removeTimer(testResponseId);
+            // Pass workerProcessId as query param to results page
+            const workerProcessId = response.workerProcess?.id;
+            if (workerProcessId) {
+                navigate(`/trabajador/resultados/${testResponseId}?processId=${workerProcessId}`);
+            } else {
+                navigate(`/trabajador/resultados/${testResponseId}`);
+            }
         } catch {
             setIsSubmitting(false);
         }
-    }, [testResponseId, questions, answers, submitMutation, navigate, isSubmitting]);
+    }, [testResponseId, questions, answers, submitMutation, navigate, isSubmitting, removeTimer]);
 
+    // Register timer with global timer system and update local display
     useEffect(() => {
-        if (!testData?.duration || testResponse?.isCompleted) return;
+        if (!testData?.duration || !testResponse?.startedAt || testResponse?.isCompleted || !testResponseId) return;
 
-        const duration = testData.duration * 60;
-        const startedAt = testResponse?.startedAt
-            ? new Date(testResponse.startedAt).getTime()
-            : Date.now();
-        const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-        const remaining = Math.max(0, duration - elapsed);
+        const startedAt = new Date(testResponse.startedAt).getTime();
+        const duration = testData.duration; // in minutes
 
-        setTimeLeft(remaining);
+        // Get processId and workerProcessId
+        const processId = typeof testResponse.workerProcess === 'string'
+            ? testResponse.workerProcess
+            : testResponse.workerProcess?.id || '';
+        const workerProcessId = processId;
 
-        // Don't auto-submit if timer is already at 0 when component mounts
-        if (remaining <= 0) {
-            return;
+        // Register with global timer system (only once, registerTimer handles duplicates)
+        registerTimer(testResponseId, startedAt, duration, processId, workerProcessId);
+
+        // Update local timeLeft state for display
+        const updateTimeLeft = () => {
+            const remaining = getTimeLeft(testResponseId);
+            setTimeLeft(remaining);
+        };
+
+        // Update immediately
+        updateTimeLeft();
+
+        // Update every second for display
+        const interval = setInterval(updateTimeLeft, 1000);
+
+        return () => {
+            clearInterval(interval);
+            // Don't remove timer on unmount - it should continue globally
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [testResponse?.startedAt, testData?.duration, testResponse?.isCompleted, testResponseId]);
+
+    // Redirect to applications when test is completed
+    useEffect(() => {
+        if (testResponse?.isCompleted) {
+            // Clean up timer and localStorage
+            if (testResponseId) {
+                removeTimer(testResponseId);
+                localStorage.removeItem(`test_progress_${testResponseId}`);
+                localStorage.removeItem(`test_progress_answers_${testResponseId}`);
+            }
+            // Redirect after a short delay to allow state updates
+            const timer = setTimeout(() => {
+                navigate("/trabajador/postulaciones");
+            }, 500);
+            return () => clearTimeout(timer);
         }
-
-        const interval = setInterval(() => {
-            setTimeLeft((prev) => {
-                if (prev === null || prev <= 1) {
-                    clearInterval(interval);
-                    // Only auto-submit when timer naturally reaches 0
-                    if (prev === 1 && !isSubmitting) {
-                        handleSubmit();
-                    }
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, [testResponse, testData, handleSubmit, isSubmitting]);
+    }, [testResponse?.isCompleted, testResponseId, removeTimer, navigate]);
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -625,18 +671,9 @@ export const WorkerTestTakingPage = () => {
         return (
             <div className="max-w-2xl mx-auto px-6 py-12">
                 <div className="bg-white rounded-lg shadow p-8 text-center">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                        Test Completado
-                    </h2>
-                    <p className="text-gray-600 mb-6">
-                        Ya has completado este test.
+                    <p className="text-gray-600">
+                        Redirigiendo...
                     </p>
-                    <button
-                        onClick={() => navigate("/trabajador/postulaciones")}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                        Ver Mis Postulaciones
-                    </button>
                 </div>
             </div>
         );
