@@ -16,7 +16,7 @@ interface TimerState {
 const STORAGE_KEY = 'active_test_timers';
 
 // Global interval reference to ensure only one interval runs
-let globalIntervalId: NodeJS.Timeout | null = null;
+let globalIntervalId: number | null = null;
 let intervalCallbacks: Map<string, () => void> = new Map();
 
 /**

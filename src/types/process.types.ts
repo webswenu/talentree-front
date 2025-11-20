@@ -56,6 +56,7 @@ export interface SelectionProcess {
     createdBy: User;
     evaluators?: User[];
     tests?: Array<{ id: string; name: string }>;
+    fixedTests?: Array<{ id: string; name: string; code: string }>;
     workers?: BasicWorkerProcess[];
 }
 

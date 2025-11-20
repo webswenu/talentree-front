@@ -1,4 +1,4 @@
-import { Test, TestQuestion } from "./test.types";
+import { Test, TestQuestion, FixedTest } from "./test.types";
 import { WorkerProcess } from "./worker.types";
 
 export interface TestAnswer {
@@ -23,6 +23,7 @@ export interface TestResponse {
     evaluatorNotes?: string;
     metadata?: Record<string, unknown>;
     test: Test;
+    fixedTest?: FixedTest;
     workerProcess: WorkerProcess;
     worker?: {
         firstName: string;
