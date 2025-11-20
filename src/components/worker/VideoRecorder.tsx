@@ -15,12 +15,14 @@ type RecordingState = "idle" | "countdown" | "recording" | "stopped" | "review" 
 
 export const VideoRecorder = ({
     maxDuration,
-    questions = [],
+    questions: questionsProps = [],
     instructions,
     workerId: _workerId, // eslint-disable-line @typescript-eslint/no-unused-vars
     onVideoRecorded,
     onCancel,
 }: VideoRecorderProps) => {
+    // Ensure questions is always an array (never null or undefined)
+    const questions = questionsProps || [];
     const [state, setState] = useState<RecordingState>("idle");
     const [countdown, setCountdown] = useState(3);
     const [elapsedTime, setElapsedTime] = useState(0);
@@ -41,6 +43,7 @@ export const VideoRecorder = ({
     const analyserRef = useRef<AnalyserNode | null>(null);
     const animationFrameRef = useRef<number | null>(null);
     const hasCalledOnVideoRecorded = useRef(false);
+    const elapsedTimeRef = useRef<number>(0); // Ref for actual elapsed time
 
     const [audioLevel, setAudioLevel] = useState(0);
 
@@ -78,6 +81,7 @@ export const VideoRecorder = ({
             timerRef.current = setInterval(() => {
                 setElapsedTime((prev) => {
                     const newTime = prev + 1;
+                    elapsedTimeRef.current = newTime; // Update ref with current time
 
                     // Check for questions to display
                     const questionToShow = questions.find(
@@ -264,9 +268,12 @@ export const VideoRecorder = ({
                 // Create URL for preview
                 const url = URL.createObjectURL(blob);
 
+                // Use ref to get actual elapsed time (not captured state)
+                const actualDuration = elapsedTimeRef.current;
+
                 // Save blob for review/download
                 setRecordedBlob(blob);
-                setRecordedDuration(elapsedTime);
+                setRecordedDuration(actualDuration);
                 setVideoPreviewUrl(url);
                 setState("review");
             };
@@ -277,6 +284,17 @@ export const VideoRecorder = ({
 
             setState("recording");
             setElapsedTime(0);
+            elapsedTimeRef.current = 0; // Initialize ref
+
+            // Check for questions at second 0 immediately
+            const questionAtZero = questions.find((q) => q.displayAtSecond === 0);
+            if (questionAtZero) {
+                setCurrentQuestion(questionAtZero);
+                // Hide question after 5 seconds
+                questionTimerRef.current = setTimeout(() => {
+                    setCurrentQuestion(null);
+                }, 5000);
+            }
         } catch (error: unknown) {
             let errorMsg = "Error al iniciar la grabación";
             
@@ -394,7 +412,7 @@ export const VideoRecorder = ({
 
     return (
         <div className="max-w-6xl mx-auto p-6 space-y-6">
-            {/* Instructions */}
+            {/* Instructions - Only show above video when idle */}
             {state === "idle" && instructions && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                     <h3 className="text-lg font-semibold text-blue-900 mb-2">
@@ -420,8 +438,11 @@ export const VideoRecorder = ({
                 </div>
             )}
 
-            {/* Video Preview */}
-            <div className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video">
+            {/* Video and Instructions Side by Side when recording */}
+            {state !== "review" && (
+            <div className={`flex gap-6 ${state === "recording" ? "flex-row" : "flex-col"}`}>
+                {/* Video Preview */}
+                <div className={`relative bg-gray-900 rounded-lg overflow-hidden ${state === "recording" ? "w-2/3 aspect-video" : "aspect-video"}`}>
                 <video
                     ref={videoRef}
                     autoPlay
@@ -544,6 +565,44 @@ export const VideoRecorder = ({
                 )}
             </div>
 
+                {/* Instructions Box - Show on the right when recording */}
+                {state === "recording" && instructions && (
+                    <div className="w-1/3 flex flex-col space-y-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 flex-1">
+                            <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                                📹 Instrucciones
+                            </h3>
+                            <p className="text-blue-800 whitespace-pre-wrap text-sm">{instructions}</p>
+                            <div className="mt-4 flex items-start space-x-2 text-sm text-blue-700">
+                                <span>⏱️</span>
+                                <p>
+                                    Duración máxima: {Math.floor(maxDuration / 60)} minutos y{" "}
+                                    {maxDuration % 60} segundos
+                                </p>
+                            </div>
+                            {questions.length > 0 && (
+                                <div className="mt-3 flex items-start space-x-2 text-sm text-blue-700">
+                                    <span>❓</span>
+                                    <p>
+                                        Durante la grabación aparecerán {questions.length}{" "}
+                                        pregunta(s) que debes responder
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Terminar Grabación button */}
+                        <button
+                            onClick={stopRecording}
+                            className="w-full px-6 py-4 bg-red-600 text-white text-lg font-semibold rounded-lg hover:bg-red-700 transition-colors"
+                        >
+                            ✅ Terminar Grabación
+                        </button>
+                    </div>
+                )}
+            </div>
+            )}
+
             {/* Controls */}
             <div className="flex justify-center space-x-4">
                 {state === "idle" && (
@@ -563,14 +622,7 @@ export const VideoRecorder = ({
                     </>
                 )}
 
-                {state === "recording" && (
-                    <button
-                        onClick={stopRecording}
-                        className="px-8 py-3 bg-red-600 text-white text-lg font-semibold rounded-lg hover:bg-red-700 transition-colors"
-                    >
-                        ✅ Terminar Grabación
-                    </button>
-                )}
+                {/* Recording button moved to instructions box on the right */}
 
                 {state === "stopped" && (
                     <div className="text-center">
@@ -580,61 +632,57 @@ export const VideoRecorder = ({
                 )}
 
                 {state === "review" && (
-                    <div className="w-full max-w-4xl mx-auto">
-                        <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6 mb-6">
+                    <div className="flex gap-6">
+                        {/* Video Preview on the left */}
+                        <div className="w-2/3">
+                            <div className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video">
+                                <video
+                                    src={videoPreviewUrl}
+                                    controls
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Success Box on the right */}
+                        <div className="w-1/3 flex flex-col space-y-4">
+                            <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6 flex-1">
                             <div className="flex items-center justify-center mb-4">
                                 <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
-                            <h3 className="text-2xl font-bold text-green-900 text-center mb-2">
+                            <h3 className="text-xl font-bold text-green-900 text-center mb-2">
                                 ¡Grabación completada!
                             </h3>
-                            <p className="text-green-700 text-center mb-1">
+                            <p className="text-green-700 text-center mb-1 text-sm">
                                 Duración: {formatTime(recordedDuration)}
                             </p>
                             <p className="text-green-700 text-center text-sm">
                                 Tamaño: {((recordedBlob?.size || 0) / (1024 * 1024)).toFixed(2)} MB
                             </p>
-                        </div>
-
-                        {/* Instructions */}
-                        <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-6">
-                            <div className="flex items-start">
-                                <svg className="w-6 h-6 text-blue-600 mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                </svg>
-                                <div>
-                                    <h4 className="font-semibold text-blue-900 mb-2">
-                                        📹 Tu video ha sido grabado exitosamente
-                                    </h4>
-                                    <p className="text-sm text-blue-800 mb-3">
-                                        Durante la grabación pudiste ver tu imagen y escuchar el audio en tiempo real.
-                                        El video ha sido capturado correctamente con una duración de <strong>{formatTime(recordedDuration)}</strong>.
-                                    </p>
-                                    <p className="text-sm text-blue-800">
-                                        ¿Estás satisfecho con la grabación? Si es así, puedes subirla ahora.
-                                        Si no, puedes grabar de nuevo.
-                                    </p>
-                                </div>
+                            <div className="mt-4 pt-4 border-t border-green-300">
+                                <p className="text-sm text-green-800 text-center">
+                                    Revisa tu video y confirma si estás satisfecho con la grabación.
+                                </p>
                             </div>
                         </div>
 
-                        <div className="flex flex-col space-y-3">
-                            <button
-                                onClick={handleConfirmUpload}
-                                className="w-full px-6 py-3 bg-green-600 text-white text-lg font-semibold rounded-lg hover:bg-green-700 transition-colors"
-                            >
-                                ✓ Confirmar y Subir Video
-                            </button>
+                        {/* Buttons */}
+                        <button
+                            onClick={handleConfirmUpload}
+                            className="w-full px-6 py-4 bg-green-600 text-white text-lg font-semibold rounded-lg hover:bg-green-700 transition-colors"
+                        >
+                            ✓ Confirmar y Subir Video
+                        </button>
 
-                            <button
-                                onClick={handleRetry}
-                                className="w-full px-6 py-3 bg-gray-400 text-white text-lg font-semibold rounded-lg hover:bg-gray-500 transition-colors"
-                            >
-                                🔄 Grabar de Nuevo
-                            </button>
-                        </div>
+                        <button
+                            onClick={handleRetry}
+                            className="w-full px-6 py-4 bg-gray-400 text-white text-lg font-semibold rounded-lg hover:bg-gray-500 transition-colors"
+                        >
+                            🔄 Grabar de Nuevo
+                        </button>
+                    </div>
                     </div>
                 )}
             </div>
