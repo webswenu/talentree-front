@@ -337,6 +337,16 @@ export const WorkerDashboard = () => {
 
             {/* Mis Aplicaciones */}
             <div className="glass-white rounded-2xl p-4 sm:p-6">
+                {/* Alerta de procesos pendientes */}
+                {misAplicacionesCompletas.some(
+                    (app) => app.estado === WorkerStatus.PENDING || app.estado === WorkerStatus.IN_PROCESS
+                ) && (
+                    <div className="mb-4 p-3 rounded-xl border-2 border-orange-200 bg-orange-50/50">
+                        <h2 className="text-sm sm:text-base font-bold text-orange-600">
+                            ⚠️ Tienes procesos pendientes o en proceso
+                        </h2>
+                    </div>
+                )}
                 <h2 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text text-transparent mb-6">
                     Mis Aplicaciones
                 </h2>

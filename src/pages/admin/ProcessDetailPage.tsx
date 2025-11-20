@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useProcess, useProcessTests } from "../../hooks/useProcesses";
@@ -9,6 +9,7 @@ import {
     useDownloadReportFile,
     useApproveReport,
     useDeleteReport,
+    useUploadReportFile,
 } from "../../hooks/useReports";
 import { useRemoveTest, useRemoveFixedTest } from "../../hooks/useProcesses";
 import { useAuthStore } from "../../store/authStore";
@@ -50,6 +51,7 @@ import { AssignTestsModal } from "../../components/common/AssignTestsModal";
 import ProcessModal from "../../components/admin/ProcessModal";
 import { VideoRequirementsConfig } from "../../components/admin/VideoRequirementsConfig";
 import { BulkInviteModal } from "../../components/admin/BulkInviteModal";
+import { toast } from "../../utils/toast";
 
 type TabType = "info" | "tests" | "video" | "candidates" | "approved" | "reports" | "timeline";
 
@@ -81,12 +83,15 @@ export const ProcessDetailPage = () => {
     const [invitationFirstName, setInvitationFirstName] = useState("");
     const [invitationLastName, setInvitationLastName] = useState("");
     const [showInvitationsTable, setShowInvitationsTable] = useState(false);
+    const [uploadingReportId, setUploadingReportId] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { data: process, isLoading, error } = useProcess(id!);
     const { data: testsData } = useProcessTests(id!) as { data?: ProcessTestsData };
     const { data: workersData } = useProcessWorkers(id!) as { data?: WorkerProcess[] };
     const { data: reportsData } = useReportsByProcess(id!);
     const downloadMutation = useDownloadReportFile();
+    const uploadMutation = useUploadReportFile();
     const approveMutation = useApproveReport();
     const deleteMutation = useDeleteReport();
     const removeTestMutation = useRemoveTest();
@@ -239,6 +244,30 @@ export const ProcessDetailPage = () => {
         }
     };
 
+    const handleUploadClick = (reportId: string) => {
+        setUploadingReportId(reportId);
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file && uploadingReportId) {
+            try {
+                await uploadMutation.mutateAsync({
+                    id: uploadingReportId,
+                    file,
+                });
+                toast.success('Archivo subido exitosamente. Ya puedes aprobar el reporte si es PDF.');
+            } catch {
+                toast.error('No se pudo subir el archivo. Por favor, intenta nuevamente.');
+            }
+            setUploadingReportId(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+        }
+    };
+
     const handleRemoveTest = async (testId: string) => {
         if (!id) return;
         try {
@@ -312,6 +341,13 @@ export const ProcessDetailPage = () => {
 
     return (
         <div className="space-y-6">
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept=".pdf,.docx,.doc"
+                style={{ display: "none" }}
+            />
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
@@ -1246,6 +1282,20 @@ export const ProcessDetailPage = () => {
                                                             }`}>
                                                                 {isDOCX(report.fileName) ? 'DOCX' : 'PDF'}
                                                             </span>
+                                                        )}
+
+                                                        {/* Upload button */}
+                                                        {canEdit && (
+                                                            <button
+                                                                onClick={() => handleUploadClick(report.id)}
+                                                                disabled={uploadMutation.isPending}
+                                                                className="p-1 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded disabled:opacity-50"
+                                                                title="Subir PDF"
+                                                            >
+                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                                </svg>
+                                                            </button>
                                                         )}
 
                                                         {/* Approve/Reject button - only for reports with PDF */}

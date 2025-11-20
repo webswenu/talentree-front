@@ -1,6 +1,6 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { workersService } from "../../services/workers.service";
 import { reportsService } from "../../services/reports.service";
 import { videoService } from "../../services/video.service";
@@ -23,6 +23,8 @@ import { toast } from "../../utils/toast";
 import {
     useDownloadReportFile,
     useApproveReport,
+    useUploadReportFile,
+    reportKeys,
 } from "../../hooks/useReports";
 
 export const WorkerDetailPage = () => {
@@ -34,6 +36,8 @@ export const WorkerDetailPage = () => {
     const [rejectModal, setRejectModal] = useState<{ isOpen: boolean; reportId: string | null }>({ isOpen: false, reportId: null });
     const [rejectionReason, setRejectionReason] = useState("");
     const [approveModal, setApproveModal] = useState<{ isOpen: boolean; reportId: string | null }>({ isOpen: false, reportId: null });
+    const [uploadingReportId, setUploadingReportId] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Detect user role and route
     const { user } = useAuthStore();
@@ -53,7 +57,7 @@ export const WorkerDetailPage = () => {
     });
 
     const { data: allReports = [] } = useQuery({
-        queryKey: ["worker-reports", id],
+        queryKey: reportKeys.byWorker(id!),
         queryFn: () => reportsService.findByWorker(id!),
         enabled: !!id,
     });
@@ -89,7 +93,37 @@ export const WorkerDetailPage = () => {
     });
 
     const downloadMutation = useDownloadReportFile();
+    const uploadMutation = useUploadReportFile();
     const approveMutation = useApproveReport();
+
+    const isPDF = (fileName: string | null | undefined) => {
+        if (!fileName) return false;
+        return fileName.toLowerCase().endsWith('.pdf');
+    };
+
+    const handleUploadClick = (reportId: string) => {
+        setUploadingReportId(reportId);
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file && uploadingReportId) {
+            try {
+                await uploadMutation.mutateAsync({
+                    id: uploadingReportId,
+                    file,
+                });
+                toast.success('Archivo subido exitosamente. Ya puedes aprobar el reporte si es PDF.');
+            } catch {
+                toast.error('No se pudo subir el archivo. Por favor, intenta nuevamente.');
+            }
+            setUploadingReportId(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+        }
+    };
 
     if (isLoading) {
         return (
@@ -117,6 +151,13 @@ export const WorkerDetailPage = () => {
 
     return (
         <div className="space-y-6">
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept=".pdf,.docx,.doc"
+                style={{ display: "none" }}
+            />
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
@@ -512,7 +553,21 @@ export const WorkerDetailPage = () => {
                                                         Descargar
                                                     </button>
                                                 )}
-                                                {isAdmin && report.status === ReportStatus.PENDING_APPROVAL && (
+                                                {isAdmin && (
+                                                    <button
+                                                        onClick={() => handleUploadClick(report.id)}
+                                                        disabled={uploadMutation.isPending}
+                                                        className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
+                                                        title="Subir PDF"
+                                                    >
+                                                        Subir
+                                                    </button>
+                                                )}
+                                                {isAdmin &&
+                                                 (report.status === ReportStatus.PENDING_APPROVAL ||
+                                                  report.status === ReportStatus.REVISION_EVALUADOR ||
+                                                  report.status === ReportStatus.REVISION_ADMIN) &&
+                                                 (report.pdfFileUrl || (report.fileUrl && isPDF(report.fileName))) && (
                                                     <>
                                                         <button
                                                             onClick={() => {

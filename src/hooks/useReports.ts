@@ -100,6 +100,14 @@ export const useUploadReportFile = () => {
             queryClient.invalidateQueries({
                 queryKey: reportKeys.detail(variables.id),
             });
+            // Invalidate all worker-specific report queries
+            queryClient.invalidateQueries({
+                queryKey: ["reports", "worker"]
+            });
+            // Invalidate all process-specific report queries
+            queryClient.invalidateQueries({
+                queryKey: ["reports", "process"]
+            });
         },
     });
 };
@@ -126,6 +134,10 @@ export const useApproveReport = () => {
             queryClient.invalidateQueries({ queryKey: reportKeys.lists() });
             queryClient.invalidateQueries({
                 queryKey: reportKeys.detail(variables.id),
+            });
+            // Invalidate all worker-specific report queries
+            queryClient.invalidateQueries({
+                queryKey: ["reports", "worker"]
             });
         },
     });

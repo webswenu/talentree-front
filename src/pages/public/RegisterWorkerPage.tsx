@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useRegisterWorker } from "../../hooks/useAuth";
 import { RegisterWorkerDto } from "../../types/user.types";
 import { processInvitationsService } from "../../services/process-invitations.service";
+import { useUploadCV } from "../../hooks/useWorkers";
+import { toast } from "../../utils/toast";
 
 const STEPS = [
     { id: 1, title: "Cuenta", description: "Datos de acceso" },
@@ -17,6 +19,7 @@ export const RegisterWorkerPage = () => {
     const [currentStep, setCurrentStep] = useState(1);
     // Si hay invitación, no dejar que el hook navegue automáticamente
     const registerMutation = useRegisterWorker(!!fromInvitation);
+    const uploadCVMutation = useUploadCV();
 
     const [formData, setFormData] = useState<RegisterWorkerDto>({
         email: "",
@@ -36,6 +39,8 @@ export const RegisterWorkerPage = () => {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [serverError, setServerError] = useState("");
+    const [cvFile, setCvFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Pre-cargar email desde la invitación si existe
     useEffect(() => {
@@ -139,7 +144,21 @@ export const RegisterWorkerPage = () => {
         setServerError("");
         try {
             // Primero registrar
-            await registerMutation.mutateAsync(formData);
+            const result = await registerMutation.mutateAsync(formData);
+
+            // Si hay CV, subirlo usando el hook (para invalidar queries)
+            if (cvFile && result?.user?.worker?.id) {
+                try {
+                    await uploadCVMutation.mutateAsync({
+                        workerId: result.user.worker.id,
+                        file: cvFile,
+                    });
+                    toast.success("CV subido exitosamente");
+                } catch (cvError) {
+                    console.error("Error uploading CV:", cvError);
+                    toast.error("Tu cuenta fue creada pero hubo un error al subir el CV. Puedes subirlo desde tu perfil.");
+                }
+            }
 
             // Si hay un token de invitación, redirigir a la página de aceptación
             if (fromInvitation) {
@@ -449,6 +468,44 @@ export const RegisterWorkerPage = () => {
                                 {errors.phone && (
                                     <p className="mt-1 text-sm text-red-600">
                                         {errors.phone}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label
+                                    htmlFor="cv"
+                                    className="block text-sm font-medium text-gray-700 mb-1"
+                                >
+                                    Curriculum Vitae (CV)
+                                </label>
+                                <p className="text-xs text-gray-500 mb-2">
+                                    Sube tu CV en formato PDF (máx. 5MB)
+                                </p>
+                                <input
+                                    ref={fileInputRef}
+                                    id="cv"
+                                    type="file"
+                                    accept=".pdf"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            if (file.size > 5 * 1024 * 1024) {
+                                                toast.error("El archivo debe ser menor a 5MB");
+                                                e.target.value = "";
+                                                return;
+                                            }
+                                            setCvFile(file);
+                                        }
+                                    }}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                                {cvFile && (
+                                    <p className="mt-2 text-sm text-green-600 flex items-center gap-2">
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        </svg>
+                                        {cvFile.name}
                                     </p>
                                 )}
                             </div>
