@@ -412,37 +412,41 @@ export const VideoRecorder = ({
 
     return (
         <div className="max-w-6xl mx-auto p-6 space-y-6">
-            {/* Instructions - Only show above video when idle */}
-            {state === "idle" && instructions && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                        📹 Instrucciones para la grabación
-                    </h3>
-                    <p className="text-blue-800 whitespace-pre-wrap">{instructions}</p>
-                    <div className="mt-4 flex items-start space-x-2 text-sm text-blue-700">
-                        <span>⏱️</span>
-                        <p>
-                            Duración máxima: {Math.floor(maxDuration / 60)} minutos y{" "}
-                            {maxDuration % 60} segundos
-                        </p>
-                    </div>
-                    {questions.length > 0 && (
-                        <div className="mt-3 flex items-start space-x-2 text-sm text-blue-700">
-                            <span>❓</span>
-                            <p>
-                                Durante la grabación aparecerán {questions.length}{" "}
-                                pregunta(s) que debes responder
-                            </p>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Video and Instructions Side by Side when recording */}
+            {/* Video and Instructions Side by Side - Always in a row for idle and recording */}
             {state !== "review" && (
-            <div className={`flex gap-6 ${state === "recording" ? "flex-row" : "flex-col"}`}>
-                {/* Video Preview */}
-                <div className={`relative bg-gray-900 rounded-lg overflow-hidden ${state === "recording" ? "w-2/3 aspect-video" : "aspect-video"}`}>
+            <div className="flex flex-row gap-6">
+                {/* Instructions Box - Show on the left for both idle and recording */}
+                {instructions && (
+                    <div className="w-1/3 flex flex-col space-y-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 flex-1">
+                            <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                                📹 Instrucciones
+                            </h3>
+                            <p className="text-blue-800 whitespace-pre-wrap text-sm">{instructions}</p>
+                            <div className="mt-4 flex items-start space-x-2 text-sm text-blue-700">
+                                <span>⏱️</span>
+                                <p>
+                                    Duración máxima: {Math.floor(maxDuration / 60)} minutos y{" "}
+                                    {maxDuration % 60} segundos
+                                </p>
+                            </div>
+                            {questions.length > 0 && (
+                                <div className="mt-3 flex items-start space-x-2 text-sm text-blue-700">
+                                    <span>❓</span>
+                                    <p>
+                                        Durante la grabación aparecerán {questions.length}{" "}
+                                        pregunta(s) que debes responder
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Video Preview and Controls Container */}
+                <div className="flex flex-col gap-4 w-2/3">
+                    {/* Video Preview */}
+                    <div className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video">
                 <video
                     ref={videoRef}
                     autoPlay
@@ -563,78 +567,47 @@ export const VideoRecorder = ({
                         </div>
                     </div>
                 )}
-            </div>
+                    </div>
 
-                {/* Instructions Box and Stop Button - Show on the right when recording */}
-                {state === "recording" && (
-                    <div className="w-1/3 flex flex-col space-y-4">
-                        {/* Instructions Box - Only show if instructions exist */}
-                        {instructions && (
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 flex-1">
-                                <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                                    📹 Instrucciones
-                                </h3>
-                                <p className="text-blue-800 whitespace-pre-wrap text-sm">{instructions}</p>
-                                <div className="mt-4 flex items-start space-x-2 text-sm text-blue-700">
-                                    <span>⏱️</span>
-                                    <p>
-                                        Duración máxima: {Math.floor(maxDuration / 60)} minutos y{" "}
-                                        {maxDuration % 60} segundos
-                                    </p>
-                                </div>
-                                {questions.length > 0 && (
-                                    <div className="mt-3 flex items-start space-x-2 text-sm text-blue-700">
-                                        <span>❓</span>
-                                        <p>
-                                            Durante la grabación aparecerán {questions.length}{" "}
-                                            pregunta(s) que debes responder
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                    {/* Control Buttons - Show below video */}
+                    {state === "idle" && (
+                        <div className="flex gap-4">
+                            <button
+                                onClick={startCountdown}
+                                className="flex-1 px-6 py-4 bg-red-600 text-white text-lg font-semibold rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                                🎥 Iniciar Grabación
+                            </button>
+                            <button
+                                onClick={handleCancel}
+                                className="flex-1 px-6 py-4 bg-gray-300 text-gray-700 text-lg font-semibold rounded-lg hover:bg-gray-400 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    )}
 
-                        {/* Terminar Grabación button - ALWAYS show when recording */}
+                    {state === "recording" && (
                         <button
                             onClick={stopRecording}
                             className="w-full px-6 py-4 bg-red-600 text-white text-lg font-semibold rounded-lg hover:bg-red-700 transition-colors"
                         >
                             ✅ Terminar Grabación
                         </button>
-                    </div>
-                )}
+                    )}
+
+                    {state === "stopped" && (
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                            <p className="text-gray-600">Procesando video...</p>
+                        </div>
+                    )}
+                </div>
             </div>
             )}
 
-            {/* Controls */}
-            <div className="flex justify-center space-x-4">
-                {state === "idle" && (
-                    <>
-                        <button
-                            onClick={startCountdown}
-                            className="px-8 py-3 bg-red-600 text-white text-lg font-semibold rounded-lg hover:bg-red-700 transition-colors"
-                        >
-                            🎥 Iniciar Grabación
-                        </button>
-                        <button
-                            onClick={handleCancel}
-                            className="px-8 py-3 bg-gray-300 text-gray-700 text-lg font-semibold rounded-lg hover:bg-gray-400 transition-colors"
-                        >
-                            Cancelar
-                        </button>
-                    </>
-                )}
-
-                {/* Recording button moved to instructions box on the right */}
-
-                {state === "stopped" && (
-                    <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                        <p className="text-gray-600">Procesando video...</p>
-                    </div>
-                )}
-
-                {state === "review" && (
+            {/* Review State */}
+            {state === "review" && (
                     <div className="flex gap-6">
                         {/* Video Preview on the left */}
                         <div className="w-2/3">
@@ -686,9 +659,8 @@ export const VideoRecorder = ({
                             🔄 Grabar de Nuevo
                         </button>
                     </div>
-                    </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -232,14 +232,25 @@ export const WorkerTestTakingPage = () => {
         if (!currentAnswer) return false;
 
         if (currentQ.type === QuestionType.FORCED_CHOICE) {
-            // For forced choice, need both mas and menos
-            return currentAnswer &&
-                   typeof currentAnswer === 'object' &&
-                   !Array.isArray(currentAnswer) &&
-                   'mas' in currentAnswer &&
-                   'menos' in currentAnswer &&
-                   (currentAnswer as { mas?: unknown; menos?: unknown }).mas &&
-                   (currentAnswer as { mas?: unknown; menos?: unknown }).menos;
+            // For forced choice, need all 4 words to have a selection (mas or menos)
+            // Answer structure: { word1: 'mas' | 'menos', word2: 'mas' | 'menos', ... }
+            const optionsObj = currentQ.options as { words?: Record<string, string> } | Record<string, string> | undefined;
+            const wordsObj = (optionsObj && typeof optionsObj === 'object' && 'words' in optionsObj)
+                ? optionsObj.words
+                : (optionsObj as Record<string, string> | undefined);
+            const words = wordsObj ? Object.values(wordsObj) as string[] : [];
+
+            if (!currentAnswer || typeof currentAnswer !== 'object' || Array.isArray(currentAnswer)) {
+                return false;
+            }
+
+            const answerObj = currentAnswer as Record<string, string>;
+
+            // Check that all 4 words are present as keys in the answer object with a value
+            return words.every(word => {
+                const selection = answerObj[word];
+                return selection === 'mas' || selection === 'menos';
+            });
         } else if (currentQ.type === QuestionType.MULTIPLE_RESPONSE) {
             // For multiple response, need at least one selection
             return Array.isArray(currentAnswer) && currentAnswer.length > 0;
@@ -445,13 +456,14 @@ export const WorkerTestTakingPage = () => {
                 );
 
             case QuestionType.FORCED_CHOICE: {
-                // Test DISC - Elección forzada: elegir MÁS y MENOS descriptivo
-                const forcedAnswer = (currentAnswer as { mas?: string; menos?: string }) || { mas: null, menos: null };
+                // Test DISC - Elección forzada: cada palabra tiene MÁS o MENOS (mutually exclusive per word)
+                // Answer structure: { word1: 'mas' | 'menos', word2: 'mas' | 'menos', ... }
+                const forcedAnswer = (currentAnswer as Record<string, string>) || {};
 
                 // Extract words from options.words object for DISC test
                 const optionsObj = currentQ.options as { words?: Record<string, string> } | Record<string, string> | undefined;
-                const wordsObj = (optionsObj && typeof optionsObj === 'object' && 'words' in optionsObj) 
-                    ? optionsObj.words 
+                const wordsObj = (optionsObj && typeof optionsObj === 'object' && 'words' in optionsObj)
+                    ? optionsObj.words
                     : (optionsObj as Record<string, string> | undefined);
                 const words = wordsObj ? Object.values(wordsObj) as string[] : [];
 
@@ -459,61 +471,72 @@ export const WorkerTestTakingPage = () => {
                     <div className="space-y-6">
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                             <p className="text-sm font-medium text-blue-900">
-                                Instrucciones: De las siguientes palabras, selecciona:
+                                Instrucciones: Para cada una de las siguientes palabras, selecciona:
                             </p>
                             <ul className="text-sm text-blue-800 mt-2 space-y-1">
-                                <li>• Una palabra que <strong>MÁS</strong> te describe</li>
-                                <li>• Una palabra que <strong>MENOS</strong> te describe</li>
+                                <li>• <strong>MÁS</strong> si te describe más</li>
+                                <li>• <strong>MENOS</strong> si te describe menos</li>
                             </ul>
+                            <p className="text-xs text-blue-700 mt-3 italic">
+                                Debes marcar una opción (MÁS o MENOS) para cada una de las 4 palabras
+                            </p>
                         </div>
 
                         <div className="grid grid-cols-1 gap-3">
-                            {words.map((word, idx) => (
-                                <div
-                                    key={idx}
-                                    className="flex items-center justify-between p-4 border-2 border-gray-300 rounded-lg"
-                                >
-                                    <span className="font-medium">{word}</span>
-                                    <div className="flex gap-4">
-                                        <label className="flex items-center cursor-pointer">
-                                            <input
-                                                type="radio"
-                                                name={`mas-${currentQ.id}`}
-                                                value={word}
-                                                checked={forcedAnswer.mas === word}
-                                                onChange={(e) =>
-                                                    handleAnswerChange({
-                                                        ...forcedAnswer,
-                                                        mas: e.target.value,
-                                                    })
-                                                }
-                                                className="mr-2 w-4 h-4 text-green-600"
-                                            />
-                                            <span className="text-sm font-medium text-green-700">
-                                                MÁS
-                                            </span>
-                                        </label>
-                                        <label className="flex items-center cursor-pointer">
-                                            <input
-                                                type="radio"
-                                                name={`menos-${currentQ.id}`}
-                                                value={word}
-                                                checked={forcedAnswer.menos === word}
-                                                onChange={(e) =>
-                                                    handleAnswerChange({
-                                                        ...forcedAnswer,
-                                                        menos: e.target.value,
-                                                    })
-                                                }
-                                                className="mr-2 w-4 h-4 text-red-600"
-                                            />
-                                            <span className="text-sm font-medium text-red-700">
-                                                MENOS
-                                            </span>
-                                        </label>
+                            {words.map((word, idx) => {
+                                const currentSelection = forcedAnswer[word]; // 'mas' | 'menos' | undefined
+
+                                return (
+                                    <div
+                                        key={idx}
+                                        className={`flex items-center justify-between p-4 border-2 rounded-lg transition-colors ${
+                                            currentSelection
+                                                ? 'border-blue-400 bg-blue-50'
+                                                : 'border-gray-300'
+                                        }`}
+                                    >
+                                        <span className="font-medium">{word}</span>
+                                        <div className="flex gap-4">
+                                            <label className="flex items-center cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name={`word-${currentQ.id}-${idx}`}
+                                                    value="mas"
+                                                    checked={currentSelection === 'mas'}
+                                                    onChange={() =>
+                                                        handleAnswerChange({
+                                                            ...forcedAnswer,
+                                                            [word]: 'mas',
+                                                        })
+                                                    }
+                                                    className="mr-2 w-4 h-4 text-green-600"
+                                                />
+                                                <span className="text-sm font-medium text-green-700">
+                                                    MÁS
+                                                </span>
+                                            </label>
+                                            <label className="flex items-center cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name={`word-${currentQ.id}-${idx}`}
+                                                    value="menos"
+                                                    checked={currentSelection === 'menos'}
+                                                    onChange={() =>
+                                                        handleAnswerChange({
+                                                            ...forcedAnswer,
+                                                            [word]: 'menos',
+                                                        })
+                                                    }
+                                                    className="mr-2 w-4 h-4 text-red-600"
+                                                />
+                                                <span className="text-sm font-medium text-red-700">
+                                                    MENOS
+                                                </span>
+                                            </label>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 );

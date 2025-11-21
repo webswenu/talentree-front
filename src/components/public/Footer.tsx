@@ -8,7 +8,7 @@ export const Footer = () => {
                         alt="Talentree"
                         className="h-40 mb-4"
                     />
-                    <p className="mb-2">Teléfonos: +56 9 1111 1111 / +56 9 1111 1111</p>
+                    <p className="mb-2">Teléfonos: +56 9 6371 7583</p>
                     <p className="mb-4">Dirección: Av. Nombre #123, Ciudad, Chile</p>
                     <div className="flex gap-4 mt-4">
                         <a
@@ -84,22 +84,12 @@ export const Footer = () => {
                             </a>
                         </li>
                         <li>
-                            <a href="#" className="hover:text-teal-500 transition">
-                                Afiliados
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" className="hover:text-teal-500 transition">
-                                Política de Cancelación
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" className="hover:text-teal-500 transition">
+                            <a href="/terms" className="hover:text-teal-500 transition">
                                 Términos y Condiciones
                             </a>
                         </li>
                         <li>
-                            <a href="#" className="hover:text-teal-500 transition">
+                            <a href="/faq" className="hover:text-teal-500 transition">
                                 Preguntas Frecuentes
                             </a>
                         </li>

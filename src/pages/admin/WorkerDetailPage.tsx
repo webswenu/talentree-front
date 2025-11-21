@@ -26,6 +26,7 @@ import {
     useUploadReportFile,
     reportKeys,
 } from "../../hooks/useReports";
+import { Permission, hasPermission } from "../../utils/permissions";
 
 export const WorkerDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -45,10 +46,13 @@ export const WorkerDetailPage = () => {
     const isCompany = location.pathname.includes("/empresa");
     const isGuest = location.pathname.includes("/invitado");
     const baseRoute = isEvaluator ? "/evaluador" : isCompany ? "/empresa" : isGuest ? "/invitado" : "/admin";
-    const isAdmin = !isEvaluator && !isCompany && !isGuest;
 
     // Get company ID if user is company or guest
     const userCompanyId = user?.company?.id || user?.belongsToCompany?.id;
+
+    // Permission checks
+    const canEdit = user && hasPermission(user.role, Permission.REPORTS_EDIT);
+    const canApprove = user && hasPermission(user.role, Permission.REPORTS_APPROVE);
 
     const { data: worker, isLoading } = useQuery({
         queryKey: ["worker", id],
@@ -578,7 +582,7 @@ export const WorkerDetailPage = () => {
                                                         </svg>
                                                     </button>
                                                 )}
-                                                {isAdmin && (
+                                                {canEdit && (
                                                     <button
                                                         onClick={() => handleUploadClick(report.id)}
                                                         disabled={uploadMutation.isPending}
@@ -595,7 +599,7 @@ export const WorkerDetailPage = () => {
                                         {/* Columna Aprobar Informe de Selección (PDF) */}
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div className="flex gap-2">
-                                                {isAdmin &&
+                                                {canApprove &&
                                                  (report.status === ReportStatus.PENDING_APPROVAL ||
                                                   report.status === ReportStatus.REVISION_EVALUADOR ||
                                                   report.status === ReportStatus.REVISION_ADMIN) &&
@@ -622,7 +626,7 @@ export const WorkerDetailPage = () => {
                                                         </button>
                                                     </>
                                                 )}
-                                                {isAdmin &&
+                                                {canApprove &&
                                                  (report.status === ReportStatus.PENDING_APPROVAL ||
                                                   report.status === ReportStatus.REVISION_EVALUADOR ||
                                                   report.status === ReportStatus.REVISION_ADMIN) &&

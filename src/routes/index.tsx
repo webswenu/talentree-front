@@ -20,6 +20,8 @@ import { UnauthorizedPage } from "../pages/public/UnauthorizedPage";
 import { NotFoundPage } from "../pages/public/NotFoundPage";
 import { AcceptInvitationPage } from "../pages/public/AcceptInvitationPage";
 import { InvitationAcceptedPage } from "../pages/public/InvitationAcceptedPage";
+import { TermsPage } from "../pages/public/TermsPage";
+import { FAQPage } from "../pages/public/FAQPage";
 
 // Admin Pages
 import { AdminDashboard } from "../pages/admin/AdminDashboard";
@@ -118,6 +120,8 @@ export const AppRoutes = () => {
                         path="invitation-accepted"
                         element={<InvitationAcceptedPage />}
                     />
+                    <Route path="terms" element={<TermsPage />} />
+                    <Route path="faq" element={<FAQPage />} />
                     <Route path="unauthorized" element={<UnauthorizedPage />} />
                 </Route>
 
