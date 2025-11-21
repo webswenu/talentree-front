@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { processesService } from "../../services/processes.service";
 import { videoService } from "../../services/video.service";
 import { VideoRecorder } from "./VideoRecorder";
+import { Clock, HelpCircle, Video, CheckCircle } from "lucide-react";
 
 interface VideoRequirementGateProps {
     processId: string;
@@ -276,18 +277,16 @@ export const VideoRequirementGate = ({
     }
 
     return (
-        <div className="max-w-4xl mx-auto p-6">
-            <div className="bg-white rounded-lg shadow-lg p-8">
-                <div className="text-center mb-6">
-                    <div className="text-6xl mb-4">🎥</div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                        Video Introductorio Requerido
-                    </h2>
-                    <p className="text-gray-600">
-                        Este proceso requiere que grabes un video introductorio antes de
-                        acceder a los tests psicotécnicos.
-                    </p>
-                </div>
+        <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className="text-center mb-6">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                    Video Introductorio Requerido
+                </h2>
+                <p className="text-gray-600">
+                    Este proceso requiere que grabes un video introductorio antes de
+                    acceder a los tests psicotécnicos.
+                </p>
+            </div>
 
                 {videoConfig.instructions && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
@@ -302,7 +301,7 @@ export const VideoRequirementGate = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-                        <span className="text-2xl">⏱️</span>
+                        <Clock className="w-6 h-6 text-gray-700 flex-shrink-0 mt-0.5" />
                         <div>
                             <h4 className="font-semibold text-gray-900">Duración</h4>
                             <p className="text-sm text-gray-600">
@@ -315,7 +314,7 @@ export const VideoRequirementGate = ({
                     </div>
 
                     <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-                        <span className="text-2xl">❓</span>
+                        <HelpCircle className="w-6 h-6 text-gray-700 flex-shrink-0 mt-0.5" />
                         <div>
                             <h4 className="font-semibold text-gray-900">Preguntas</h4>
                             <p className="text-sm text-gray-600">
@@ -326,7 +325,7 @@ export const VideoRequirementGate = ({
                     </div>
 
                     <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-                        <span className="text-2xl">📹</span>
+                        <Video className="w-6 h-6 text-gray-700 flex-shrink-0 mt-0.5" />
                         <div>
                             <h4 className="font-semibold text-gray-900">Requisitos</h4>
                             <p className="text-sm text-gray-600">
@@ -336,7 +335,7 @@ export const VideoRequirementGate = ({
                     </div>
 
                     <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-                        <span className="text-2xl">✅</span>
+                        <CheckCircle className="w-6 h-6 text-gray-700 flex-shrink-0 mt-0.5" />
                         <div>
                             <h4 className="font-semibold text-gray-900">
                                 Acceso automático
@@ -348,14 +347,13 @@ export const VideoRequirementGate = ({
                     </div>
                 </div>
 
-                <div className="flex justify-center">
-                    <button
-                        onClick={() => setShowRecorder(true)}
-                        className="px-8 py-3 bg-blue-600 text-white text-lg font-semibold rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                        🎥 Comenzar Grabación
-                    </button>
-                </div>
+            <div className="flex justify-center">
+                <button
+                    onClick={() => setShowRecorder(true)}
+                    className="px-8 py-3 bg-blue-600 text-white text-lg font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                    Comenzar Grabación
+                </button>
             </div>
         </div>
     );

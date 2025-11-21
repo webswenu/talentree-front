@@ -85,7 +85,7 @@ export const AdminDashboard = () => {
         {
             title: "Candidatos",
             value: workersStats?.total ?? 0,
-            color: "purple" as const,
+            color: "orange" as const,
             icon: (
                 <svg
                     className="w-8 h-8"
@@ -105,7 +105,7 @@ export const AdminDashboard = () => {
         {
             title: "Tests Completados",
             value: testResponsesStats?.completed ?? 0,
-            color: "pink" as const,
+            color: "turquoise" as const,
             icon: (
                 <svg
                     className="w-8 h-8"
@@ -216,7 +216,7 @@ export const AdminDashboard = () => {
     }
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-8 animate-fade-in">
             {/* Header */}
             <div className="rounded-2xl p-8">
                 <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-primary-600/70 via-secondary-600/70 to-primary-600/70 bg-clip-text">
@@ -227,11 +227,41 @@ export const AdminDashboard = () => {
                 </p>
             </div>
 
+            {/* Separator */}
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t-2 border-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                </div>
+                <div className="relative flex justify-center">
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-gray-500">Resumen</span>
+                </div>
+            </div>
+
             {/* Quick Stats */}
             <QuickStats stats={stats} />
 
+            {/* Separator */}
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t-2 border-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                </div>
+                <div className="relative flex justify-center">
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-gray-500">Acciones Rápidas</span>
+                </div>
+            </div>
+
             {/* Quick Actions */}
             <QuickActions actions={quickActions} columns={2} />
+
+            {/* Separator */}
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t-2 border-gradient-to-r from-transparent via-orange-200 to-transparent"></div>
+                </div>
+                <div className="relative flex justify-center">
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-orange-600">Estadísticas</span>
+                </div>
+            </div>
 
             {/* Charts and Lists */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -253,6 +283,16 @@ export const AdminDashboard = () => {
                         }}
                     />
                 )}
+            </div>
+
+            {/* Separator */}
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t-2 border-gradient-to-r from-transparent via-teal-200 to-transparent"></div>
+                </div>
+                <div className="relative flex justify-center">
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-teal-600">Actividad Reciente</span>
+                </div>
             </div>
 
             {/* Activity Feed */}

@@ -154,15 +154,25 @@ export const CompanyDashboard = () => {
     const companyName = user?.company?.name || user?.belongsToCompany?.name || "Empresa";
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-8 animate-fade-in">
             {/* Header */}
-            <div className="glass-white rounded-2xl p-8">
-                <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-primary-600/70 via-secondary-600/70 to-primary-600/70 bg-clip-text text-transparent">
-                    Bienvenido, {companyName}
+            <div className="rounded-2xl p-8">
+                <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-primary-600/70 via-secondary-600/70 to-primary-600/70 bg-clip-text">
+                    Dashboard de {companyName}
                 </h1>
                 <p className="text-gray-800 mt-3 text-lg font-bold">
-                    Gestiona tus procesos de selección y candidatos
+                    Bienvenido, <span className="text-primary-600/80">{user?.firstName}</span>
                 </p>
+            </div>
+
+            {/* Separator */}
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t-2 border-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                </div>
+                <div className="relative flex justify-center">
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-gray-500">Resumen</span>
+                </div>
             </div>
 
             {/* Stats Cards */}
@@ -199,7 +209,7 @@ export const CompanyDashboard = () => {
                         {
                             title: "Candidatos Aprobados",
                             value: stats.aprobados,
-                            color: "purple" as const,
+                            color: "orange" as const,
                             icon: (
                                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -209,7 +219,7 @@ export const CompanyDashboard = () => {
                         {
                             title: "Procesos Completados",
                             value: stats.completados,
-                            color: "pink" as const,
+                            color: "turquoise" as const,
                             icon: (
                                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
@@ -220,15 +230,25 @@ export const CompanyDashboard = () => {
                 />
             )}
 
+            {/* Separator */}
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t-2 border-gradient-to-r from-transparent via-orange-200 to-transparent"></div>
+                </div>
+                <div className="relative flex justify-center">
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-orange-600">Procesos Activos</span>
+                </div>
+            </div>
+
             {/* Procesos Activos */}
             <div className="glass-white rounded-2xl p-6">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text text-transparent">
+                    <h2 className="text-xl font-bold text-gray-900">
                         Procesos Activos
                     </h2>
                     <button
                         onClick={() => navigate(`${getBaseUrl()}/procesos`)}
-                        className="text-sm font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text text-transparent hover:scale-110 transition-transform duration-300"
+                        className="text-sm font-bold text-gray-900 hover:scale-110 transition-transform duration-300"
                     >
                         Ver Todos →
                     </button>
@@ -277,7 +297,7 @@ export const CompanyDashboard = () => {
                                                 `${getBaseUrl()}/procesos/${proceso.id}`
                                             )
                                         }
-                                        className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text text-transparent hover:scale-110 transition-transform duration-300 whitespace-nowrap"
+                                        className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-gray-900 hover:scale-110 transition-transform duration-300 whitespace-nowrap"
                                     >
                                         Ver Detalle →
                                     </button>
@@ -288,11 +308,18 @@ export const CompanyDashboard = () => {
                 </div>
             </div>
 
+            {/* Separator */}
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t-2 border-gradient-to-r from-transparent via-teal-200 to-transparent"></div>
+                </div>
+                <div className="relative flex justify-center">
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-teal-600">Actividad Reciente</span>
+                </div>
+            </div>
+
             {/* Actividad Reciente */}
             <div className="glass-white rounded-2xl p-4 sm:p-6">
-                <h2 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text text-transparent mb-6">
-                    Actividad Reciente
-                </h2>
                 <div className="space-y-3">
                     {actividadReciente.length > 0 ? (
                         actividadReciente.map(
@@ -330,7 +357,7 @@ export const CompanyDashboard = () => {
                     <div className="mt-6 text-center">
                         <button
                             onClick={() => navigate(`${getBaseUrl()}/trabajadores`)}
-                            className="text-sm font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text text-transparent hover:scale-110 transition-transform duration-300"
+                            className="text-sm font-bold text-gray-900 hover:scale-110 transition-transform duration-300"
                         >
                             Ver todos los candidatos →
                         </button>

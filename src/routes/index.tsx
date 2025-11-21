@@ -13,6 +13,7 @@ import { GuestLayout } from "../components/layouts/GuestLayout";
 
 // Public Pages
 import { LandingPage } from "../pages/public/LandingPage";
+import { OpportunitiesPage } from "../pages/public/OpportunitiesPage";
 import { LoginPage } from "../pages/public/LoginPage";
 import { RegisterWorkerPage } from "../pages/public/RegisterWorkerPage";
 import { UnauthorizedPage } from "../pages/public/UnauthorizedPage";
@@ -103,6 +104,7 @@ export const AppRoutes = () => {
                 {/* Public Routes */}
                 <Route path="/" element={<LandingLayout />}>
                     <Route index element={<LandingPage />} />
+                    <Route path="oportunidades" element={<OpportunitiesPage />} />
                     <Route path="login" element={<LoginPage />} />
                     <Route
                         path="register/worker"

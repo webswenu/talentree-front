@@ -23,19 +23,19 @@ export const Navbar = () => {
 
                 {/* Desktop Menu */}
                 <div className="hidden md:flex gap-8 items-center">
-                    <a href="#home" className="hover:text-teal-500 transition">
+                    <a href="/#home" className="hover:text-teal-500 transition">
                         Home
                     </a>
-                    <a href="#about" className="hover:text-teal-500 transition">
+                    <a href="/#about" className="hover:text-teal-500 transition">
                         Quienes Somos
                     </a>
-                    <a href="#services" className="hover:text-teal-500 transition">
+                    <a href="/#services" className="hover:text-teal-500 transition">
                         Servicios
                     </a>
-                    <a href="#processes" className="hover:text-teal-500 transition">
+                    <a href="/#processes" className="hover:text-teal-500 transition">
                         Procesos
                     </a>
-                    <a href="#contact" className="hover:text-teal-500 transition">
+                    <a href="/#contact" className="hover:text-teal-500 transition">
                         Contacto
                     </a>
                     <Link
@@ -78,35 +78,35 @@ export const Navbar = () => {
             >
                 <div className="flex flex-col gap-4 px-6 py-4">
                     <a
-                        href="#home"
+                        href="/#home"
                         className="hover:text-teal-500 transition"
                         onClick={() => setIsMenuOpen(false)}
                     >
                         Home
                     </a>
                     <a
-                        href="#about"
+                        href="/#about"
                         className="hover:text-teal-500 transition"
                         onClick={() => setIsMenuOpen(false)}
                     >
                         Quienes Somos
                     </a>
                     <a
-                        href="#services"
+                        href="/#services"
                         className="hover:text-teal-500 transition"
                         onClick={() => setIsMenuOpen(false)}
                     >
                         Servicios
                     </a>
                     <a
-                        href="#processes"
+                        href="/#processes"
                         className="hover:text-teal-500 transition"
                         onClick={() => setIsMenuOpen(false)}
                     >
                         Procesos
                     </a>
                     <a
-                        href="#contact"
+                        href="/#contact"
                         className="hover:text-teal-500 transition"
                         onClick={() => setIsMenuOpen(false)}
                     >

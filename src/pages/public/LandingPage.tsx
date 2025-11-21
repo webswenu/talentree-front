@@ -20,7 +20,7 @@ export const LandingPage = () => {
     const testimonials = useScrollAnimation();
     const contact = useScrollAnimation();
 
-    const { data: processesData, isLoading: isLoadingProcesses } = usePublicProcesses({ page: 1, limit: 6 });
+    const { data: processesData, isLoading: isLoadingProcesses } = usePublicProcesses({ page: 1, limit: 3 });
     const publicProcesses = processesData?.data || [];
 
     const handleApplyToProcess = async (processId: string) => {
@@ -265,7 +265,7 @@ export const LandingPage = () => {
                             {publicProcesses.map((process: any, index: number) => (
                                 <div
                                     key={process.id}
-                                    className={`bg-white border border-gray-200 p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-500 animate-on-scroll hover:-translate-y-2 ${processes.isVisible ? 'visible' : ''}`}
+                                    className={`bg-white border border-gray-200 p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-500 animate-on-scroll hover:-translate-y-2 flex flex-col ${processes.isVisible ? 'visible' : ''}`}
                                     style={{ transitionDelay: `${(index + 1) * 100}ms` }}
                                 >
                                     <div className="flex items-start justify-between mb-4">
@@ -303,7 +303,7 @@ export const LandingPage = () => {
                                     <button
                                         onClick={() => handleApplyToProcess(process.id)}
                                         disabled={applyingProcessId === process.id}
-                                        className={`w-full py-2 px-4 rounded-lg font-medium transition-all duration-300 ${
+                                        className={`w-full py-2 px-4 rounded-lg font-medium transition-all duration-300 mt-auto ${
                                             applyingProcessId === process.id
                                                 ? "bg-gray-400 cursor-not-allowed"
                                                 : "bg-teal-500 hover:bg-teal-600 text-white hover:scale-105"
@@ -325,17 +325,12 @@ export const LandingPage = () => {
 
                     {publicProcesses.length > 0 && (
                         <div className="text-center mt-12">
-                            <p className="text-gray-500 text-sm">
-                                {user ? (
-                                    user.role === UserRole.WORKER ? (
-                                        "Ve a tu dashboard para ver todos tus procesos y postulaciones"
-                                    ) : (
-                                        "Regístrate como trabajador para postular a estos procesos"
-                                    )
-                                ) : (
-                                    "Inicia sesión o regístrate para postular a estos procesos"
-                                )}
-                            </p>
+                            <button
+                                onClick={() => navigate('/oportunidades')}
+                                className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-semibold transition-all duration-300 hover:from-orange-600 hover:to-orange-700 hover:shadow-lg hover:scale-105"
+                            >
+                                Revisa oportunidades
+                            </button>
                         </div>
                     )}
                 </div>
@@ -355,21 +350,22 @@ export const LandingPage = () => {
                         style={{ transitionDelay: '100ms' }}
                     >
                         <p className="text-gray-500 mb-6 italic text-justify">
-                            "Amet minim mollit non deserunt ullamco est sit
-                            aliqua dolor do amet sint."
+                            "Quiero destacar la calidad del servicio recibido por parte de Talentree. Su equipo mostró un nivel de profesionalismo y claridad muy acorde a nuestras exigencias, comprendiendo con precisión los perfiles y competencias que buscábamos.
+
+                            El proceso fue ordenado, transparente y eficiente, lo que nos permitió avanzar con seguridad en cada etapa. El resultado final fue plenamente satisfactorio, logrando incorporar profesionales que se alinean de manera consistente con la cultura y los objetivos de nuestra organización."
                         </p>
                         <div className="flex items-center justify-center gap-4">
                             <img
-                                src="testimonio.jpg"
-                                alt="Autor"
-                                className="w-12 h-12 rounded-full hover:scale-110 transition-transform duration-300"
+                                src="/anwo.png"
+                                alt="Anwo Logo"
+                                className="w-40 h-40 object-contain hover:scale-110 transition-transform duration-300"
                             />
                             <div className="text-left">
                                 <h4 className="font-semibold text-gray-800">
-                                    Author Name
+                                    Andres Baeza
                                 </h4>
                                 <p className="text-sm text-gray-500">
-                                    Cargo/Profesión
+                                    Subgerente de Marketing
                                 </p>
                             </div>
                         </div>
@@ -380,21 +376,20 @@ export const LandingPage = () => {
                         style={{ transitionDelay: '300ms' }}
                     >
                         <p className="text-gray-500 mb-6 italic text-justify">
-                            "Amet minim mollit non deserunt ullamco est sit
-                            aliqua dolor do amet sint."
+                            "Tuve la oportunidad de trabajar con Karina y destaco su profundo entendimiento de las necesidades del cliente. Es una profesional que impulsa procesos de selección ágiles y eficientes, asegurando la incorporación de postulantes idóneos, alineados al perfil requerido y con las competencias necesarias para potenciar a la organización."
                         </p>
                         <div className="flex items-center justify-center gap-4">
                             <img
-                                src="testimonio.jpg"
-                                alt="Autor"
-                                className="w-12 h-12 rounded-full hover:scale-110 transition-transform duration-300"
+                                src="/lureye.png"
+                                alt="Lureye Logo"
+                                className="w-40 h-40 object-contain hover:scale-110 transition-transform duration-300"
                             />
                             <div className="text-left">
                                 <h4 className="font-semibold text-gray-800">
-                                    Author Name
+                                    Oscar Lorca
                                 </h4>
                                 <p className="text-sm text-gray-500">
-                                    Cargo/Profesión
+                                    Gerente de negocios
                                 </p>
                             </div>
                         </div>

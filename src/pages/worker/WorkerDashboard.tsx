@@ -12,7 +12,6 @@ import { useNavigate } from "react-router-dom";
 import { ApplyProcessModal } from "../../components/worker/ApplyProcessModal";
 import { SearchInput } from "../../components/common/SearchInput";
 import { useDebounce } from "../../hooks/useDebounce";
-import { useFilter } from "../../hooks/useFilter";
 import { Modal } from "../../components/common/Modal";
 import { toast } from "../../utils/toast";
 import { QuickStats } from "../../components/widgets/QuickStats";
@@ -32,12 +31,8 @@ export const WorkerDashboard = () => {
 
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearch = useDebounce(searchTerm, 300);
-    const [showFilters, setShowFilters] = useState(false);
-
-    const { filters, setFilter, clearFilters } = useFilter({
-        ubicacion: "all",
-        empresa: "all",
-    });
+    const [searchApplications, setSearchApplications] = useState("");
+    const debouncedSearchApplications = useDebounce(searchApplications, 300);
 
     const {
         data: stats,
@@ -81,8 +76,17 @@ export const WorkerDashboard = () => {
             };
         }) || [];
 
+    // Filtrar aplicaciones por búsqueda
+    const misAplicacionesFiltradas = misAplicacionesCompletas.filter((app) => {
+        const searchLower = debouncedSearchApplications.toLowerCase();
+        return (
+            app.titulo.toLowerCase().includes(searchLower) ||
+            app.empresa.toLowerCase().includes(searchLower)
+        );
+    });
+
     // Ordenar por fecha de aplicación (más reciente primero) y tomar las últimas 3
-    const misAplicaciones = misAplicacionesCompletas
+    const misAplicaciones = misAplicacionesFiltradas
         .sort((a, b) => b.fechaAplicacionRaw - a.fechaAplicacionRaw)
         .slice(0, 3);
 
@@ -91,33 +95,6 @@ export const WorkerDashboard = () => {
         [myApplications]
     );
 
-    const empresasUnicas = useMemo(() => {
-        const empresas = new Set(
-            availableProcesses
-                ?.filter(
-                    (p) =>
-                        p.status === ProcessStatus.ACTIVE &&
-                        !appliedProcessIds.has(p.id)
-                )
-                .map((p) => p.company?.name)
-                .filter(Boolean)
-        );
-        return ["all", ...Array.from(empresas)];
-    }, [availableProcesses, appliedProcessIds]);
-
-    const ubicacionesUnicas = useMemo(() => {
-        const ubicaciones = new Set(
-            availableProcesses
-                ?.filter(
-                    (p) =>
-                        p.status === ProcessStatus.ACTIVE &&
-                        !appliedProcessIds.has(p.id)
-                )
-                .map((p) => p.location)
-                .filter(Boolean)
-        );
-        return ["all", ...Array.from(ubicaciones)];
-    }, [availableProcesses, appliedProcessIds]);
 
     const ofertasDisponiblesFiltradas = useMemo(() => {
         return (
@@ -145,15 +122,7 @@ export const WorkerDashboard = () => {
                             ?.toLowerCase()
                             .includes(debouncedSearch.toLowerCase());
 
-                    const matchesUbicacion =
-                        filters.ubicacion === "all" ||
-                        process.location === filters.ubicacion;
-
-                    const matchesEmpresa =
-                        filters.empresa === "all" ||
-                        process.company?.name === filters.empresa;
-
-                    return matchesSearch && matchesUbicacion && matchesEmpresa;
+                    return matchesSearch;
                 })
                 .map((process) => ({
                     id: process.id,
@@ -176,7 +145,7 @@ export const WorkerDashboard = () => {
                         : 0,
                 })) || []
         );
-    }, [availableProcesses, appliedProcessIds, debouncedSearch, filters]);
+    }, [availableProcesses, appliedProcessIds, debouncedSearch]);
 
     // Ordenar por fecha de creación (más reciente primero) y tomar las últimas 3
     const ofertasDisponibles = ofertasDisponiblesFiltradas
@@ -217,6 +186,18 @@ export const WorkerDashboard = () => {
             [WorkerStatus.COMPLETED]: "Completado",
         };
         return messages[status] || "";
+    }
+
+    function getButtonText(status: WorkerStatus): string {
+        const buttonTexts: Record<WorkerStatus, string> = {
+            [WorkerStatus.PENDING]: "Inicia el Proceso →",
+            [WorkerStatus.IN_PROCESS]: "Continuar con el Proceso →",
+            [WorkerStatus.COMPLETED]: "Ver Detalles →",
+            [WorkerStatus.APPROVED]: "Ver Detalles →",
+            [WorkerStatus.REJECTED]: "Ver Detalles →",
+            [WorkerStatus.HIRED]: "Ver Detalles →",
+        };
+        return buttonTexts[status] || "Ver Detalles →";
     }
 
     const getEstadoColorClass = (color: string) => {
@@ -269,15 +250,25 @@ export const WorkerDashboard = () => {
     };
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-8 animate-fade-in">
             {/* Header */}
-            <div className="glass-white rounded-2xl p-8">
-                <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-primary-600/70 via-secondary-600/70 to-primary-600/70 bg-clip-text text-transparent">
-                    Bienvenido, {user?.firstName} {user?.lastName}
+            <div className="rounded-2xl p-8">
+                <h1 className="text-4xl md:text-5xl font-black text-gray-900">
+                    Dashboard de Trabajador
                 </h1>
                 <p className="text-gray-800 mt-3 text-lg font-bold">
-                    Encuentra tu próxima oportunidad laboral
+                    Bienvenido, <span className="text-primary-600/80">{user?.firstName}</span>
                 </p>
+            </div>
+
+            {/* Separator */}
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t-2 border-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                </div>
+                <div className="relative flex justify-center">
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-gray-500">Resumen</span>
+                </div>
             </div>
 
             {/* Stats Cards */}
@@ -314,7 +305,7 @@ export const WorkerDashboard = () => {
                         {
                             title: "Finalizadas",
                             value: stats?.finalizadas || 0,
-                            color: "purple" as const,
+                            color: "orange" as const,
                             icon: (
                                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -324,7 +315,7 @@ export const WorkerDashboard = () => {
                         {
                             title: "Ofertas Nuevas",
                             value: stats?.disponibles || 0,
-                            color: "pink" as const,
+                            color: "turquoise" as const,
                             icon: (
                                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -335,243 +326,151 @@ export const WorkerDashboard = () => {
                 />
             )}
 
-            {/* Mis Aplicaciones */}
-            <div className="glass-white rounded-2xl p-4 sm:p-6">
-                {/* Alerta de procesos pendientes */}
-                {misAplicacionesCompletas.some(
-                    (app) => app.estado === WorkerStatus.PENDING || app.estado === WorkerStatus.IN_PROCESS
-                ) && (
-                    <div className="mb-4 p-3 rounded-xl border-2 border-orange-200 bg-orange-50/50">
-                        <h2 className="text-sm sm:text-base font-bold text-orange-600">
-                            ⚠️ Tienes procesos pendientes o en proceso
+            {/* Separator */}
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t-2 border-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                </div>
+                <div className="relative flex justify-center">
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-gray-500">Mis Procesos y Oportunidades</span>
+                </div>
+            </div>
+
+            {/* Grid con Mis Aplicaciones y Ofertas Disponibles */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Mis Aplicaciones */}
+                <div className="glass-white rounded-2xl p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                        <h2 className="text-xl font-bold text-gray-900">
+                            Mis Aplicaciones
                         </h2>
+                        <SearchInput
+                            value={searchApplications}
+                            onChange={setSearchApplications}
+                            placeholder="Buscar aplicaciones..."
+                        />
                     </div>
-                )}
-                <h2 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text text-transparent mb-6">
-                    Mis Aplicaciones
-                </h2>
-                <div className="space-y-3">
-                    {misAplicaciones.map((app) => (
-                        <div
-                            key={app.id}
-                            onClick={() => navigate(`/trabajador/postulaciones/${app.id}`)}
-                            className="p-3 sm:p-4 rounded-xl border border-white/15 bg-white/8 transition-all duration-300 hover:bg-white/12 cursor-pointer"
-                        >
-                            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                                        <h3 className="text-base sm:text-lg font-bold text-gray-900 break-words">
-                                            {app.titulo}
-                                        </h3>
-                                        <span
-                                            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-bold rounded-xl shadow-md flex-shrink-0 ${getEstadoColorClass(
-                                                app.estadoColor
-                                            )}`}
-                                        >
-                                            {app.estadoLabel}
-                                        </span>
+                    {/* Alerta de procesos pendientes */}
+                    {misAplicacionesCompletas.some(
+                        (app) => app.estado === WorkerStatus.PENDING || app.estado === WorkerStatus.IN_PROCESS
+                    ) && (
+                        <div className="mb-4 p-3 rounded-xl border-2 border-orange-200 bg-orange-50/50">
+                            <h2 className="text-sm sm:text-base font-bold text-orange-600">
+                                ⚠️ Tienes procesos pendientes o en proceso
+                            </h2>
+                        </div>
+                    )}
+                <div className="space-y-4">
+                    {misAplicaciones.map((app, index) => (
+                        <div key={app.id}>
+                            <div className="p-3 sm:p-4 rounded-xl border border-white/15 bg-white/8 transition-all duration-300">
+                                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                                            <h3 className="text-base sm:text-lg font-bold text-gray-900 break-words">
+                                                {app.titulo}
+                                            </h3>
+                                            <span
+                                                className={`px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-bold rounded-xl shadow-md flex-shrink-0 ${getEstadoColorClass(
+                                                    app.estadoColor
+                                                )}`}
+                                            >
+                                                {app.estadoLabel}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs sm:text-sm font-bold text-gray-600 mt-1">
+                                            {app.empresa}
+                                        </p>
+                                        <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                                            Aplicado: {app.fechaAplicacion}
+                                        </p>
                                     </div>
-                                    <p className="text-xs sm:text-sm font-bold text-gray-600 mt-1">
-                                        {app.empresa}
-                                    </p>
-                                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                                        Aplicado: {app.fechaAplicacion}
-                                    </p>
+                                    <button
+                                        onClick={() => navigate(`/trabajador/postulaciones/${app.id}`)}
+                                        className="px-4 py-2 bg-yellow-400 text-gray-900 rounded-xl hover:bg-yellow-500 transition-all duration-300 text-sm font-bold shadow-md self-start lg:self-center whitespace-nowrap"
+                                    >
+                                        {getButtonText(app.estado)}
+                                    </button>
                                 </div>
                             </div>
+                            {index < misAplicaciones.length - 1 && (
+                                <div className="my-3 border-t border-gray-200"></div>
+                            )}
                         </div>
                     ))}
                 </div>
                 {/* Footer - Ver todas las aplicaciones */}
-                {misAplicacionesCompletas.length > 3 && (
+                {misAplicacionesFiltradas.length > 3 && (
                     <div className="mt-6 text-center">
                         <button
                             onClick={() => navigate("/trabajador/postulaciones")}
-                            className="text-sm font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text text-transparent hover:scale-110 transition-transform duration-300"
+                            className="text-sm font-bold text-gray-900 hover:scale-110 transition-transform duration-300"
                         >
-                            Ver todas las aplicaciones ({misAplicacionesCompletas.length}) →
+                            Ver todas las aplicaciones ({misAplicacionesFiltradas.length}) →
                         </button>
                     </div>
                 )}
-            </div>
-
-            {/* Ofertas Disponibles */}
-            <div className="glass-white rounded-2xl p-4 sm:p-6">
-                <div className="mb-6">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-0 mb-4">
-                        <div>
-                            <h2 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text text-transparent">
-                                Ofertas Disponibles
-                            </h2>
-                            <p className="text-xs sm:text-sm text-gray-600 mt-1 font-medium">
-                                {ofertasDisponiblesFiltradas.length}{" "}
-                                {ofertasDisponiblesFiltradas.length === 1
-                                    ? "oportunidad"
-                                    : "oportunidades"}{" "}
-                                encontradas
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => setShowFilters(!showFilters)}
-                            className={`px-3 sm:px-4 py-1.5 sm:py-2 border rounded-xl transition-all duration-300 text-xs sm:text-sm font-bold flex items-center gap-2 self-start ${
-                                showFilters ||
-                                filters.ubicacion !== "all" ||
-                                filters.empresa !== "all"
-                                    ? "border-primary-500/50 bg-primary-50/50 text-primary-700"
-                                    : "border-white/30 text-gray-700 hover:bg-white/20"
-                            }`}
-                        >
-                            <svg
-                                className="w-4 h-4 sm:w-5 sm:h-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                                />
-                            </svg>
-                            Filtros
-                            {(filters.ubicacion !== "all" ||
-                                filters.empresa !== "all") && (
-                                <span className="ml-1 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">
-                                    {(filters.ubicacion !== "all" ? 1 : 0) +
-                                        (filters.empresa !== "all" ? 1 : 0)}
-                                </span>
-                            )}
-                        </button>
-                    </div>
-
-                    {/* Barra de búsqueda */}
-                    <SearchInput
-                        value={searchTerm}
-                        onChange={setSearchTerm}
-                        placeholder="Buscar por nombre, empresa, ubicación o cargo..."
-                        className="mb-4"
-                    />
-
-                    {/* Panel de filtros */}
-                    {showFilters && (
-                        <div className="bg-white/12 rounded-xl p-3 sm:p-4 mb-4 border border-white/20">
-                            <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-sm sm:text-base font-bold text-gray-900">
-                                    Filtros
-                                </h3>
-                                <button
-                                    onClick={clearFilters}
-                                    className="text-xs sm:text-sm font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text text-transparent hover:scale-110 transition-transform duration-300"
-                                >
-                                    Limpiar filtros
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                                <div>
-                                    <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-2">
-                                        Ubicación
-                                    </label>
-                                    <select
-                                        value={filters.ubicacion}
-                                        onChange={(e) =>
-                                            setFilter(
-                                                "ubicacion",
-                                                e.target.value
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 text-sm border border-white/30 bg-white/50 rounded-xl focus:ring-2 focus:ring-primary-500/50 focus:border-transparent font-medium text-gray-900"
-                                    >
-                                        <option value="all">
-                                            Todas las ubicaciones
-                                        </option>
-                                        {ubicacionesUnicas
-                                            .filter((u) => u !== "all")
-                                            .map((ubicacion) => (
-                                                <option
-                                                    key={ubicacion}
-                                                    value={ubicacion}
-                                                >
-                                                    {ubicacion}
-                                                </option>
-                                            ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-2">
-                                        Empresa
-                                    </label>
-                                    <select
-                                        value={filters.empresa}
-                                        onChange={(e) =>
-                                            setFilter("empresa", e.target.value)
-                                        }
-                                        className="w-full px-3 py-2 text-sm border border-white/30 bg-white/50 rounded-xl focus:ring-2 focus:ring-primary-500/50 focus:border-transparent font-medium text-gray-900"
-                                    >
-                                        <option value="all">
-                                            Todas las empresas
-                                        </option>
-                                        {empresasUnicas
-                                            .filter((e) => e !== "all")
-                                            .map((empresa) => (
-                                                <option
-                                                    key={empresa}
-                                                    value={empresa}
-                                                >
-                                                    {empresa}
-                                                </option>
-                                            ))}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
-                <div className="space-y-3">
-                    {ofertasDisponibles.map((oferta) => (
-                        <div
-                            key={oferta.id}
-                            className="p-3 sm:p-4 rounded-xl border border-white/15 bg-white/8 hover:bg-white/12 transition-all duration-300"
-                        >
-                            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                                        <h3 className="text-base sm:text-lg font-bold text-gray-900 break-words">
-                                            {oferta.titulo}
-                                        </h3>
-                                        {oferta.nuevo && (
-                                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-xl flex-shrink-0">
-                                                🆕 NUEVA
-                                            </span>
-                                        )}
-                                    </div>
-                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold break-words">
-                                        {oferta.empresa}
-                                    </p>
-                                    {oferta.descripcion && (
-                                        <p className="text-xs sm:text-sm text-gray-500 mt-2 font-medium break-words">
-                                            {oferta.descripcion}
+
+                {/* Ofertas Disponibles */}
+                <div className="glass-white rounded-2xl p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                        <h2 className="text-xl font-bold text-gray-900">
+                            Ofertas Disponibles
+                        </h2>
+                        <SearchInput
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                            placeholder="Buscar ofertas..."
+                        />
+                    </div>
+                    <div className="space-y-4">
+                        {ofertasDisponibles.map((oferta, index) => (
+                        <div key={oferta.id}>
+                            <div className="p-3 sm:p-4 rounded-xl border border-white/15 bg-white/8 hover:bg-white/12 transition-all duration-300">
+                                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                                            <h3 className="text-base sm:text-lg font-bold text-gray-900 break-words">
+                                                {oferta.titulo}
+                                            </h3>
+                                            {oferta.nuevo && (
+                                                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-xl flex-shrink-0">
+                                                    🆕 NUEVA
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold break-words">
+                                            {oferta.empresa}
                                         </p>
-                                    )}
-                                    <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-2 text-xs sm:text-sm text-gray-600">
-                                        <span className="font-medium">{oferta.ubicacion}</span>
-                                        <span className="text-green-600 font-bold">
-                                            • {oferta.salario}
-                                        </span>
+                                        {oferta.descripcion && (
+                                            <p className="text-xs sm:text-sm text-gray-500 mt-2 font-medium break-words">
+                                                {oferta.descripcion}
+                                            </p>
+                                        )}
+                                        <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-2 text-xs sm:text-sm text-gray-600">
+                                            <span className="font-medium">{oferta.ubicacion}</span>
+                                            <span className="text-green-600 font-bold">
+                                                • {oferta.salario}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-500">
+                                            <span className="font-medium">{oferta.vacantes} vacantes</span>
+                                            <span className="font-medium">• Vence: {oferta.vence}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-500">
-                                        <span className="font-medium">{oferta.vacantes} vacantes</span>
-                                        <span className="font-medium">• Vence: {oferta.vence}</span>
-                                    </div>
+                                    <button
+                                        onClick={() => handleApplyClick(oferta.id)}
+                                        disabled={applyMutation.isPending}
+                                        className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-300 text-xs sm:text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-md self-start lg:self-center whitespace-nowrap"
+                                    >
+                                        Postular
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={() => handleApplyClick(oferta.id)}
-                                    disabled={applyMutation.isPending}
-                                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-300 text-xs sm:text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-md self-start lg:self-center whitespace-nowrap"
-                                >
-                                    Postular
-                                </button>
                             </div>
+                            {index < ofertasDisponibles.length - 1 && (
+                                <div className="my-3 border-t border-gray-200"></div>
+                            )}
                         </div>
                     ))}
 
@@ -594,23 +493,16 @@ export const WorkerDashboard = () => {
                                 </svg>
                             </div>
                             <p className="text-sm sm:text-base text-gray-600 mb-2 font-medium">
-                                {debouncedSearch ||
-                                filters.ubicacion !== "all" ||
-                                filters.empresa !== "all"
-                                    ? "No se encontraron ofertas con los criterios seleccionados"
+                                {debouncedSearch
+                                    ? "No se encontraron ofertas con tu búsqueda"
                                     : "No hay ofertas disponibles en este momento"}
                             </p>
-                            {(debouncedSearch ||
-                                filters.ubicacion !== "all" ||
-                                filters.empresa !== "all") && (
+                            {debouncedSearch && (
                                 <button
-                                    onClick={() => {
-                                        setSearchTerm("");
-                                        clearFilters();
-                                    }}
-                                    className="text-xs sm:text-sm font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text text-transparent hover:scale-110 transition-transform duration-300"
+                                    onClick={() => setSearchTerm("")}
+                                    className="text-xs sm:text-sm font-bold text-gray-900 hover:scale-110 transition-transform duration-300"
                                 >
-                                    Limpiar búsqueda y filtros
+                                    Limpiar búsqueda
                                 </button>
                             )}
                         </div>
@@ -622,12 +514,13 @@ export const WorkerDashboard = () => {
                     <div className="mt-6 text-center">
                         <button
                             onClick={() => navigate("/trabajador/procesos")}
-                            className="text-sm font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text text-transparent hover:scale-110 transition-transform duration-300"
+                            className="text-sm font-bold text-gray-900 hover:scale-110 transition-transform duration-300"
                         >
                             Ver todas las ofertas ({ofertasDisponiblesFiltradas.length}) →
                         </button>
                     </div>
                 )}
+                </div>
             </div>
 
             {/* Modal de confirmación */}

@@ -12,6 +12,7 @@ import { VideoRequirementGate } from "../../components/worker/VideoRequirementGa
 import { Test, FixedTest } from "../../types/test.types";
 import { TestResponse } from "../../types/test-response.types";
 import { toast } from "../../utils/toast";
+import { Clock, FileText, Target } from "lucide-react";
 
 interface ProcessTestsData {
     tests?: Test[];
@@ -95,7 +96,7 @@ export const WorkerApplicationDetailPage = () => {
 
     return (
         <div className="max-w-7xl mx-auto space-y-6">
-            {/* Header */}
+            {/* Header with Back Button */}
             <div className="flex items-center justify-between">
                 <button
                     onClick={() => navigate("/trabajador/postulaciones")}
@@ -118,11 +119,11 @@ export const WorkerApplicationDetailPage = () => {
                 </button>
             </div>
 
-            {/* Process Info Card */}
+            {/* Page Title - Process Name */}
             <div className="bg-white rounded-lg shadow-lg p-6">
-                <div className="flex items-start justify-between mb-6">
+                <div className="flex items-start justify-between">
                     <div className="flex-1">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                        <h1 className="text-4xl font-black text-gray-900 mb-2">
                             {process.name}
                         </h1>
                         <p className="text-lg text-gray-600">
@@ -137,107 +138,26 @@ export const WorkerApplicationDetailPage = () => {
                         {WorkerStatusLabels[application.status]}
                     </span>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-1">
-                            Empresa
-                        </h3>
-                        <p className="text-lg text-gray-900">
-                            {process.company?.name || "No especificada"}
-                        </p>
-                    </div>
-                    <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-1">
-                            Código del Proceso
-                        </h3>
-                        <p className="text-lg text-gray-900">{process.code}</p>
-                    </div>
-                    <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-1">
-                            Ubicación
-                        </h3>
-                        <p className="text-lg text-gray-900">
-                            {process.location || "No especificada"}
-                        </p>
-                    </div>
-                    <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-1">
-                            Departamento
-                        </h3>
-                        <p className="text-lg text-gray-900">
-                            {process.department || "No especificado"}
-                        </p>
-                    </div>
-                </div>
-
-                {process.description && (
-                    <div className="mt-6">
-                        <h3 className="text-sm font-medium text-gray-500 mb-2">
-                            Descripción del Proceso
-                        </h3>
-                        <p className="text-gray-700 whitespace-pre-line">
-                            {process.description}
-                        </p>
-                    </div>
-                )}
-            </div>
-
-            {/* Application Status Card */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">
-                    Estado de tu Postulación
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="border-l-4 border-blue-500 pl-4">
-                        <h3 className="text-sm font-medium text-gray-500 mb-1">
-                            Fecha de Postulación
-                        </h3>
-                        <p className="text-lg text-gray-900">
-                            {formatDate(application.appliedAt)}
-                        </p>
-                    </div>
-
-                    {application.evaluatedAt && (
-                        <div className="border-l-4 border-green-500 pl-4">
-                            <h3 className="text-sm font-medium text-gray-500 mb-1">
-                                Fecha de Evaluación
-                            </h3>
-                            <p className="text-lg text-gray-900">
-                                {formatDate(application.evaluatedAt)}
-                            </p>
-                        </div>
-                    )}
-                </div>
-
-                {application.notes && (
-                    <div className="mt-6 bg-gray-50 rounded-lg p-4">
-                        <h3 className="text-sm font-medium text-gray-700 mb-2">
-                            Notas del Evaluador
-                        </h3>
-                        <p className="text-gray-600">{application.notes}</p>
-                    </div>
-                )}
             </div>
 
             {/* Available Tests Section - Wrapped with Video Gate */}
             {processTests && (((processTests as ProcessTestsData).tests?.length ?? 0) > 0 || ((processTests as ProcessTestsData).fixedTests?.length ?? 0) > 0) && (
-                <VideoRequirementGate
-                    processId={process.id}
-                    workerId={user?.worker?.id || ""}
-                    workerProcessId={application.id}
-                    onVideoCompleted={() => {
-                        // Reload page or invalidate queries
-                        window.location.reload();
-                    }}
-                >
-                    <div className="bg-white rounded-lg shadow-lg p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-6">
-                            Tests Disponibles
-                        </h2>
+                <div className="w-full">
+                    <VideoRequirementGate
+                        processId={process.id}
+                        workerId={user?.worker?.id || ""}
+                        workerProcessId={application.id}
+                        onVideoCompleted={() => {
+                            // Reload page or invalidate queries
+                            window.location.reload();
+                        }}
+                    >
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <h2 className="text-xl font-bold text-gray-900 mb-6">
+                                Tests Disponibles
+                            </h2>
 
-                    <div className="space-y-4">
+                        <div className="space-y-4">
                         {/* Custom Tests */}
                         {(processTests as ProcessTestsData).tests?.map((test) => (
                             <div
@@ -256,10 +176,16 @@ export const WorkerApplicationDetailPage = () => {
                                         )}
                                         <div className="flex gap-4 text-sm text-gray-500">
                                             {test.duration && (
-                                                <span>⏱️ {test.duration} minutos</span>
+                                                <span className="flex items-center gap-1">
+                                                    <Clock className="w-4 h-4" />
+                                                    {test.duration} minutos
+                                                </span>
                                             )}
                                             {test.questions && (
-                                                <span>📝 {test.questions.length} preguntas</span>
+                                                <span className="flex items-center gap-1">
+                                                    <FileText className="w-4 h-4" />
+                                                    {test.questions.length} preguntas
+                                                </span>
                                             )}
                                         </div>
                                     </div>
@@ -344,9 +270,15 @@ export const WorkerApplicationDetailPage = () => {
                                         )}
                                         <div className="flex gap-4 text-sm text-gray-600">
                                             {fixedTest.duration && (
-                                                <span>⏱️ {fixedTest.duration} minutos</span>
+                                                <span className="flex items-center gap-1">
+                                                    <Clock className="w-4 h-4" />
+                                                    {fixedTest.duration} minutos
+                                                </span>
                                             )}
-                                            <span>🎯 {fixedTest.code}</span>
+                                            <span className="flex items-center gap-1">
+                                                <Target className="w-4 h-4" />
+                                                {fixedTest.code}
+                                            </span>
                                         </div>
                                     </div>
                                     {(() => {
@@ -406,30 +338,121 @@ export const WorkerApplicationDetailPage = () => {
                                 </div>
                             </div>
                         ))}
+                        </div>
                     </div>
+                    </VideoRequirementGate>
                 </div>
-                </VideoRequirementGate>
             )}
 
+            {/* Grid: Process Info/Application Status and Timeline */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Process Info and Application Status Combined Card */}
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                    <h2 className="text-xl font-bold text-gray-900 mb-6">
+                        Detalle de la Oportunidad
+                    </h2>
 
-            {/* Timeline Section */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">
-                    Timeline del Proceso
-                </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <h3 className="text-sm font-medium text-gray-500 mb-1">
+                                Empresa
+                            </h3>
+                            <p className="text-lg text-gray-900">
+                                {process.company?.name || "No especificada"}
+                            </p>
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-medium text-gray-500 mb-1">
+                                Código del Proceso
+                            </h3>
+                            <p className="text-lg text-gray-900">{process.code}</p>
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-medium text-gray-500 mb-1">
+                                Ubicación
+                            </h3>
+                            <p className="text-lg text-gray-900">
+                                {process.location || "No especificada"}
+                            </p>
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-medium text-gray-500 mb-1">
+                                Departamento
+                            </h3>
+                            <p className="text-lg text-gray-900">
+                                {process.department || "No especificado"}
+                            </p>
+                        </div>
+                    </div>
 
-                <div className="relative">
-                    <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                    {process.description && (
+                        <div className="mb-6">
+                            <h3 className="text-sm font-medium text-gray-500 mb-2">
+                                Descripción del Proceso
+                            </h3>
+                            <p className="text-gray-700 whitespace-pre-line">
+                                {process.description}
+                            </p>
+                        </div>
+                    )}
 
-                    <div className="space-y-6">
-                        {/* Postulación */}
-                        <div className="relative flex items-start">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white z-10">
-                                <svg
-                                    className="w-4 h-4"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                >
+                    {/* Application Status Section */}
+                    <div className="border-t border-gray-200 pt-6">
+                        <h2 className="text-xl font-bold text-gray-900 mb-6">
+                            Estado de tu Postulación
+                        </h2>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="border-l-4 border-blue-500 pl-4">
+                                <h3 className="text-sm font-medium text-gray-500 mb-1">
+                                    Fecha de Postulación
+                                </h3>
+                                <p className="text-lg text-gray-900">
+                                    {formatDate(application.appliedAt)}
+                                </p>
+                            </div>
+
+                            {application.evaluatedAt && (
+                                <div className="border-l-4 border-green-500 pl-4">
+                                    <h3 className="text-sm font-medium text-gray-500 mb-1">
+                                        Fecha de Evaluación
+                                    </h3>
+                                    <p className="text-lg text-gray-900">
+                                        {formatDate(application.evaluatedAt)}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        {application.notes && (
+                            <div className="mt-6 bg-gray-50 rounded-lg p-4">
+                                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                                    Notas del Evaluador
+                                </h3>
+                                <p className="text-gray-600">{application.notes}</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Timeline Section */}
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                    <h2 className="text-xl font-bold text-gray-900 mb-6">
+                        Timeline del Proceso
+                    </h2>
+
+                    <div className="relative">
+                        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+
+                        <div className="space-y-6">
+                            {/* Postulación */}
+                            <div className="relative flex items-start">
+                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white z-10">
+                                    <svg
+                                        className="w-4 h-4"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                    >
                                     <path
                                         fillRule="evenodd"
                                         d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -519,6 +542,9 @@ export const WorkerApplicationDetailPage = () => {
                         </div>
                     </div>
                 </div>
+                {/* Close Timeline Section */}
+                </div>
+            {/* Close grid container */}
             </div>
         </div>
     );

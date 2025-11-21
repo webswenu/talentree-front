@@ -1190,7 +1190,13 @@ export const ProcessDetailPage = () => {
                                                 Trabajador
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Archivos
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Acciones
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Aprobar Informe de Selección (PDF)
                                             </th>
                                         </tr>
                                     </thead>
@@ -1247,9 +1253,37 @@ export const ProcessDetailPage = () => {
                                                         ? `${report.worker.firstName} ${report.worker.lastName}`
                                                         : "-"}
                                                 </td>
+                                                {/* Columna Archivos */}
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                     <div className="flex gap-2 items-center">
-                                                        {/* Download button */}
+                                                        {(report.pdfFileUrl || report.docxFileUrl || report.fileUrl) && (
+                                                            <div className="flex items-center gap-1">
+                                                                {report.docxFileUrl && (
+                                                                    <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+                                                                        DOCX
+                                                                    </span>
+                                                                )}
+                                                                {report.pdfFileUrl && (
+                                                                    <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-700">
+                                                                        PDF
+                                                                    </span>
+                                                                )}
+                                                                {!report.pdfFileUrl && !report.docxFileUrl && report.fileUrl && (
+                                                                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                                                        isDOCX(report.fileName)
+                                                                            ? 'bg-blue-100 text-blue-700'
+                                                                            : 'bg-red-100 text-red-700'
+                                                                    }`}>
+                                                                        {isDOCX(report.fileName) ? 'DOCX' : 'PDF'}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                {/* Columna Acciones */}
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    <div className="flex gap-2 items-center">
                                                         {(report.pdfFileUrl || report.docxFileUrl || report.fileUrl) && (
                                                             <button
                                                                 onClick={() => handleDownloadClick(report)}
@@ -1262,29 +1296,6 @@ export const ProcessDetailPage = () => {
                                                                 </svg>
                                                             </button>
                                                         )}
-
-                                                        {/* File type badges */}
-                                                        {report.docxFileUrl && (
-                                                            <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
-                                                                DOCX
-                                                            </span>
-                                                        )}
-                                                        {report.pdfFileUrl && (
-                                                            <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-700">
-                                                                PDF
-                                                            </span>
-                                                        )}
-                                                        {!report.pdfFileUrl && !report.docxFileUrl && report.fileUrl && (
-                                                            <span className={`text-xs px-1.5 py-0.5 rounded ${
-                                                                isDOCX(report.fileName)
-                                                                    ? 'bg-blue-100 text-blue-700'
-                                                                    : 'bg-red-100 text-red-700'
-                                                            }`}>
-                                                                {isDOCX(report.fileName) ? 'DOCX' : 'PDF'}
-                                                            </span>
-                                                        )}
-
-                                                        {/* Upload button */}
                                                         {canEdit && (
                                                             <button
                                                                 onClick={() => handleUploadClick(report.id)}
@@ -1297,25 +1308,6 @@ export const ProcessDetailPage = () => {
                                                                 </svg>
                                                             </button>
                                                         )}
-
-                                                        {/* Approve/Reject button - only for reports with PDF */}
-                                                        {(report.status === ReportStatus.PENDING_APPROVAL ||
-                                                          report.status === ReportStatus.REVISION_EVALUADOR ||
-                                                          report.status === ReportStatus.REVISION_ADMIN) &&
-                                                          (report.pdfFileUrl || (report.fileUrl && isPDF(report.fileName))) && (
-                                                            <button
-                                                                onClick={() => handleApproveRejectClick(report)}
-                                                                disabled={approveMutation.isPending}
-                                                                className="p-1 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded disabled:opacity-50"
-                                                                title="Aprobar/Rechazar"
-                                                            >
-                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                                </svg>
-                                                            </button>
-                                                        )}
-
-                                                        {/* Delete button */}
                                                         {canEdit && (
                                                             <button
                                                                 onClick={() => handleDelete(report.id)}
@@ -1327,6 +1319,36 @@ export const ProcessDetailPage = () => {
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                                 </svg>
                                                             </button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                {/* Columna Aprobar Informe de Selección (PDF) */}
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    <div className="flex gap-2 items-center">
+                                                        {(report.status === ReportStatus.PENDING_APPROVAL ||
+                                                          report.status === ReportStatus.REVISION_EVALUADOR ||
+                                                          report.status === ReportStatus.REVISION_ADMIN) &&
+                                                          (report.pdfFileUrl || (report.fileUrl && isPDF(report.fileName))) && (
+                                                            <button
+                                                                onClick={() => handleApproveRejectClick(report)}
+                                                                disabled={approveMutation.isPending}
+                                                                className="p-1 text-purple-600 hover:text-purple-900 hover:bg-purple-50 rounded disabled:opacity-50"
+                                                                title="Aprobar/Rechazar"
+                                                            >
+                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
+                                                        {(report.status === ReportStatus.PENDING_APPROVAL ||
+                                                          report.status === ReportStatus.REVISION_EVALUADOR ||
+                                                          report.status === ReportStatus.REVISION_ADMIN) &&
+                                                          !report.pdfFileUrl &&
+                                                          !(report.fileUrl && isPDF(report.fileName)) &&
+                                                          (report.docxFileUrl || report.fileUrl) && (
+                                                            <span className="text-xs text-gray-500 italic">
+                                                                Subir PDF para aprobar
+                                                            </span>
                                                         )}
                                                     </div>
                                                 </td>

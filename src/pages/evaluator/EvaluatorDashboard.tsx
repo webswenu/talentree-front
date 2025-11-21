@@ -88,8 +88,7 @@ export const EvaluatorDashboard = () => {
         {
             title: "Empresas Activas",
             value: companiesStats?.active ?? 0,
-            trend: companiesStats ? { value: 12, isPositive: true } : undefined,
-            color: "blue" as const,
+            color: "orange" as const,
             icon: (
                 <svg
                     className="w-8 h-8"
@@ -109,8 +108,7 @@ export const EvaluatorDashboard = () => {
         {
             title: "Procesos Activos",
             value: processesStats?.byStatus?.active ?? 0,
-            trend: processesStats ? { value: 8, isPositive: true } : undefined,
-            color: "green" as const,
+            color: "turquoise" as const,
             icon: (
                 <svg
                     className="w-8 h-8"
@@ -130,8 +128,7 @@ export const EvaluatorDashboard = () => {
         {
             title: "Candidatos",
             value: workersStats?.total ?? 0,
-            trend: workersStats ? { value: 5, isPositive: false } : undefined,
-            color: "yellow" as const,
+            color: "orange" as const,
             icon: (
                 <svg
                     className="w-8 h-8"
@@ -151,10 +148,7 @@ export const EvaluatorDashboard = () => {
         {
             title: "Tests Completados",
             value: testResponsesStats?.completed ?? 0,
-            trend: testResponsesStats
-                ? { value: 15, isPositive: true }
-                : undefined,
-            color: "gray" as const,
+            color: "turquoise" as const,
             icon: (
                 <svg
                     className="w-8 h-8"
@@ -215,7 +209,7 @@ export const EvaluatorDashboard = () => {
                 </svg>
             ),
             onClick: () => navigate("/evaluador/empresas"),
-            color: "blue" as const,
+            color: "orange" as const,
         },
         {
             id: "view-tests",
@@ -236,46 +230,71 @@ export const EvaluatorDashboard = () => {
                 </svg>
             ),
             onClick: () => navigate("/evaluador/tests"),
-            color: "green" as const,
+            color: "turquoise" as const,
         },
     ];
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <div className="text-gray-500">Cargando estadísticas...</div>
+            <div className="flex items-center justify-center h-screen">
+                <div className="glass-white rounded-2xl p-8 text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent mb-4"></div>
+                    <div className="text-gray-700 font-bold">Cargando estadísticas...</div>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-8 animate-fade-in">
             {/* Header */}
-            <div className="glass-white rounded-2xl p-6 sm:p-8">
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-black bg-gradient-to-r from-primary-600/70 via-secondary-600/70 to-primary-600/70 bg-clip-text text-transparent">
-                    Bienvenido, {user?.firstName} {user?.lastName}
+            <div className="rounded-2xl p-8">
+                <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-primary-600/70 via-secondary-600/70 to-primary-600/70 bg-clip-text">
+                    Dashboard de Evaluador
                 </h1>
-                <p className="text-gray-800 mt-3 text-base sm:text-lg font-bold">
-                    Panel de Evaluador - Revisa y califica candidatos
+                <p className="text-gray-800 mt-3 text-lg font-bold">
+                    Bienvenido, <span className="text-primary-600/80">{user?.firstName}</span>
                 </p>
+            </div>
+
+            {/* Separator */}
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t-2 border-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                </div>
+                <div className="relative flex justify-center">
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-gray-500">Resumen</span>
+                </div>
             </div>
 
             {/* Quick Stats */}
             <QuickStats stats={stats} />
 
+            {/* Separator */}
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t-2 border-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                </div>
+                <div className="relative flex justify-center">
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-gray-500">Acciones Rápidas</span>
+                </div>
+            </div>
+
             {/* Quick Actions */}
             <QuickActions actions={quickActions} columns={2} />
 
+            {/* Separator */}
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t-2 border-gradient-to-r from-transparent via-purple-200 to-transparent"></div>
+                </div>
+                <div className="relative flex justify-center">
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-purple-600">Evaluaciones Pendientes</span>
+                </div>
+            </div>
+
             {/* Evaluaciones Pendientes */}
             <div className="glass-white rounded-2xl p-4 sm:p-6">
-                <div className="mb-6">
-                    <h2 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text text-transparent">
-                        Evaluaciones Pendientes
-                    </h2>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-medium">
-                        Tests que requieren calificación manual
-                    </p>
-                </div>
                 <div className="space-y-3">
                     {pendingEvaluations && pendingEvaluations.length > 0 ? (
                         pendingEvaluations.map((testResponse) => {
@@ -380,6 +399,16 @@ export const EvaluatorDashboard = () => {
                             </p>
                         </div>
                     )}
+                </div>
+            </div>
+
+            {/* Separator */}
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t-2 border-gradient-to-r from-transparent via-orange-200 to-transparent"></div>
+                </div>
+                <div className="relative flex justify-center">
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-orange-600">Estadísticas</span>
                 </div>
             </div>
 

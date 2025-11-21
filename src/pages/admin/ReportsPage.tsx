@@ -445,14 +445,20 @@ export default function ReportsPage() {
                                 Fecha
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Archivos
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Acciones
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Aprobar Informe de Selección (PDF)
                             </th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {filteredReports && filteredReports.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                                <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
                                     No hay reportes con el filtro seleccionado
                                 </td>
                             </tr>
@@ -509,22 +515,11 @@ export default function ReportsPage() {
                                         })
                                         : "-"}
                                 </td>
+                                {/* Columna Archivos */}
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div className="flex gap-2 items-center">
                                         {(report.pdfFileUrl || report.docxFileUrl || report.fileUrl) && (
                                             <div className="flex items-center gap-1">
-                                                <button
-                                                    onClick={() =>
-                                                        handleDownloadClick(report)
-                                                    }
-                                                    disabled={downloadMutation.isPending}
-                                                    className="p-1 text-green-600 hover:text-green-900 hover:bg-green-50 rounded disabled:opacity-50"
-                                                    title="Descargar"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                </button>
                                                 {report.docxFileUrl && (
                                                     <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
                                                         DOCX
@@ -542,6 +537,25 @@ export default function ReportsPage() {
                                                 )}
                                             </div>
                                         )}
+                                    </div>
+                                </td>
+                                {/* Columna Acciones */}
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div className="flex gap-2 items-center">
+                                        {(report.pdfFileUrl || report.docxFileUrl || report.fileUrl) && (
+                                            <button
+                                                onClick={() =>
+                                                    handleDownloadClick(report)
+                                                }
+                                                disabled={downloadMutation.isPending}
+                                                className="p-1 text-green-600 hover:text-green-900 hover:bg-green-50 rounded disabled:opacity-50"
+                                                title="Descargar"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                            </button>
+                                        )}
                                         {canEdit && (
                                             <button
                                                 onClick={() =>
@@ -556,6 +570,22 @@ export default function ReportsPage() {
                                                 </svg>
                                             </button>
                                         )}
+                                        {canDelete && (
+                                            <button
+                                                onClick={() => handleDelete(report)}
+                                                className="p-1 text-red-600 hover:text-red-900 hover:bg-red-50 rounded"
+                                                title="Eliminar"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                </td>
+                                {/* Columna Aprobar Informe de Selección (PDF) */}
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div className="flex gap-2 items-center">
                                         {canApprove &&
                                             (report.status === ReportStatus.PENDING_APPROVAL ||
                                              report.status === ReportStatus.REVISION_EVALUADOR ||
@@ -587,17 +617,6 @@ export default function ReportsPage() {
                                                     Subir PDF para aprobar
                                                 </span>
                                             )}
-                                        {canDelete && (
-                                            <button
-                                                onClick={() => handleDelete(report)}
-                                                className="p-1 text-red-600 hover:text-red-900 hover:bg-red-50 rounded"
-                                                title="Eliminar"
-                                            >
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                        )}
                                     </div>
                                 </td>
                             </tr>

@@ -12,7 +12,7 @@ export const EvaluatorLayout = () => {
             </div>
 
             <Sidebar />
-            <div className="lg:ml-72 p-6 md:p-8 lg:p-10 pt-20 lg:pt-6 relative z-10">
+            <div className="lg:ml-72 p-6 md:p-8 lg:p-12 xl:p-16 pt-20 lg:pt-8 relative z-10">
                 <Outlet />
             </div>
         </div>

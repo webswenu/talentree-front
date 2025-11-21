@@ -8,7 +8,15 @@ interface StatCardProps {
         value: number;
         isPositive: boolean;
     };
-    color?: "orange" | "turquoise" | "purple" | "pink" | "yellow" | "green" | "blue" | "gray";
+    color?: 
+        | "orange"
+        | "turquoise"
+        | "purple"
+        | "pink"
+        | "yellow"
+        | "green"
+        | "blue"
+        | "gray";
 }
 
 export const StatCard = ({
@@ -30,7 +38,10 @@ export const StatCard = ({
     };
 
     return (
-        <div className="rounded-2xl p-6 hover:scale-[1.02] transition-all duration-300 animate-slide-up group hover:shadow-xl border border-black/30 ">
+        <div
+            className={`rounded-2xl p-6 hover:scale-[1.02] transition-all duration-300 animate-slide-up 
+                group hover:shadow-xl border border-black/30 ${colorClasses[color]}`}
+        >
             <div className="flex items-center justify-between">
                 <div className="flex-1">
                     <p className="text-sm font-bold text-black uppercase tracking-wide mb-2">
@@ -48,14 +59,16 @@ export const StatCard = ({
                                         : "bg-red-500/20 text-red-800"
                                 }`}
                             >
-                                {trend.isPositive ? "↑" : "↓"}{" "}
-                                {Math.abs(trend.value)}%
+                                {trend.isPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
                             </span>
                         </div>
                     )}
                 </div>
                 {icon && (
-                    <div className={`p-4 rounded-2xl ${colorClasses[color]} text-black shadow-lg transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 flex items-center justify-center text-3xl`}>
+                    <div className="p-4 rounded-2xl bg-gray-100 text-gray-700 shadow-lg transform 
+                        group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 
+                        flex items-center justify-center text-3xl"
+                    >
                         {icon}
                     </div>
                 )}

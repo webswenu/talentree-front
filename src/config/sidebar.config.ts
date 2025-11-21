@@ -19,6 +19,10 @@ export interface SidebarSection {
     icon: React.ComponentType<{ size?: number; className?: string }>;
     roles: UserRole[];
     badge?: boolean;
+    separator?: {
+        label: string;
+        beforeThis: boolean;
+    };
 }
 
 export const sidebarSections: SidebarSection[] = [
@@ -59,6 +63,10 @@ export const sidebarSections: SidebarSection[] = [
         label: "Empresas",
         icon: Building2,
         roles: [UserRole.ADMIN_TALENTREE],
+        separator: {
+            label: "Gestión",
+            beforeThis: true,
+        },
     },
     {
         path: "/evaluador/empresas",
@@ -79,24 +87,40 @@ export const sidebarSections: SidebarSection[] = [
         label: "Mis Procesos",
         icon: ClipboardList,
         roles: [UserRole.COMPANY],
+        separator: {
+            label: "Gestión",
+            beforeThis: true,
+        },
     },
     {
         path: "/evaluador/procesos",
         label: "Procesos Asignados",
         icon: ClipboardList,
         roles: [UserRole.EVALUATOR],
+        separator: {
+            label: "Trabajo",
+            beforeThis: true,
+        },
     },
     {
         path: "/trabajador/procesos",
         label: "Ofertas Disponibles",
         icon: Search,
         roles: [UserRole.WORKER],
+        separator: {
+            label: "Oportunidades",
+            beforeThis: true,
+        },
     },
     {
         path: "/invitado/procesos",
         label: "Procesos",
         icon: ClipboardList,
         roles: [UserRole.GUEST],
+        separator: {
+            label: "Consulta",
+            beforeThis: true,
+        },
     },
 
     // Tests
@@ -169,24 +193,40 @@ export const sidebarSections: SidebarSection[] = [
         label: "Reportes",
         icon: BarChart,
         roles: [UserRole.ADMIN_TALENTREE],
+        separator: {
+            label: "Análisis",
+            beforeThis: true,
+        },
     },
     {
         path: "/empresa/reportes",
         label: "Reportes",
         icon: BarChart,
         roles: [UserRole.COMPANY],
+        separator: {
+            label: "Análisis",
+            beforeThis: true,
+        },
     },
     {
         path: "/evaluador/reportes",
         label: "Reportes",
         icon: BarChart,
         roles: [UserRole.EVALUATOR],
+        separator: {
+            label: "Análisis",
+            beforeThis: true,
+        },
     },
     {
         path: "/invitado/reportes",
         label: "Reportes",
         icon: BarChart,
         roles: [UserRole.GUEST],
+        separator: {
+            label: "Análisis",
+            beforeThis: true,
+        },
     },
 
     // Auditoría
@@ -203,30 +243,50 @@ export const sidebarSections: SidebarSection[] = [
         label: "Configuración",
         icon: Settings,
         roles: [UserRole.ADMIN_TALENTREE],
+        separator: {
+            label: "Sistema",
+            beforeThis: true,
+        },
     },
     {
         path: "/empresa/configuracion",
         label: "Configuración",
         icon: Settings,
         roles: [UserRole.COMPANY],
+        separator: {
+            label: "Sistema",
+            beforeThis: true,
+        },
     },
     {
         path: "/evaluador/configuracion",
         label: "Configuración",
         icon: Settings,
         roles: [UserRole.EVALUATOR],
+        separator: {
+            label: "Sistema",
+            beforeThis: true,
+        },
     },
     {
         path: "/invitado/configuracion",
         label: "Configuración",
         icon: Settings,
         roles: [UserRole.GUEST],
+        separator: {
+            label: "Sistema",
+            beforeThis: true,
+        },
     },
     {
         path: "/trabajador/perfil",
         label: "Mi Perfil",
         icon: User,
         roles: [UserRole.WORKER],
+        separator: {
+            label: "Perfil",
+            beforeThis: true,
+        },
     },
 ];
 

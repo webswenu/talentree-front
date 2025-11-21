@@ -7,7 +7,8 @@ import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { useAuthStore } from "../../store/authStore";
 import { Permission, hasPermission } from "../../utils/permissions";
 import { toast } from "../../utils/toast";
-import { EyeIcon, EditIcon, TrashIcon } from "../../components/common/ActionIcons";
+import { EditIcon, TrashIcon } from "../../components/common/ActionIcons";
+import { ClipboardList } from "lucide-react";
 
 export const CompaniesPage = () => {
     const { user } = useAuthStore();
@@ -284,7 +285,7 @@ export const CompaniesPage = () => {
                                             className="text-blue-600 hover:text-blue-900 mr-4 p-2 hover:bg-blue-50 rounded-lg transition-colors inline-flex items-center justify-center"
                                             title="Ver procesos"
                                         >
-                                            <EyeIcon />
+                                            <ClipboardList size={20} />
                                         </button>
                                         {canEdit && (
                                             <button

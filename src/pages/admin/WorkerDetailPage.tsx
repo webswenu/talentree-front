@@ -467,7 +467,13 @@ export const WorkerDetailPage = () => {
                                         Fecha
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Archivos
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Acciones
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Aprobar Informe de Selección (PDF)
                                     </th>
                                 </tr>
                             </thead>
@@ -519,6 +525,22 @@ export const WorkerDetailPage = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {new Date(report.generatedDate || report.createdAt).toLocaleDateString()}
                                         </td>
+                                        {/* Columna Archivos */}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <div className="flex gap-1 items-center">
+                                                {report.docxFileUrl && (
+                                                    <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+                                                        DOCX
+                                                    </span>
+                                                )}
+                                                {report.pdfFileUrl && (
+                                                    <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-700">
+                                                        PDF
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        {/* Columna Acciones */}
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div className="flex gap-2">
                                                 {(report.pdfFileUrl || report.docxFileUrl) && (
@@ -548,21 +570,31 @@ export const WorkerDetailPage = () => {
                                                             }
                                                         }}
                                                         disabled={downloadMutation.isPending}
-                                                        className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                                                        className="p-1 text-green-600 hover:text-green-900 hover:bg-green-50 rounded disabled:opacity-50"
+                                                        title="Descargar"
                                                     >
-                                                        Descargar
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
                                                     </button>
                                                 )}
                                                 {isAdmin && (
                                                     <button
                                                         onClick={() => handleUploadClick(report.id)}
                                                         disabled={uploadMutation.isPending}
-                                                        className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
+                                                        className="p-1 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded disabled:opacity-50"
                                                         title="Subir PDF"
                                                     >
-                                                        Subir
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                        </svg>
                                                     </button>
                                                 )}
+                                            </div>
+                                        </td>
+                                        {/* Columna Aprobar Informe de Selección (PDF) */}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <div className="flex gap-2">
                                                 {isAdmin &&
                                                  (report.status === ReportStatus.PENDING_APPROVAL ||
                                                   report.status === ReportStatus.REVISION_EVALUADOR ||
@@ -589,6 +621,17 @@ export const WorkerDetailPage = () => {
                                                             Rechazar
                                                         </button>
                                                     </>
+                                                )}
+                                                {isAdmin &&
+                                                 (report.status === ReportStatus.PENDING_APPROVAL ||
+                                                  report.status === ReportStatus.REVISION_EVALUADOR ||
+                                                  report.status === ReportStatus.REVISION_ADMIN) &&
+                                                 !report.pdfFileUrl &&
+                                                 !(report.fileUrl && isPDF(report.fileName)) &&
+                                                 (report.docxFileUrl || report.fileUrl) && (
+                                                    <span className="text-xs text-gray-500 italic">
+                                                        Subir PDF para aprobar
+                                                    </span>
                                                 )}
                                             </div>
                                         </td>
