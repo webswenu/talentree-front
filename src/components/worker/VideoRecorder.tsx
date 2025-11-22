@@ -32,6 +32,7 @@ export const VideoRecorder = ({
     const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
     const [recordedDuration, setRecordedDuration] = useState(0);
     const [videoPreviewUrl, setVideoPreviewUrl] = useState<string>("");
+    const [isMobile, setIsMobile] = useState(false);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -46,6 +47,23 @@ export const VideoRecorder = ({
     const elapsedTimeRef = useRef<number>(0); // Ref for actual elapsed time
 
     const [audioLevel, setAudioLevel] = useState(0);
+
+    // Detectar si es mobile
+    useEffect(() => {
+        const checkMobile = () => {
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+            const isSmallScreen = window.innerWidth < 768;
+            setIsMobile(isMobileDevice || isSmallScreen);
+        };
+
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+
+        return () => {
+            window.removeEventListener('resize', checkMobile);
+        };
+    }, []);
 
     // Request camera permission on mount
     useEffect(() => {
@@ -161,13 +179,25 @@ export const VideoRecorder = ({
 
     const requestPermission = async () => {
         try {
+            // Configuración de video según dispositivo
+            const videoConstraints = isMobile
+                ? {
+                      // Mobile: Video vertical (9:16)
+                      width: { ideal: 720, min: 480 },
+                      height: { ideal: 1280, min: 640 },
+                      facingMode: "user",
+                      frameRate: { ideal: 30 },
+                  }
+                : {
+                      // Desktop: Video horizontal (16:9)
+                      width: { ideal: 1280, min: 640 },
+                      height: { ideal: 720, min: 480 },
+                      facingMode: "user",
+                      frameRate: { ideal: 30 },
+                  };
+
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    width: { ideal: 1280, min: 640 },
-                    height: { ideal: 720, min: 480 },
-                    facingMode: "user",
-                    frameRate: { ideal: 30 },
-                },
+                video: videoConstraints,
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
@@ -411,19 +441,29 @@ export const VideoRecorder = ({
     }
 
     return (
-        <div className="max-w-6xl mx-auto p-6 space-y-6">
-            {/* Video and Instructions Side by Side - Always in a row for idle and recording */}
+        <div className="max-w-6xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+            {/* Video and Instructions - Responsive Layout */}
             {state !== "review" && (
-            <div className="flex flex-row gap-6">
-                {/* Instructions Box - Show on the left for both idle and recording */}
+            <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+                {/* Instructions Box - Show on top for mobile, left for desktop */}
                 {instructions && (
-                    <div className="w-1/3 flex flex-col space-y-4">
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 flex-1">
-                            <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                    <div className="w-full lg:w-1/3 flex flex-col space-y-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6 flex-1">
+                            <h3 className="text-base sm:text-lg font-semibold text-blue-900 mb-2">
                                 📹 Instrucciones
                             </h3>
                             <p className="text-blue-800 whitespace-pre-wrap text-sm">{instructions}</p>
-                            <div className="mt-4 flex items-start space-x-2 text-sm text-blue-700">
+
+                            {isMobile && (
+                                <div className="mt-3 flex items-start space-x-2 text-xs sm:text-sm text-blue-700 bg-blue-100 p-2 rounded-lg">
+                                    <span>📱</span>
+                                    <p className="font-semibold">
+                                        El video se grabará en formato vertical (modo retrato) para tu comodidad
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="mt-4 flex items-start space-x-2 text-xs sm:text-sm text-blue-700">
                                 <span>⏱️</span>
                                 <p>
                                     Duración máxima: {Math.floor(maxDuration / 60)} minutos y{" "}
@@ -431,7 +471,7 @@ export const VideoRecorder = ({
                                 </p>
                             </div>
                             {questions.length > 0 && (
-                                <div className="mt-3 flex items-start space-x-2 text-sm text-blue-700">
+                                <div className="mt-3 flex items-start space-x-2 text-xs sm:text-sm text-blue-700">
                                     <span>❓</span>
                                     <p>
                                         Durante la grabación aparecerán {questions.length}{" "}
@@ -444,9 +484,11 @@ export const VideoRecorder = ({
                 )}
 
                 {/* Video Preview and Controls Container */}
-                <div className="flex flex-col gap-4 w-2/3">
-                    {/* Video Preview */}
-                    <div className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video">
+                <div className="flex flex-col gap-3 sm:gap-4 w-full lg:w-2/3">
+                    {/* Video Preview - Vertical en mobile, horizontal en desktop */}
+                    <div className={`relative bg-gray-900 rounded-lg overflow-hidden ${
+                        isMobile ? 'aspect-[9/16] max-w-md mx-auto' : 'aspect-video'
+                    }`}>
                 <video
                     ref={videoRef}
                     autoPlay
@@ -457,21 +499,21 @@ export const VideoRecorder = ({
 
                 {/* Audio Level Indicator (Preview Mode) */}
                 {state === "idle" && hasPermission && (
-                    <div className="absolute bottom-4 left-4">
-                        <div className="flex items-center space-x-3 bg-black bg-opacity-75 text-white px-4 py-3 rounded-lg">
-                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4">
+                        <div className="flex items-center space-x-2 sm:space-x-3 bg-black bg-opacity-75 text-white px-2 sm:px-4 py-2 sm:py-3 rounded-lg">
+                            <svg className="w-4 h-4 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
                             </svg>
                             <div>
                                 <div className="text-xs text-gray-300 mb-1">Nivel de Audio</div>
-                                <div className="flex items-end space-x-1 h-8">
+                                <div className="flex items-end space-x-1 h-6 sm:h-8">
                                     {[0, 1, 2, 3, 4, 5, 6, 7].map((bar) => {
                                         const barHeight = (bar + 1) * 12.5;
                                         const isActive = audioLevel > bar * 12.5;
                                         return (
                                             <div
                                                 key={bar}
-                                                className={`w-2 rounded-full transition-all duration-100 ${
+                                                className={`w-1.5 sm:w-2 rounded-full transition-all duration-100 ${
                                                     isActive
                                                         ? audioLevel > 70
                                                             ? "bg-red-500"
@@ -495,7 +537,7 @@ export const VideoRecorder = ({
                 {/* Countdown Overlay */}
                 {state === "countdown" && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                        <div className="text-white text-9xl font-bold animate-pulse">
+                        <div className="text-white text-6xl sm:text-9xl font-bold animate-pulse">
                             {countdown}
                         </div>
                     </div>
@@ -503,26 +545,26 @@ export const VideoRecorder = ({
 
                 {/* Recording Indicator */}
                 {state === "recording" && (
-                    <div className="absolute top-4 left-4 flex items-center space-x-4">
+                    <div className="absolute top-2 sm:top-4 left-2 sm:left-4 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
                         {/* REC Badge */}
-                        <div className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-full">
-                            <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-                            <span className="font-semibold">REC</span>
+                        <div className="flex items-center space-x-1.5 sm:space-x-2 bg-red-600 text-white px-2 sm:px-4 py-1 sm:py-2 rounded-full">
+                            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-white rounded-full animate-pulse"></div>
+                            <span className="text-xs sm:text-base font-semibold">REC</span>
                         </div>
 
                         {/* Audio Level Indicator */}
-                        <div className="flex items-center space-x-2 bg-black bg-opacity-75 text-white px-4 py-2 rounded-full">
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <div className="flex items-center space-x-1.5 sm:space-x-2 bg-black bg-opacity-75 text-white px-2 sm:px-4 py-1 sm:py-2 rounded-full">
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
                             </svg>
-                            <div className="flex items-end space-x-1 h-6">
+                            <div className="flex items-end space-x-0.5 sm:space-x-1 h-4 sm:h-6">
                                 {[0, 1, 2, 3, 4].map((bar) => {
                                     const barHeight = (bar + 1) * 20;
                                     const isActive = audioLevel > bar * 20;
                                     return (
                                         <div
                                             key={bar}
-                                            className={`w-1.5 rounded-full transition-all duration-100 ${
+                                            className={`w-1 sm:w-1.5 rounded-full transition-all duration-100 ${
                                                 isActive
                                                     ? audioLevel > 70
                                                         ? "bg-red-500"
@@ -544,24 +586,24 @@ export const VideoRecorder = ({
 
                 {/* Timer */}
                 {state === "recording" && (
-                    <div className="absolute top-4 right-4 bg-black bg-opacity-75 text-white px-4 py-2 rounded-lg">
-                        <div className="text-2xl font-mono font-bold">
+                    <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-black bg-opacity-75 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg">
+                        <div className="text-lg sm:text-2xl font-mono font-bold">
                             {formatTime(elapsedTime)}
                         </div>
                         <div className="text-xs text-gray-300 text-center">
-                            Restante: {formatTime(remainingTime)}
+                            Quedan: {formatTime(remainingTime)}
                         </div>
                     </div>
                 )}
 
                 {/* Current Question Overlay */}
                 {currentQuestion && state === "recording" && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-6">
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-3 sm:p-6">
                         <div className="text-white">
-                            <div className="text-sm font-semibold text-yellow-400 mb-2">
+                            <div className="text-xs sm:text-sm font-semibold text-yellow-400 mb-1 sm:mb-2">
                                 Pregunta {currentQuestion.order}:
                             </div>
-                            <div className="text-xl font-medium">
+                            <div className="text-base sm:text-xl font-medium">
                                 {currentQuestion.question}
                             </div>
                         </div>
@@ -571,16 +613,16 @@ export const VideoRecorder = ({
 
                     {/* Control Buttons - Show below video */}
                     {state === "idle" && (
-                        <div className="flex gap-4">
+                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                             <button
                                 onClick={startCountdown}
-                                className="flex-1 px-6 py-4 bg-red-600 text-white text-lg font-semibold rounded-lg hover:bg-red-700 transition-colors"
+                                className="flex-1 px-4 sm:px-6 py-3 sm:py-4 bg-red-600 text-white text-base sm:text-lg font-semibold rounded-lg hover:bg-red-700 transition-colors"
                             >
                                 🎥 Iniciar Grabación
                             </button>
                             <button
                                 onClick={handleCancel}
-                                className="flex-1 px-6 py-4 bg-gray-300 text-gray-700 text-lg font-semibold rounded-lg hover:bg-gray-400 transition-colors"
+                                className="flex-1 px-4 sm:px-6 py-3 sm:py-4 bg-gray-300 text-gray-700 text-base sm:text-lg font-semibold rounded-lg hover:bg-gray-400 transition-colors"
                             >
                                 Cancelar
                             </button>
@@ -590,16 +632,16 @@ export const VideoRecorder = ({
                     {state === "recording" && (
                         <button
                             onClick={stopRecording}
-                            className="w-full px-6 py-4 bg-red-600 text-white text-lg font-semibold rounded-lg hover:bg-red-700 transition-colors"
+                            className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-red-600 text-white text-base sm:text-lg font-semibold rounded-lg hover:bg-red-700 transition-colors"
                         >
                             ✅ Terminar Grabación
                         </button>
                     )}
 
                     {state === "stopped" && (
-                        <div className="text-center">
+                        <div className="text-center py-4">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                            <p className="text-gray-600">Procesando video...</p>
+                            <p className="text-sm sm:text-base text-gray-600">Procesando video...</p>
                         </div>
                     )}
                 </div>
@@ -608,37 +650,40 @@ export const VideoRecorder = ({
 
             {/* Review State */}
             {state === "review" && (
-                    <div className="flex gap-6">
-                        {/* Video Preview on the left */}
-                        <div className="w-2/3">
-                            <div className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video">
+                    <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+                        {/* Video Preview on the left/top - Vertical en mobile, horizontal en desktop */}
+                        <div className="w-full lg:w-2/3">
+                            <div className={`relative bg-gray-900 rounded-lg overflow-hidden ${
+                                isMobile ? 'aspect-[9/16] max-w-md mx-auto' : 'aspect-video'
+                            }`}>
                                 <video
                                     src={videoPreviewUrl}
                                     controls
+                                    playsInline
                                     className="w-full h-full object-cover"
                                 />
                             </div>
                         </div>
 
-                        {/* Success Box on the right */}
-                        <div className="w-1/3 flex flex-col space-y-4">
-                            <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6 flex-1">
-                            <div className="flex items-center justify-center mb-4">
-                                <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {/* Success Box on the right/bottom */}
+                        <div className="w-full lg:w-1/3 flex flex-col space-y-3 sm:space-y-4">
+                            <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 sm:p-6 flex-1">
+                            <div className="flex items-center justify-center mb-3 sm:mb-4">
+                                <svg className="w-10 h-10 sm:w-12 sm:h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
-                            <h3 className="text-xl font-bold text-green-900 text-center mb-2">
+                            <h3 className="text-lg sm:text-xl font-bold text-green-900 text-center mb-2">
                                 ¡Grabación completada!
                             </h3>
-                            <p className="text-green-700 text-center mb-1 text-sm">
+                            <p className="text-green-700 text-center mb-1 text-xs sm:text-sm">
                                 Duración: {formatTime(recordedDuration)}
                             </p>
-                            <p className="text-green-700 text-center text-sm">
+                            <p className="text-green-700 text-center text-xs sm:text-sm">
                                 Tamaño: {((recordedBlob?.size || 0) / (1024 * 1024)).toFixed(2)} MB
                             </p>
-                            <div className="mt-4 pt-4 border-t border-green-300">
-                                <p className="text-sm text-green-800 text-center">
+                            <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-green-300">
+                                <p className="text-xs sm:text-sm text-green-800 text-center">
                                     Revisa tu video y confirma si estás satisfecho con la grabación.
                                 </p>
                             </div>
@@ -647,14 +692,14 @@ export const VideoRecorder = ({
                         {/* Buttons */}
                         <button
                             onClick={handleConfirmUpload}
-                            className="w-full px-6 py-4 bg-green-600 text-white text-lg font-semibold rounded-lg hover:bg-green-700 transition-colors"
+                            className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-green-600 text-white text-base sm:text-lg font-semibold rounded-lg hover:bg-green-700 transition-colors"
                         >
                             ✓ Confirmar y Subir Video
                         </button>
 
                         <button
                             onClick={handleRetry}
-                            className="w-full px-6 py-4 bg-gray-400 text-white text-lg font-semibold rounded-lg hover:bg-gray-500 transition-colors"
+                            className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-gray-400 text-white text-base sm:text-lg font-semibold rounded-lg hover:bg-gray-500 transition-colors"
                         >
                             🔄 Grabar de Nuevo
                         </button>
