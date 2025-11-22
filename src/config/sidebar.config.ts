@@ -140,7 +140,7 @@ export const sidebarSections: SidebarSection[] = [
     // Postulaciones
     {
         path: "/trabajador/postulaciones",
-        label: "Mis Aplicaciones",
+        label: "Mis Postulaciones",
         icon: FileText,
         roles: [UserRole.WORKER],
     },

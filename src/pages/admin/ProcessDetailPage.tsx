@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useProcess, useProcessTests } from "../../hooks/useProcesses";
+import { useProcess } from "../../hooks/useProcesses";
+import { ProcessStatusLabels } from "../../types/process.types";
 import { useProcessWorkers } from "../../hooks/useWorkers";
 import { videoService } from "../../services/video.service";
 import {
@@ -11,7 +12,6 @@ import {
     useDeleteReport,
     useUploadReportFile,
 } from "../../hooks/useReports";
-import { useRemoveTest, useRemoveFixedTest } from "../../hooks/useProcesses";
 import { useAuthStore } from "../../store/authStore";
 import { UserRole } from "../../types/user.types";
 import {
@@ -27,9 +27,6 @@ import {
     ProcessInvitationStatusColors,
 } from "../../types/process-invitation.types";
 import {
-    ProcessStatusLabels,
-} from "../../types/process.types";
-import {
     Report,
     ReportType,
     ReportTypeLabels,
@@ -44,27 +41,18 @@ import {
     WorkerStatusColors,
     WorkerProcess,
 } from "../../types/worker.types";
-import { Test, FixedTest } from "../../types/test.types";
 import { ApproveRejectModal } from "../../components/common/ApproveRejectModal";
 import { FormatSelectionModal } from "../../components/common/FormatSelectionModal";
-import { AssignTestsModal } from "../../components/common/AssignTestsModal";
-import ProcessModal from "../../components/admin/ProcessModal";
-import { VideoRequirementsConfig } from "../../components/admin/VideoRequirementsConfig";
 import { BulkInviteModal } from "../../components/admin/BulkInviteModal";
 import { toast } from "../../utils/toast";
 
-type TabType = "info" | "tests" | "video" | "candidates" | "approved" | "reports" | "timeline";
-
-interface ProcessTestsData {
-    tests?: Test[];
-    fixedTests?: FixedTest[];
-}
+type TabType = "candidates" | "approved" | "reports" | "timeline";
 
 export const ProcessDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const location = useLocation();
-    const [activeTab, setActiveTab] = useState<TabType>("info");
+    const [activeTab, setActiveTab] = useState<TabType>("candidates");
     const [approveRejectModal, setApproveRejectModal] = useState<{
         isOpen: boolean;
         report: Report | null;
@@ -73,8 +61,6 @@ export const ProcessDetailPage = () => {
         isOpen: boolean;
         report: Report | null;
     }>({ isOpen: false, report: null });
-    const [assignTestsModal, setAssignTestsModal] = useState(false);
-    const [editProcessModal, setEditProcessModal] = useState(false);
     const [selectedVideo, setSelectedVideo] = useState<{ videoId: string; processName: string; videoUrl: string; workerName: string } | null>(null);
     const [downloadingVideo, setDownloadingVideo] = useState(false);
     const [invitationModal, setInvitationModal] = useState(false);
@@ -87,15 +73,12 @@ export const ProcessDetailPage = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { data: process, isLoading, error } = useProcess(id!);
-    const { data: testsData } = useProcessTests(id!) as { data?: ProcessTestsData };
     const { data: workersData } = useProcessWorkers(id!) as { data?: WorkerProcess[] };
     const { data: reportsData } = useReportsByProcess(id!);
     const downloadMutation = useDownloadReportFile();
     const uploadMutation = useUploadReportFile();
     const approveMutation = useApproveReport();
     const deleteMutation = useDeleteReport();
-    const removeTestMutation = useRemoveTest();
-    const removeFixedTestMutation = useRemoveFixedTest();
     const { user } = useAuthStore();
 
     // Invitations hooks
@@ -131,13 +114,6 @@ export const ProcessDetailPage = () => {
 
     // Solo admin puede editar/asignar/eliminar
     const canEdit = isAdmin && !isEvaluator && !isCompany;
-
-    // Redirigir a un tab válido si el usuario está en un tab no permitido para empresas
-    useEffect(() => {
-        if (isCompany && (activeTab === "video" || activeTab === "approved" || activeTab === "reports")) {
-            setActiveTab("info");
-        }
-    }, [isCompany, activeTab]);
 
     // Helper functions
     const isPDF = (fileName: string | null | undefined) => {
@@ -268,24 +244,6 @@ export const ProcessDetailPage = () => {
         }
     };
 
-    const handleRemoveTest = async (testId: string) => {
-        if (!id) return;
-        try {
-            await removeTestMutation.mutateAsync({ processId: id, testId });
-        } catch {
-            // Error handled silently or by mutation error handler
-        }
-    };
-
-    const handleRemoveFixedTest = async (fixedTestId: string) => {
-        if (!id) return;
-        try {
-            await removeFixedTestMutation.mutateAsync({ processId: id, fixedTestId });
-        } catch {
-            // Error handled silently or by mutation error handler
-        }
-    };
-
     // Invitation handlers
     const handleCreateInvitation = async () => {
         if (!id || !invitationEmail || !invitationFirstName || !invitationLastName) return;
@@ -349,112 +307,24 @@ export const ProcessDetailPage = () => {
                 style={{ display: "none" }}
             />
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <button
-                        onClick={() => navigate(`${baseRoute}/procesos`)}
-                        className="text-sm text-gray-600 hover:text-gray-900 mb-2 flex items-center gap-1"
-                    >
-                        ← Volver a procesos
-                    </button>
-                    <h1 className="text-2xl font-bold text-gray-900">
-                        {process.name}
-                    </h1>
-                    <p className="text-gray-600">{process.description}</p>
-                </div>
-                {canEdit && (
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setAssignTestsModal(true)}
-                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                            Asignar Tests
-                        </button>
-                        <button
-                            onClick={() => setEditProcessModal(true)}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            Editar Proceso
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            {/* Status Banner */}
-            <div
-                className={`p-4 rounded-lg ${
-                    process.status === "active"
-                        ? "bg-green-50 border border-green-200"
-                        : process.status === "draft"
-                        ? "bg-gray-50 border border-gray-200"
-                        : "bg-red-50 border border-red-200"
-                }`}
-            >
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h3 className="font-medium text-gray-900">
-                            Estado del Proceso
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                            {process.status === "active" &&
-                                "El proceso está activo y recibiendo postulaciones"}
-                            {process.status === "draft" &&
-                                "El proceso está en borrador"}
-                            {process.status === "completed" &&
-                                "El proceso ha finalizado"}
-                        </p>
-                    </div>
-                    <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            process.status === "active"
-                                ? "bg-green-100 text-green-800"
-                                : process.status === "draft"
-                                ? "bg-gray-100 text-gray-800"
-                                : "bg-red-100 text-red-800"
-                        }`}
-                    >
-                        {process.status === "active" && "Activo"}
-                        {process.status === "draft" && "Borrador"}
-                        {process.status === "completed" && "Completado"}
-                    </span>
-                </div>
+            <div>
+                <button
+                    onClick={() => navigate(`${baseRoute}/procesos`)}
+                    className="text-sm text-gray-600 hover:text-gray-900 mb-2 flex items-center gap-1"
+                >
+                    ← Volver a procesos
+                </button>
+                <h1 className="text-2xl font-bold text-gray-900">
+                    {process.name}
+                </h1>
+                <p className="text-gray-600 mt-1">
+                    Visualiza y gestiona los candidatos, reportes y el progreso del proceso de selección
+                </p>
             </div>
 
             {/* Tabs */}
             <div className="border-b border-gray-200">
                 <nav className="-mb-px flex space-x-8">
-                    <button
-                        onClick={() => setActiveTab("info")}
-                        className={`py-4 px-1 text-sm font-medium border-b-2 ${
-                            activeTab === "info"
-                                ? "border-blue-500 text-blue-600"
-                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                        }`}
-                    >
-                        Información
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("tests")}
-                        className={`py-4 px-1 text-sm font-medium border-b-2 ${
-                            activeTab === "tests"
-                                ? "border-blue-500 text-blue-600"
-                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                        }`}
-                    >
-                        Tests ({testsData?.tests?.length || 0} + {testsData?.fixedTests?.length || 0})
-                    </button>
-                    {!isCompany && (
-                        <button
-                            onClick={() => setActiveTab("video")}
-                            className={`py-4 px-1 text-sm font-medium border-b-2 ${
-                                activeTab === "video"
-                                    ? "border-blue-500 text-blue-600"
-                                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                            }`}
-                        >
-                            Video
-                        </button>
-                    )}
                     <button
                         onClick={() => setActiveTab("candidates")}
                         className={`py-4 px-1 text-sm font-medium border-b-2 ${
@@ -490,7 +360,7 @@ export const ProcessDetailPage = () => {
                                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                             }`}
                         >
-                            Reportes
+                            Informes
                         </button>
                     )}
                     <button
@@ -507,265 +377,6 @@ export const ProcessDetailPage = () => {
             </div>
 
             {/* Tab Content */}
-            {activeTab === "info" && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-lg shadow p-6 space-y-4">
-                            <h2 className="text-lg font-semibold text-gray-900">
-                                Información del Proceso
-                            </h2>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-sm font-medium text-gray-500">
-                                        Empresa
-                                    </label>
-                                    <p className="text-gray-900">
-                                        {process.company?.name || "No asignada"}
-                                    </p>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-gray-500">
-                                        Fecha de Inicio
-                                    </label>
-                                    <p className="text-gray-900">
-                                        {process.startDate
-                                            ? new Date(
-                                                  process.startDate
-                                              ).toLocaleDateString("es-CL")
-                                        : "N/A"}
-                                </p>
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-500">
-                                    Fecha de Fin
-                                </label>
-                                <p className="text-gray-900">
-                                    {process.endDate
-                                        ? new Date(
-                                              process.endDate
-                                          ).toLocaleDateString("es-CL")
-                                        : "N/A"}
-                                </p>
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-500">
-                                    Vacantes
-                                </label>
-                                <p className="text-gray-900">
-                                    {process.vacancies}
-                                </p>
-                            </div>
-                            <div className="col-span-2">
-                                <label className="text-sm font-medium text-gray-500">
-                                    Descripción
-                                </label>
-                                <p className="text-gray-900">
-                                    {process.description}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Requirements */}
-                    {process.requirements && (
-                        <div className="bg-white rounded-lg shadow p-6 space-y-4">
-                            <h2 className="text-lg font-semibold text-gray-900">
-                                Requisitos
-                            </h2>
-                            <div className="prose prose-sm max-w-none">
-                                <p className="text-gray-700">
-                                    {process.requirements}
-                                </p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Stats Sidebar */}
-                <div className="space-y-6">
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-sm font-medium text-gray-500 mb-4">
-                            Estadísticas
-                        </h3>
-                        <div className="space-y-4">
-                            <div>
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-sm text-gray-600">
-                                        Postulantes
-                                    </span>
-                                    <span className="text-sm font-medium text-gray-900">
-                                        {workersData?.length || 0}
-                                    </span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div
-                                        className="bg-blue-600 h-2 rounded-full"
-                                        style={{ width: `${workersData?.length ? 100 : 0}%` }}
-                                    ></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-sm text-gray-600">
-                                        En Evaluación
-                                    </span>
-                                    <span className="text-sm font-medium text-gray-900">
-                                        {workersData?.filter((w) => w.status === WorkerStatus.IN_PROCESS).length || 0}
-                                    </span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div
-                                        className="bg-yellow-500 h-2 rounded-full"
-                                        style={{
-                                            width: `${workersData && workersData.length > 0
-                                                ? ((workersData.filter((w) => w.status === WorkerStatus.IN_PROCESS).length / workersData.length) * 100)
-                                                : 0}%`
-                                        }}
-                                    ></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-sm text-gray-600">
-                                        Completados
-                                    </span>
-                                    <span className="text-sm font-medium text-gray-900">
-                                        {workersData?.filter((w) => w.status === WorkerStatus.COMPLETED || w.status === WorkerStatus.APPROVED).length || 0}
-                                    </span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div
-                                        className="bg-green-600 h-2 rounded-full"
-                                        style={{
-                                            width: `${workersData && workersData.length > 0
-                                                ? ((workersData.filter((w) => w.status === WorkerStatus.APPROVED).length / workersData.length) * 100)
-                                                : 0}%`
-                                        }}
-                                    ></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            )}
-
-            {/* Tab Tests */}
-            {activeTab === "tests" && (
-                <div className="bg-white rounded-lg shadow">
-                    <div className="p-6">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                            Tests Asignados
-                        </h2>
-                        <div className="space-y-4">
-                            {testsData?.tests && testsData.tests.length > 0 && (
-                                <div>
-                                    <h3 className="text-sm font-medium text-gray-700 mb-2">
-                                        Tests Personalizados
-                                    </h3>
-                                    <div className="grid gap-3">
-                                        {testsData.tests.map((test) => (
-                                            <div
-                                                key={test.id}
-                                                className="border rounded-lg p-4 hover:bg-gray-50"
-                                            >
-                                                <div className="flex justify-between items-start">
-                                                    <div className="flex-1">
-                                                        <h4 className="font-medium text-gray-900">
-                                                            {test.name}
-                                                        </h4>
-                                                        <p className="text-sm text-gray-500 mt-1">
-                                                            {test.description}
-                                                        </p>
-                                                        <p className="text-xs text-gray-400 mt-2">
-                                                            {test.questions?.length || 0} preguntas • {test.duration} minutos
-                                                        </p>
-                                                    </div>
-                                                    {canEdit && (
-                                                        <button
-                                                            onClick={() => handleRemoveTest(test.id)}
-                                                            disabled={removeTestMutation.isPending}
-                                                            className="ml-4 p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
-                                                            title="Remover test"
-                                                        >
-                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {testsData?.fixedTests && testsData.fixedTests.length > 0 && (
-                                <div>
-                                    <h3 className="text-sm font-medium text-gray-700 mb-2">
-                                        Tests Fijos (Psicométricos)
-                                    </h3>
-                                    <div className="grid gap-3">
-                                        {testsData.fixedTests.map((test) => (
-                                            <div
-                                                key={test.id}
-                                                className="border rounded-lg p-4 bg-indigo-50 border-indigo-200"
-                                            >
-                                                <div className="flex justify-between items-start">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <h4 className="font-medium text-gray-900">
-                                                                {test.name}
-                                                            </h4>
-                                                            <span className="px-2 py-0.5 text-xs bg-indigo-100 text-indigo-700 rounded">
-                                                                Test Fijo
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-sm text-gray-600 mt-1">
-                                                            {test.description}
-                                                        </p>
-                                                        <p className="text-xs text-gray-500 mt-2">
-                                                            {test.code} • {test.duration} minutos
-                                                        </p>
-                                                    </div>
-                                                    {canEdit && (
-                                                        <button
-                                                            onClick={() => handleRemoveFixedTest(test.id)}
-                                                            disabled={removeFixedTestMutation.isPending}
-                                                            className="ml-4 p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
-                                                            title="Remover test fijo"
-                                                        >
-                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {(!testsData?.tests || testsData.tests.length === 0) &&
-                                (!testsData?.fixedTests || testsData.fixedTests.length === 0) && (
-                                    <p className="text-center text-gray-500 py-8">
-                                        No hay tests asignados a este proceso
-                                    </p>
-                                )}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Tab Video */}
-            {activeTab === "video" && (
-                <div className="mt-6">
-                    <VideoRequirementsConfig processId={id!} readOnly={!canEdit} />
-                </div>
-            )}
-
             {/* Tab Candidatos */}
             {activeTab === "candidates" && (
                 <div className="space-y-6">
@@ -1409,40 +1020,6 @@ export const ProcessDetailPage = () => {
                                 </div>
                             </div>
 
-                            {/* Evento: Tests asignados */}
-                            {testsData &&
-                                ((testsData.tests?.length ?? 0) > 0 || (testsData.fixedTests?.length ?? 0) > 0) && (
-                                    <div className="relative flex items-start mb-6">
-                                        <div className="absolute left-0 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                                            <svg
-                                                className="w-4 h-4 text-white"
-                                                fill="currentColor"
-                                                viewBox="0 0 20 20"
-                                            >
-                                                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z"
-                                                    clipRule="evenodd"
-                                                />
-                                            </svg>
-                                        </div>
-                                        <div className="ml-12">
-                                            <h3 className="text-sm font-semibold text-gray-900">
-                                                Tests Asignados
-                                            </h3>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                {(testsData?.tests?.length || 0) +
-                                                    (testsData?.fixedTests?.length || 0)}{" "}
-                                                tests asignados al proceso
-                                            </p>
-                                            <p className="text-xs text-gray-400 mt-1">
-                                                {testsData?.tests?.length || 0} personalizados +{" "}
-                                                {testsData?.fixedTests?.length || 0} fijos
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
 
                             {/* Evento: Primer candidato */}
                             {workersData && workersData.length > 0 && (
@@ -1579,20 +1156,6 @@ export const ProcessDetailPage = () => {
                 hasPdf={!!formatSelectionModal.report?.pdfFileUrl}
                 hasDocx={!!formatSelectionModal.report?.docxFileUrl}
             />
-
-            <AssignTestsModal
-                isOpen={assignTestsModal}
-                onClose={() => setAssignTestsModal(false)}
-                processId={id!}
-                assignedTestIds={testsData?.fixedTests?.map((t) => t.id) || []}
-            />
-
-            {editProcessModal && (
-                <ProcessModal
-                    process={process}
-                    onClose={() => setEditProcessModal(false)}
-                />
-            )}
 
             {selectedVideo && (
                 <div

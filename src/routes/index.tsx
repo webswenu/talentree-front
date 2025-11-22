@@ -29,6 +29,7 @@ import { CompaniesPage } from "../pages/admin/CompaniesPage";
 import { CompanyDetailPage } from "../pages/admin/CompanyDetailPage";
 import ProcessesPage from "../pages/admin/ProcessesPage";
 import { ProcessDetailPage } from "../pages/admin/ProcessDetailPage";
+import { ProcessConfigPage } from "../pages/admin/ProcessConfigPage";
 import TestsPage from "../pages/admin/TestsPage";
 import { TestDetailPage } from "../pages/admin/TestDetailPage";
 import WorkersPage from "../pages/admin/WorkersPage";
@@ -146,6 +147,10 @@ export const AppRoutes = () => {
                     <Route
                         path="procesos/:id"
                         element={<ProcessDetailPage />}
+                    />
+                    <Route
+                        path="procesos/:id/configuracion"
+                        element={<ProcessConfigPage />}
                     />
                     <Route path="tests" element={<TestsPage />} />
                     <Route path="tests/:id" element={<TestDetailPage />} />

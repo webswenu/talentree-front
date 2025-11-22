@@ -3,7 +3,6 @@ import { useAuthStore } from "../../store/authStore";
 import {
     useWorkerProcesses,
     useApplyToProcess,
-    useWorkerDashboardStats,
 } from "../../hooks/useWorkers";
 import { useProcesses } from "../../hooks/useProcesses";
 import { WorkerStatus } from "../../types/worker.types";
@@ -14,7 +13,7 @@ import { SearchInput } from "../../components/common/SearchInput";
 import { useDebounce } from "../../hooks/useDebounce";
 import { Modal } from "../../components/common/Modal";
 import { toast } from "../../utils/toast";
-import { QuickStats } from "../../components/widgets/QuickStats";
+import { QuickActions } from "../../components/widgets/QuickActions";
 
 export const WorkerDashboard = () => {
     const { user } = useAuthStore();
@@ -33,11 +32,6 @@ export const WorkerDashboard = () => {
     const debouncedSearch = useDebounce(searchTerm, 300);
     const [searchApplications, setSearchApplications] = useState("");
     const debouncedSearchApplications = useDebounce(searchApplications, 300);
-
-    const {
-        data: stats,
-        isLoading: loadingStats,
-    } = useWorkerDashboardStats(workerId);
 
     const { data: myApplications } = useWorkerProcesses(workerId || "");
 
@@ -267,64 +261,60 @@ export const WorkerDashboard = () => {
                     <div className="w-full border-t-2 border-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
                 </div>
                 <div className="relative flex justify-center">
-                    <span className="bg-gray-50 px-4 text-sm font-semibold text-gray-500">Resumen</span>
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-gray-500">Acciones Rápidas</span>
                 </div>
             </div>
 
-            {/* Stats Cards */}
-            {loadingStats ? (
-                <div className="flex items-center justify-center py-12">
-                    <div className="glass-white rounded-2xl p-8 text-center">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent mb-4"></div>
-                        <div className="text-gray-700 font-bold">Cargando estadísticas...</div>
-                    </div>
-                </div>
-            ) : (
-                <QuickStats
-                    stats={[
-                        {
-                            title: "Aplicaciones",
-                            value: stats?.aplicadas || 0,
-                            color: "orange" as const,
-                            icon: (
-                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                            ),
-                        },
-                        {
-                            title: "En Proceso",
-                            value: stats?.enProceso || 0,
-                            color: "turquoise" as const,
-                            icon: (
-                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            ),
-                        },
-                        {
-                            title: "Finalizadas",
-                            value: stats?.finalizadas || 0,
-                            color: "orange" as const,
-                            icon: (
-                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            ),
-                        },
-                        {
-                            title: "Ofertas Nuevas",
-                            value: stats?.disponibles || 0,
-                            color: "turquoise" as const,
-                            icon: (
-                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            ),
-                        },
-                    ]}
-                />
-            )}
+            {/* Quick Access Buttons */}
+            <QuickActions
+                actions={[
+                    {
+                        id: "ver-postulaciones-pendientes",
+                        label: "Ver Postulaciones Pendientes",
+                        icon: (
+                            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        ),
+                        onClick: () => navigate("/trabajador/postulaciones?status=pending"),
+                        color: "orange" as const,
+                    },
+                    {
+                        id: "ver-postulaciones-proceso",
+                        label: "Ver Postulaciones en Proceso",
+                        icon: (
+                            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        ),
+                        onClick: () => navigate("/trabajador/postulaciones?status=in_process"),
+                        color: "turquoise" as const,
+                    },
+                    {
+                        id: "ver-ofertas-disponibles",
+                        label: "Ver Todas las Ofertas Disponibles",
+                        icon: (
+                            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        ),
+                        onClick: () => navigate("/trabajador/procesos"),
+                        color: "orange" as const,
+                    },
+                    {
+                        id: "ver-resultados",
+                        label: "Ver Mis Resultados",
+                        icon: (
+                            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        ),
+                        onClick: () => navigate("/trabajador/postulaciones?results=true"),
+                        color: "turquoise" as const,
+                    },
+                ]}
+                columns={2}
+            />
 
             {/* Separator */}
             <div className="relative">

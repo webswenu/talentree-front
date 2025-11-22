@@ -13,7 +13,6 @@ import ProcessModal from "../../components/admin/ProcessModal";
 import { useCompaniesStats } from "../../hooks/useCompanies";
 import { useProcessesStats, useProcesses } from "../../hooks/useProcesses";
 import { useWorkersStats } from "../../hooks/useWorkers";
-import { useTestResponsesStats } from "../../hooks/useTestResponses";
 import { ProcessStatusLabels } from "../../types/process.types";
 
 export const EvaluatorDashboard = () => {
@@ -27,8 +26,6 @@ export const EvaluatorDashboard = () => {
     const { data: processesStats, isLoading: loadingProcesses } =
         useProcessesStats();
     const { data: workersStats, isLoading: loadingWorkers } = useWorkersStats();
-    const { data: testResponsesStats, isLoading: loadingTests } =
-        useTestResponsesStats();
     const { data: processesData, isLoading: loadingRecentProcesses } =
         useProcesses();
     const recentProcesses = processesData?.data || [];
@@ -37,7 +34,6 @@ export const EvaluatorDashboard = () => {
         loadingCompanies ||
         loadingProcesses ||
         loadingWorkers ||
-        loadingTests ||
         loadingRecentProcesses;
 
     const { data: pendingEvaluations } = useQuery({
@@ -89,6 +85,7 @@ export const EvaluatorDashboard = () => {
             title: "Empresas Activas",
             value: companiesStats?.active ?? 0,
             color: "orange" as const,
+            onClick: () => navigate("/evaluador/empresas"),
             icon: (
                 <svg
                     className="w-8 h-8"
@@ -109,6 +106,7 @@ export const EvaluatorDashboard = () => {
             title: "Procesos Activos",
             value: processesStats?.byStatus?.active ?? 0,
             color: "turquoise" as const,
+            onClick: () => navigate("/evaluador/procesos"),
             icon: (
                 <svg
                     className="w-8 h-8"
@@ -129,6 +127,7 @@ export const EvaluatorDashboard = () => {
             title: "Candidatos",
             value: workersStats?.total ?? 0,
             color: "orange" as const,
+            onClick: () => navigate("/evaluador/trabajadores"),
             icon: (
                 <svg
                     className="w-8 h-8"
@@ -141,26 +140,6 @@ export const EvaluatorDashboard = () => {
                         strokeLinejoin="round"
                         strokeWidth={2}
                         d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                    />
-                </svg>
-            ),
-        },
-        {
-            title: "Tests Completados",
-            value: testResponsesStats?.completed ?? 0,
-            color: "turquoise" as const,
-            icon: (
-                <svg
-                    className="w-8 h-8"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
                     />
                 </svg>
             ),
@@ -268,7 +247,7 @@ export const EvaluatorDashboard = () => {
             </div>
 
             {/* Quick Stats */}
-            <QuickStats stats={stats} />
+            <QuickStats stats={stats} columns={3} />
 
             {/* Separator */}
             <div className="relative">

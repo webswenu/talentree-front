@@ -14,7 +14,7 @@ import { Pagination } from "../../components/common/Pagination";
 import { useAuthStore } from "../../store/authStore";
 import { Permission, hasPermission } from "../../utils/permissions";
 import { UserRole } from "../../types/user.types";
-import { EyeIcon, EditIcon, TrashIcon } from "../../components/common/ActionIcons";
+import { EyeIcon, SettingsIcon, TrashIcon } from "../../components/common/ActionIcons";
 
 /**
  * IMPORTANTE: Patrón de filtros para inputs controlados
@@ -69,17 +69,9 @@ export default function ProcessesPage() {
     const { data: processesData, isLoading } = useProcesses(filters);
     const deleteMutation = useDeleteProcess();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedProcess, setSelectedProcess] = useState<
-        SelectionProcess | undefined
-    >();
     const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
     const [processToDelete, setProcessToDelete] =
         useState<SelectionProcess | null>(null);
-
-    const handleEdit = (process: SelectionProcess) => {
-        setSelectedProcess(process);
-        setIsModalOpen(true);
-    };
 
     const handleDelete = (process: SelectionProcess) => {
         setProcessToDelete(process);
@@ -105,7 +97,6 @@ export default function ProcessesPage() {
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
-        setSelectedProcess(undefined);
     };
 
     const getStatusBadge = (status: string) => {
@@ -358,17 +349,21 @@ export default function ProcessesPage() {
                                             }`)
                                         }
                                         className="text-blue-600 hover:text-blue-900 mr-4 p-2 hover:bg-blue-50 rounded-lg transition-colors inline-flex items-center justify-center"
-                                        title="Ver detalle"
+                                        title="Ver detalles de trabajador e informes"
                                     >
                                         <EyeIcon />
                                     </button>
                                     {canEdit && (
                                         <button
-                                            onClick={() => handleEdit(process)}
+                                            onClick={() =>
+                                                (window.location.href = `${getBaseUrl()}/${
+                                                    process.id
+                                                }/configuracion`)
+                                            }
                                             className="text-orange-600 hover:text-orange-900 mr-4 p-2 hover:bg-orange-50 rounded-lg transition-colors inline-flex items-center justify-center"
-                                            title="Editar"
+                                            title="Configuración"
                                         >
-                                            <EditIcon />
+                                            <SettingsIcon />
                                         </button>
                                     )}
                                     {canDelete && (
@@ -413,7 +408,6 @@ export default function ProcessesPage() {
 
             {canCreate && isModalOpen && (
                 <ProcessModal
-                    process={selectedProcess}
                     onClose={handleCloseModal}
                 />
             )}
