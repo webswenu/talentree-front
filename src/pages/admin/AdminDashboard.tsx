@@ -11,7 +11,6 @@ import ProcessModal from "../../components/admin/ProcessModal";
 import { useCompaniesStats } from "../../hooks/useCompanies";
 import { useProcessesStats, useProcesses } from "../../hooks/useProcesses";
 import { useWorkersStats } from "../../hooks/useWorkers";
-import { useTestResponsesStats } from "../../hooks/useTestResponses";
 import { useAuditStats } from "../../hooks/useAudit";
 import { ProcessStatusLabels } from "../../types/process.types";
 
@@ -26,8 +25,6 @@ export const AdminDashboard = () => {
     const { data: processesStats, isLoading: loadingProcesses } =
         useProcessesStats();
     const { data: workersStats, isLoading: loadingWorkers } = useWorkersStats();
-    const { data: testResponsesStats, isLoading: loadingTests } =
-        useTestResponsesStats();
     const { data: auditStats, isLoading: loadingAudit } = useAuditStats();
     const { data: processesData, isLoading: loadingRecentProcesses } =
         useProcesses();
@@ -37,7 +34,6 @@ export const AdminDashboard = () => {
         loadingCompanies ||
         loadingProcesses ||
         loadingWorkers ||
-        loadingTests ||
         loadingAudit ||
         loadingRecentProcesses;
 
@@ -46,6 +42,7 @@ export const AdminDashboard = () => {
             title: "Empresas Activas",
             value: companiesStats?.active ?? 0,
             color: "orange" as const,
+            onClick: () => navigate("/admin/empresas"),
             icon: (
                 <svg
                     className="w-8 h-8"
@@ -66,6 +63,7 @@ export const AdminDashboard = () => {
             title: "Procesos Activos",
             value: processesStats?.byStatus?.active ?? 0,
             color: "turquoise" as const,
+            onClick: () => navigate("/admin/procesos?status=active"),
             icon: (
                 <svg
                     className="w-8 h-8"
@@ -86,6 +84,7 @@ export const AdminDashboard = () => {
             title: "Candidatos",
             value: workersStats?.total ?? 0,
             color: "orange" as const,
+            onClick: () => navigate("/admin/trabajadores"),
             icon: (
                 <svg
                     className="w-8 h-8"
@@ -98,26 +97,6 @@ export const AdminDashboard = () => {
                         strokeLinejoin="round"
                         strokeWidth={2}
                         d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                    />
-                </svg>
-            ),
-        },
-        {
-            title: "Tests Completados",
-            value: testResponsesStats?.completed ?? 0,
-            color: "turquoise" as const,
-            icon: (
-                <svg
-                    className="w-8 h-8"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
                     />
                 </svg>
             ),
@@ -162,45 +141,87 @@ export const AdminDashboard = () => {
     const quickActions = [
         {
             id: "new-company",
-            label: "Nueva Empresa",
+            label: "Crear Nueva Empresa",
             icon: (
                 <svg
-                    className="w-8 h-8"
+                    className="w-full h-full"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
+                    strokeWidth={2.5}
                 >
                     <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                     />
                 </svg>
             ),
             onClick: () => setIsCompanyModalOpen(true),
-            color: "orange" as const,
+            color: "blue" as const,
         },
         {
             id: "new-process",
-            label: "Nuevo Proceso",
+            label: "Crear Nuevo Proceso",
             icon: (
                 <svg
-                    className="w-8 h-8"
+                    className="w-full h-full"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
+                    strokeWidth={2.5}
                 >
                     <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
                     />
                 </svg>
             ),
             onClick: () => setIsProcessModalOpen(true),
-            color: "turquoise" as const,
+            color: "green" as const,
+        },
+        {
+            id: "view-workers",
+            label: "Leer información de un Trabajador",
+            icon: (
+                <svg
+                    className="w-full h-full"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                </svg>
+            ),
+            onClick: () => navigate("/admin/trabajadores"),
+            color: "purple" as const,
+        },
+        {
+            id: "view-reports",
+            label: "Revisar informes generados",
+            icon: (
+                <svg
+                    className="w-full h-full"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                </svg>
+            ),
+            onClick: () => navigate("/admin/reportes"),
+            color: "orange" as const,
         },
     ];
 
@@ -225,6 +246,9 @@ export const AdminDashboard = () => {
                 <p className="text-gray-800 mt-3 text-lg font-bold">
                     Bienvenido, <span className="text-primary-600/80">{user?.firstName}</span>
                 </p>
+                <p className="text-gray-600 mt-2 text-sm">
+                    Aquí encontrarás un resumen completo de la actividad del sistema. Visualiza estadísticas clave, accede rápidamente a las funciones principales y mantente al tanto de los últimos procesos y actividades.
+                </p>
             </div>
 
             {/* Separator */}
@@ -237,8 +261,15 @@ export const AdminDashboard = () => {
                 </div>
             </div>
 
+            {/* Resumen Description */}
+            <div className="text-center px-4">
+                <p className="text-gray-600 text-sm">
+                    Haz clic en cualquier tarjeta para acceder directamente a la sección correspondiente y ver más detalles.
+                </p>
+            </div>
+
             {/* Quick Stats */}
-            <QuickStats stats={stats} />
+            <QuickStats stats={stats} columns={3} />
 
             {/* Separator */}
             <div className="relative">
@@ -248,6 +279,13 @@ export const AdminDashboard = () => {
                 <div className="relative flex justify-center">
                     <span className="bg-gray-50 px-4 text-sm font-semibold text-gray-500">Acciones Rápidas</span>
                 </div>
+            </div>
+
+            {/* Acciones Rápidas Description */}
+            <div className="text-center px-4">
+                <p className="text-gray-600 text-sm">
+                    Ejecuta las tareas más comunes con un solo clic: crear empresas y procesos, consultar información de candidatos o revisar informes generados.
+                </p>
             </div>
 
             {/* Quick Actions */}
@@ -261,6 +299,13 @@ export const AdminDashboard = () => {
                 <div className="relative flex justify-center">
                     <span className="bg-gray-50 px-4 text-sm font-semibold text-orange-600">Estadísticas</span>
                 </div>
+            </div>
+
+            {/* Estadísticas Description */}
+            <div className="text-center px-4">
+                <p className="text-gray-600 text-sm">
+                    Visualiza la evolución mensual de procesos de selección en el gráfico de barras y consulta los procesos recientes. Haz clic en cualquier proceso para ver sus detalles completos.
+                </p>
             </div>
 
             {/* Charts and Lists */}
@@ -293,6 +338,13 @@ export const AdminDashboard = () => {
                 <div className="relative flex justify-center">
                     <span className="bg-gray-50 px-4 text-sm font-semibold text-teal-600">Actividad Reciente</span>
                 </div>
+            </div>
+
+            {/* Actividad Reciente Description */}
+            <div className="text-center px-4">
+                <p className="text-gray-600 text-sm">
+                    Monitorea todas las acciones realizadas en el sistema: creación, actualización y eliminación de registros, así como inicios de sesión de usuarios. Se muestran las 10 actividades más recientes.
+                </p>
             </div>
 
             {/* Activity Feed */}

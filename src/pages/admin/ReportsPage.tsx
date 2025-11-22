@@ -323,7 +323,12 @@ export default function ReportsPage() {
             />
 
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Reportes</h1>
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-800">Reportes</h1>
+                    <p className="text-gray-500 text-sm mt-2">
+                        Gestiona todos los informes de selección generados automáticamente cuando los candidatos completan sus tests. Descarga reportes en formato PDF o DOCX, sube versiones editadas y aprueba/rechaza informes para que las empresas puedan visualizarlos. Filtra por estado o busca por título, candidato o proceso.
+                    </p>
+                </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">

@@ -190,7 +190,7 @@ export const sidebarSections: SidebarSection[] = [
     // Reportes
     {
         path: "/admin/reportes",
-        label: "Reportes",
+        label: "Informes",
         icon: BarChart,
         roles: [UserRole.ADMIN_TALENTREE],
         separator: {
@@ -200,7 +200,7 @@ export const sidebarSections: SidebarSection[] = [
     },
     {
         path: "/empresa/reportes",
-        label: "Reportes",
+        label: "Informes",
         icon: BarChart,
         roles: [UserRole.COMPANY],
         separator: {
@@ -210,7 +210,7 @@ export const sidebarSections: SidebarSection[] = [
     },
     {
         path: "/evaluador/reportes",
-        label: "Reportes",
+        label: "Informes",
         icon: BarChart,
         roles: [UserRole.EVALUATOR],
         separator: {
@@ -220,7 +220,7 @@ export const sidebarSections: SidebarSection[] = [
     },
     {
         path: "/invitado/reportes",
-        label: "Reportes",
+        label: "Informes",
         icon: BarChart,
         roles: [UserRole.GUEST],
         separator: {

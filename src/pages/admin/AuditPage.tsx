@@ -50,7 +50,12 @@ export default function AuditPage() {
     return (
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Auditoría</h1>
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-800">Auditoría</h1>
+                    <p className="text-gray-500 text-sm mt-2">
+                        Consulta el registro completo de todas las acciones realizadas en el sistema. Monitorea quién hizo qué, cuándo y sobre qué entidad. Filtra por acción, entidad, usuario o rango de fechas para realizar auditorías detalladas y rastrear cambios específicos.
+                    </p>
+                </div>
             </div>
 
             {stats && (

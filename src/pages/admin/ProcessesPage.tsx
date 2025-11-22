@@ -156,17 +156,24 @@ export default function ProcessesPage() {
     return (
         <div className="p-6">
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
-                    Procesos de Selección
-                </h1>
-                {canCreate && (
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="btn-primary w-full md:w-auto md:float-right md:-mt-10"
-                    >
-                        + Nuevo Proceso
-                    </button>
-                )}
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div className="flex-1 md:pr-4">
+                        <h1 className="text-2xl font-bold text-gray-800">
+                            Procesos de Selección
+                        </h1>
+                        <p className="text-gray-500 text-sm mt-2">
+                            Gestiona todos los procesos de selección activos y completados. Crea nuevos procesos, asigna tests psicométricos, invita candidatos y monitorea el progreso. Filtra por estado, empresa o usa la búsqueda para encontrar procesos específicos.
+                        </p>
+                    </div>
+                    {canCreate && (
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="btn-primary w-full md:w-auto md:flex-shrink-0"
+                        >
+                            + Nuevo Proceso
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Filtros */}

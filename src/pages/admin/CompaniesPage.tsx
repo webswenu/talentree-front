@@ -136,19 +136,22 @@ export const CompaniesPage = () => {
         <div>
             {/* Header */}
             <div className="mb-6">
-                <div className="mb-4 md:mb-0">
-                    <h1 className="text-3xl font-bold text-gray-900">
-                        Empresas
-                    </h1>
-                    <p className="text-gray-600 mt-1">
-                        Gestión de empresas clientes
-                    </p>
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div className="flex-1 md:pr-4">
+                        <h1 className="text-3xl font-bold text-gray-900">
+                            Empresas
+                        </h1>
+                        
+                        <p className="text-gray-500 text-sm mt-2">
+                            Administra las empresas registradas en el sistema. Puedes crear nuevas empresas, editar su información, ver sus procesos asociados y eliminarlas cuando sea necesario. Usa la barra de búsqueda para filtrar por nombre, RUT, industria, ciudad o email.
+                        </p>
+                    </div>
+                    {canCreate && (
+                        <button onClick={handleCreate} className="btn-primary w-full md:w-auto md:flex-shrink-0">
+                            + Nueva Empresa
+                        </button>
+                    )}
                 </div>
-                {canCreate && (
-                    <button onClick={handleCreate} className="btn-primary w-full md:w-auto md:float-right md:-mt-16">
-                        + Nueva Empresa
-                    </button>
-                )}
             </div>
 
             {/* Stats Cards */}

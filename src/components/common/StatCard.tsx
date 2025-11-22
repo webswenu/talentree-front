@@ -8,7 +8,7 @@ interface StatCardProps {
         value: number;
         isPositive: boolean;
     };
-    color?: 
+    color?:
         | "orange"
         | "turquoise"
         | "purple"
@@ -17,6 +17,7 @@ interface StatCardProps {
         | "green"
         | "blue"
         | "gray";
+    onClick?: () => void;
 }
 
 export const StatCard = ({
@@ -25,6 +26,7 @@ export const StatCard = ({
     icon,
     trend,
     color = "orange",
+    onClick,
 }: StatCardProps) => {
     const colorClasses = {
         orange: "bg-gradient-to-br from-primary-500/60 to-primary-600/60",
@@ -39,8 +41,9 @@ export const StatCard = ({
 
     return (
         <div
-            className={`rounded-2xl p-6 hover:scale-[1.02] transition-all duration-300 animate-slide-up 
-                group hover:shadow-xl border border-black/30 ${colorClasses[color]}`}
+            onClick={onClick}
+            className={`rounded-2xl p-6 hover:scale-[1.02] transition-all duration-300 animate-slide-up
+                group hover:shadow-xl border border-black/30 ${colorClasses[color]} ${onClick ? "cursor-pointer" : ""}`}
         >
             <div className="flex items-center justify-between">
                 <div className="flex-1">

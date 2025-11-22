@@ -7,6 +7,7 @@ interface QuickStatsProps {
         icon?: React.ReactNode;
         trend?: { value: number; isPositive: boolean };
         color?: "orange" | "turquoise" | "purple" | "pink" | "yellow" | "green" | "blue" | "gray";
+        onClick?: () => void;
     }>;
     columns?: 2 | 3 | 4;
 }

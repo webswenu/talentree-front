@@ -1,12 +1,15 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { processInvitationsService } from "../../services/process-invitations.service";
+import { workersService } from "../../services/workers.service";
+import { useAuthStore } from "../../store/authStore";
 
 export const InvitationAcceptedPage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const { user } = useAuthStore();
     const token = searchParams.get("token");
-    const [status, setStatus] = useState<"accepting" | "success" | "error">("accepting");
+    const [status, setStatus] = useState<"accepting" | "loading_application" | "success" | "error">("accepting");
     const [errorMsg, setErrorMsg] = useState("");
     const hasAccepted = useRef(false);
 
@@ -25,12 +28,52 @@ export const InvitationAcceptedPage = () => {
             hasAccepted.current = true;
 
             try {
-                await processInvitationsService.accept({ token });
+                // 1. Aceptar la invitación
+                const acceptResponse = await processInvitationsService.accept({ token });
+                setStatus("loading_application");
+
+                // 2. Obtener el processId de la respuesta
+                const processId = acceptResponse.processId || acceptResponse.invitation.processId;
+
+                if (!processId) {
+                    throw new Error("No se pudo obtener el ID del proceso");
+                }
+
+                // 3. Obtener el workerId del usuario autenticado
+                const workerId = user?.worker?.id;
+
+                if (!workerId) {
+                    // Si no hay workerId, redirigir al dashboard normal
+                    console.warn("Usuario no tiene perfil de trabajador, redirigiendo al dashboard");
+                    setTimeout(() => {
+                        navigate("/dashboard");
+                    }, 2000);
+                    return;
+                }
+
+                // 4. Obtener todas las postulaciones del trabajador
+                const workerProcesses = await workersService.getWorkerProcesses(workerId);
+
+                // 5. Encontrar el WorkerProcess que corresponde a este proceso
+                const workerProcess = workerProcesses.find(
+                    wp => wp.process?.id === processId
+                );
+
+                if (!workerProcess) {
+                    // Si no se encuentra, redirigir al dashboard de postulaciones
+                    console.warn("No se encontró el WorkerProcess, redirigiendo a postulaciones");
+                    setTimeout(() => {
+                        navigate("/trabajador/postulaciones");
+                    }, 2000);
+                    return;
+                }
+
+                // 6. Redirigir al detalle de la postulación (donde está el VideoRequirementGate)
                 setStatus("success");
-                // Esperar 2 segundos y redirigir al dashboard
                 setTimeout(() => {
-                    navigate("/dashboard");
+                    navigate(`/trabajador/postulaciones/${workerProcess.id}`);
                 }, 2000);
+
             } catch (error) {
                 console.error("Error accepting invitation:", error);
                 setStatus("error");
@@ -45,7 +88,7 @@ export const InvitationAcceptedPage = () => {
         };
 
         acceptInvitation();
-    }, [token, navigate]);
+    }, [token, navigate, user]);
 
     if (status === "accepting") {
         return (
@@ -58,6 +101,24 @@ export const InvitationAcceptedPage = () => {
                         </h1>
                         <p className="text-gray-600">
                             Por favor espera un momento
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (status === "loading_application") {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-blue-50">
+                <div className="max-w-md w-full mx-4">
+                    <div className="bg-white rounded-lg shadow-xl p-8 text-center">
+                        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-teal-500 mx-auto mb-6"></div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                            Preparando tu postulación...
+                        </h1>
+                        <p className="text-gray-600">
+                            Estamos cargando los detalles del proceso
                         </p>
                     </div>
                 </div>
@@ -125,7 +186,7 @@ export const InvitationAcceptedPage = () => {
                         ¡Invitación aceptada con éxito!
                     </h1>
                     <p className="text-gray-600 mb-6">
-                        Ya estás postulado al proceso. Redirigiendo al dashboard...
+                        Ya estás postulado al proceso. Te llevaremos a los detalles de tu postulación...
                     </p>
                     <div className="animate-pulse text-teal-600 font-medium">
                         Redirigiendo en 2 segundos...

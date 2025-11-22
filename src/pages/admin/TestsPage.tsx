@@ -41,6 +41,9 @@ export default function TestsPage() {
                     <p className="text-sm text-gray-600 mt-1">
                         Catálogo de tests estandarizados disponibles para evaluación
                     </p>
+                    <p className="text-gray-500 text-sm mt-2">
+                        Explora el catálogo completo de tests psicométricos estandarizados. Cada test está diseñado para evaluar competencias específicas de los candidatos. Haz clic en cualquier test para ver sus detalles, instrucciones y ejemplos de preguntas.
+                    </p>
                 </div>
             </div>
 

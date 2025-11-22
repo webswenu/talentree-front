@@ -141,17 +141,24 @@ export default function WorkersPage() {
     return (
         <div className="p-6">
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
-                    {pageTitle}
-                </h1>
-                {canCreate && (
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="btn-primary w-full md:w-auto md:float-right md:-mt-10"
-                    >
-                        + Nuevo Trabajador
-                    </button>
-                )}
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div className="flex-1 md:pr-4">
+                        <h1 className="text-2xl font-bold text-gray-800">
+                            {pageTitle}
+                        </h1>
+                        <p className="text-gray-500 text-sm mt-2">
+                            Visualiza y administra todos los candidatos registrados. Accede a su información personal, revisa sus postulaciones a procesos, consulta tests realizados y descarga reportes generados. Utiliza los filtros para buscar por nombre, email, RUT o estado.
+                        </p>
+                    </div>
+                    {canCreate && (
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="btn-primary w-full md:w-auto md:flex-shrink-0"
+                        >
+                            + Nuevo Trabajador
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Filtros */}

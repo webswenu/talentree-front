@@ -163,160 +163,158 @@ export const WorkerDetailPage = () => {
                 style={{ display: "none" }}
             />
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="text-sm text-gray-600 hover:text-gray-900 mb-2 flex items-center gap-1"
-                    >
-                        ← Volver
-                    </button>
-                    <h1 className="text-3xl font-bold text-gray-900">
-                        {worker.firstName} {worker.lastName}
-                    </h1>
-                    <p className="text-gray-600 mt-1">{worker.email}</p>
+            <div className="bg-white rounded-lg shadow p-6">
+                <button
+                    onClick={() => navigate(-1)}
+                    className="text-sm text-gray-600 hover:text-gray-900 mb-4 flex items-center gap-1"
+                >
+                    ← Volver
+                </button>
+
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-3xl font-bold text-gray-900">
+                                {worker.firstName} {worker.lastName}
+                            </h1>
+                            {worker.user?.isActive ? (
+                                <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    Activo
+                                </span>
+                            ) : (
+                                <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                    Inactivo
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-gray-600 mt-1">{worker.email}</p>
+                    </div>
+
+                    {/* Quick Stats - Inline */}
+                    <div className="flex flex-wrap gap-4 items-center text-sm">
+                        <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-600">Postulaciones:</span>
+                            <span className="font-bold text-gray-900 text-lg">
+                                {filteredWorkerProcesses?.length || 0}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-600">Tests Realizados:</span>
+                            <span className="font-bold text-blue-600 text-lg">
+                                {worker.testResponses?.length || 0}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-600">Reportes Generados:</span>
+                            <span className="font-bold text-purple-600 text-lg">
+                                {reports.length}
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                {worker.user?.isActive ? (
-                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        Activo
-                    </span>
-                ) : (
-                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                        Inactivo
-                    </span>
+
+                {/* Descargar CV Button */}
+                {worker.cvUrl && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                        <a
+                            href={worker.cvUrl}
+                            download
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Descargar Currículum (CV)
+                        </a>
+                    </div>
                 )}
             </div>
 
-            {/* Info Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Información Personal, Educación y Experiencia */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Información Personal - Izquierda */}
                 <div className="bg-white rounded-lg shadow p-6">
-                    <p className="text-sm font-medium text-gray-600">
-                        Postulaciones
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">
-                        {filteredWorkerProcesses?.length || 0}
-                    </p>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                    <p className="text-sm font-medium text-gray-600">
-                        Tests Realizados
-                    </p>
-                    <p className="text-3xl font-bold text-blue-600 mt-2">
-                        {worker.testResponses?.length || 0}
-                    </p>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                    <p className="text-sm font-medium text-gray-600">
-                        Reportes Generados
-                    </p>
-                    <p className="text-3xl font-bold text-purple-600 mt-2">
-                        {reports.length}
-                    </p>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                    <p className="text-sm font-medium text-gray-600">CV</p>
-                    <div className="mt-2">
-                        {worker.cvUrl ? (
-                            <a
-                                href={worker.cvUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2"
-                            >
-                                <span>📄</span>
-                                Ver CV
-                            </a>
-                        ) : (
-                            <p className="text-gray-500 text-sm">
-                                No disponible
+                    <h2 className="text-lg font-semibold mb-6">
+                        Información Personal
+                    </h2>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-sm font-medium text-gray-500">
+                                RUT
+                            </label>
+                            <p className="text-gray-900 mt-1">
+                                {worker.rut || "-"}
                             </p>
-                        )}
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-gray-500">
+                                Email
+                            </label>
+                            <p className="text-gray-900 mt-1">
+                                {worker.email || "-"}
+                            </p>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-gray-500">
+                                Teléfono
+                            </label>
+                            <p className="text-gray-900 mt-1">
+                                {worker.phone || "-"}
+                            </p>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-gray-500">
+                                Fecha de Nacimiento
+                            </label>
+                            <p className="text-gray-900 mt-1">
+                                {worker.birthDate
+                                    ? new Date(worker.birthDate).toLocaleDateString(
+                                          "es-CL"
+                                      )
+                                    : "-"}
+                            </p>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-gray-500">
+                                Dirección
+                            </label>
+                            <p className="text-gray-900 mt-1">
+                                {worker.address || "-"}
+                            </p>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-gray-500">
+                                Ciudad
+                            </label>
+                            <p className="text-gray-900 mt-1">
+                                {worker.city || "-"}
+                            </p>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-gray-500">
+                                Región
+                            </label>
+                            <p className="text-gray-900 mt-1">
+                                {worker.region || "-"}
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Información Personal */}
-            <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold mb-6">
-                    Información Personal
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label className="text-sm font-medium text-gray-500">
-                            RUT
-                        </label>
-                        <p className="text-gray-900 mt-1">
-                            {worker.rut || "-"}
+                {/* Educación y Experiencia - Derecha Apilados */}
+                <div className="space-y-6">
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h2 className="text-lg font-semibold mb-4">Educación</h2>
+                        <p className="text-gray-700 whitespace-pre-wrap">
+                            {worker.education || "No especificada"}
                         </p>
                     </div>
-                    <div>
-                        <label className="text-sm font-medium text-gray-500">
-                            Email
-                        </label>
-                        <p className="text-gray-900 mt-1">
-                            {worker.email || "-"}
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h2 className="text-lg font-semibold mb-4">Experiencia</h2>
+                        <p className="text-gray-700 whitespace-pre-wrap">
+                            {worker.experience || "No especificada"}
                         </p>
                     </div>
-                    <div>
-                        <label className="text-sm font-medium text-gray-500">
-                            Teléfono
-                        </label>
-                        <p className="text-gray-900 mt-1">
-                            {worker.phone || "-"}
-                        </p>
-                    </div>
-                    <div>
-                        <label className="text-sm font-medium text-gray-500">
-                            Fecha de Nacimiento
-                        </label>
-                        <p className="text-gray-900 mt-1">
-                            {worker.birthDate
-                                ? new Date(worker.birthDate).toLocaleDateString(
-                                      "es-CL"
-                                  )
-                                : "-"}
-                        </p>
-                    </div>
-                    <div className="md:col-span-2">
-                        <label className="text-sm font-medium text-gray-500">
-                            Dirección
-                        </label>
-                        <p className="text-gray-900 mt-1">
-                            {worker.address || "-"}
-                        </p>
-                    </div>
-                    <div>
-                        <label className="text-sm font-medium text-gray-500">
-                            Ciudad
-                        </label>
-                        <p className="text-gray-900 mt-1">
-                            {worker.city || "-"}
-                        </p>
-                    </div>
-                    <div>
-                        <label className="text-sm font-medium text-gray-500">
-                            Región
-                        </label>
-                        <p className="text-gray-900 mt-1">
-                            {worker.region || "-"}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Educación y Experiencia */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white rounded-lg shadow p-6">
-                    <h2 className="text-lg font-semibold mb-4">Educación</h2>
-                    <p className="text-gray-700 whitespace-pre-wrap">
-                        {worker.education || "No especificada"}
-                    </p>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                    <h2 className="text-lg font-semibold mb-4">Experiencia</h2>
-                    <p className="text-gray-700 whitespace-pre-wrap">
-                        {worker.experience || "No especificada"}
-                    </p>
                 </div>
             </div>
 
