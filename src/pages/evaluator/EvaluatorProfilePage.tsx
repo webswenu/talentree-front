@@ -105,10 +105,10 @@ export const EvaluatorProfilePage = () => {
             )}
 
             <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-8">
+                <nav className="-mb-px flex flex-col sm:flex-row sm:space-x-8 space-y-2 sm:space-y-0">
                     <button
                         onClick={() => setActiveTab("profile")}
-                        className={`py-4 px-1 text-sm font-medium border-b-2 ${
+                        className={`py-3 sm:py-4 px-3 sm:px-1 text-sm font-medium border-b-2 sm:border-b-2 text-left sm:text-center ${
                             activeTab === "profile"
                                 ? "border-blue-500 text-blue-600"
                                 : "border-transparent text-gray-500 hover:text-gray-700"
@@ -118,7 +118,7 @@ export const EvaluatorProfilePage = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab("notifications")}
-                        className={`py-4 px-1 text-sm font-medium border-b-2 ${
+                        className={`py-3 sm:py-4 px-3 sm:px-1 text-sm font-medium border-b-2 sm:border-b-2 text-left sm:text-center ${
                             activeTab === "notifications"
                                 ? "border-blue-500 text-blue-600"
                                 : "border-transparent text-gray-500 hover:text-gray-700"
@@ -128,7 +128,7 @@ export const EvaluatorProfilePage = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab("account")}
-                        className={`py-4 px-1 text-sm font-medium border-b-2 ${
+                        className={`py-3 sm:py-4 px-3 sm:px-1 text-sm font-medium border-b-2 sm:border-b-2 text-left sm:text-center ${
                             activeTab === "account"
                                 ? "border-blue-500 text-blue-600"
                                 : "border-transparent text-gray-500 hover:text-gray-700"
@@ -147,7 +147,7 @@ export const EvaluatorProfilePage = () => {
                     <h2 className="text-lg font-semibold text-gray-800 mb-4">
                         Información Personal
                     </h2>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Nombre *
@@ -182,7 +182,7 @@ export const EvaluatorProfilePage = () => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                             />
                         </div>
-                        <div className="col-span-2">
+                        <div className="col-span-1 md:col-span-2">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Email
                             </label>
@@ -196,7 +196,7 @@ export const EvaluatorProfilePage = () => {
                                 El email no puede ser modificado
                             </p>
                         </div>
-                        <div className="col-span-2">
+                        <div className="col-span-1 md:col-span-2">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Especialidad
                             </label>
@@ -213,7 +213,7 @@ export const EvaluatorProfilePage = () => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                             />
                         </div>
-                        <div className="col-span-2">
+                        <div className="col-span-1 md:col-span-2">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Biografía
                             </label>
@@ -251,8 +251,8 @@ export const EvaluatorProfilePage = () => {
                         Preferencias de Notificaciones
                     </h2>
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between py-3 border-b">
-                            <div>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 border-b">
+                            <div className="flex-1">
                                 <p className="font-medium text-gray-800">
                                     Notificaciones por Email
                                 </p>
@@ -278,8 +278,8 @@ export const EvaluatorProfilePage = () => {
                                 <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                             </label>
                         </div>
-                        <div className="flex items-center justify-between py-3 border-b">
-                            <div>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 border-b">
+                            <div className="flex-1">
                                 <p className="font-medium text-gray-800">
                                     Nuevas Evaluaciones
                                 </p>
@@ -302,8 +302,8 @@ export const EvaluatorProfilePage = () => {
                                 <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                             </label>
                         </div>
-                        <div className="flex items-center justify-between py-3 border-b">
-                            <div>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 border-b">
+                            <div className="flex-1">
                                 <p className="font-medium text-gray-800">
                                     Actualizaciones de Candidatos
                                 </p>
@@ -326,8 +326,8 @@ export const EvaluatorProfilePage = () => {
                                 <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                             </label>
                         </div>
-                        <div className="flex items-center justify-between py-3">
-                            <div>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3">
+                            <div className="flex-1">
                                 <p className="font-medium text-gray-800">
                                     Recordatorios de Procesos
                                 </p>

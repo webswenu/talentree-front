@@ -130,7 +130,7 @@ export const WorkerApplicationsPage = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-white p-4 rounded-lg shadow">
                     <p className="text-gray-500 text-sm">Total</p>
                     <p className="text-2xl font-bold text-gray-800">

@@ -153,9 +153,12 @@ export const WorkerApplicationDetailPage = () => {
                         }}
                     >
                         <div className="bg-white rounded-lg shadow-lg p-6">
-                            <h2 className="text-xl font-bold text-gray-900 mb-6">
+                            <h2 className="text-xl font-bold text-gray-900 mb-2">
                                 Tests Disponibles
                             </h2>
+                            <p className="text-sm text-gray-600 mb-6">
+                                Completa los siguientes tests para avanzar en el proceso de selección. Podrás ver tu progreso y resultados en esta sección.
+                            </p>
 
                         <div className="space-y-4">
                         {/* Custom Tests */}
@@ -164,7 +167,7 @@ export const WorkerApplicationDetailPage = () => {
                                 key={test.id}
                                 className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
                             >
-                                <div className="flex items-start justify-between">
+                                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                                     <div className="flex-1">
                                         <h3 className="text-lg font-semibold text-gray-900 mb-2">
                                             {test.name}
@@ -193,7 +196,7 @@ export const WorkerApplicationDetailPage = () => {
                                         const status = test.testStatus || 'available';
                                         if (status === 'completed') {
                                             return (
-                                                <div className="ml-4 px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-semibold flex items-center gap-2">
+                                                <div className="w-full md:w-auto md:ml-4 px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-semibold flex items-center justify-center gap-2">
                                                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                                     </svg>
@@ -202,7 +205,7 @@ export const WorkerApplicationDetailPage = () => {
                                             );
                                         } else if (status === 'incomplete') {
                                             return (
-                                                <div className="ml-4 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-semibold flex items-center gap-2">
+                                                <div className="w-full md:w-auto md:ml-4 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-semibold flex items-center justify-center gap-2">
                                                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                                     </svg>
@@ -215,8 +218,8 @@ export const WorkerApplicationDetailPage = () => {
                                                 r.test?.id === test.id
                                             );
                                             return (
-                                                <div className="ml-4 flex items-center gap-2">
-                                                    <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-lg text-xs font-semibold">
+                                                <div className="w-full md:w-auto md:ml-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                                    <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-lg text-xs font-semibold text-center">
                                                         En Progreso
                                                     </span>
                                                     {response && (
@@ -234,7 +237,7 @@ export const WorkerApplicationDetailPage = () => {
                                                 <button
                                                     onClick={() => handleStartTest(test.id)}
                                                     disabled={startingTestId === test.id}
-                                                    className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="w-full md:w-auto md:ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     {startingTestId === test.id
                                                         ? "Iniciando..."
@@ -253,7 +256,7 @@ export const WorkerApplicationDetailPage = () => {
                                 key={fixedTest.id}
                                 className="border border-indigo-200 bg-indigo-50 rounded-lg p-4 hover:shadow-md transition"
                             >
-                                <div className="flex items-start justify-between">
+                                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-2">
                                             <h3 className="text-lg font-semibold text-gray-900">
@@ -285,7 +288,7 @@ export const WorkerApplicationDetailPage = () => {
                                         const status = fixedTest.testStatus || 'available';
                                         if (status === 'completed') {
                                             return (
-                                                <div className="ml-4 px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-semibold flex items-center gap-2">
+                                                <div className="w-full md:w-auto md:ml-4 px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-semibold flex items-center justify-center gap-2">
                                                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                                     </svg>
@@ -294,7 +297,7 @@ export const WorkerApplicationDetailPage = () => {
                                             );
                                         } else if (status === 'incomplete') {
                                             return (
-                                                <div className="ml-4 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-semibold flex items-center gap-2">
+                                                <div className="w-full md:w-auto md:ml-4 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-semibold flex items-center justify-center gap-2">
                                                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                                     </svg>
@@ -307,8 +310,8 @@ export const WorkerApplicationDetailPage = () => {
                                                 r.fixedTest?.id === fixedTest.id
                                             );
                                             return (
-                                                <div className="ml-4 flex items-center gap-2">
-                                                    <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-lg text-xs font-semibold">
+                                                <div className="w-full md:w-auto md:ml-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                                    <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-lg text-xs font-semibold text-center">
                                                         En Progreso
                                                     </span>
                                                     {response && (
@@ -326,7 +329,7 @@ export const WorkerApplicationDetailPage = () => {
                                                 <button
                                                     onClick={() => handleStartTest(fixedTest.id, true)}
                                                     disabled={startingTestId === fixedTest.id}
-                                                    className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="w-full md:w-auto md:ml-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     {startingTestId === fixedTest.id
                                                         ? "Iniciando..."

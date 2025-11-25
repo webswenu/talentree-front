@@ -128,7 +128,7 @@ export const CompanyWorkerDetailPage = () => {
                 </div>
                 <div className="bg-white rounded-lg shadow p-6">
                     <p className="text-sm font-medium text-gray-600">
-                        Reportes Generados
+                        Informes Generados
                     </p>
                     <p className="text-3xl font-bold text-purple-600 mt-2">
                         {reports.length}
@@ -278,7 +278,7 @@ export const CompanyWorkerDetailPage = () => {
                                         Fecha de Aplicación
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Reportes
+                                        Informes
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                         Acciones
@@ -360,7 +360,7 @@ export const CompanyWorkerDetailPage = () => {
                                                     </div>
                                                 ) : (
                                                     <span className="text-xs text-gray-400">
-                                                        Sin reportes
+                                                        Sin informes
                                                     </span>
                                                 )}
                                             </td>
@@ -387,11 +387,11 @@ export const CompanyWorkerDetailPage = () => {
                 </div>
             )}
 
-            {/* Reportes */}
+            {/* Informes */}
             <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold mb-4">Reportes Generados</h2>
+                <h2 className="text-lg font-semibold mb-4">Informes Generados</h2>
                 <p className="text-sm text-gray-600 mb-6">
-                    Los reportes se generan automáticamente cuando el trabajador completa todos los tests de un proceso.
+                    Los informes se generan automáticamente cuando el trabajador completa todos los tests de un proceso.
                 </p>
 
                 {reports.length > 0 ? (
@@ -501,7 +501,7 @@ export const CompanyWorkerDetailPage = () => {
                     </div>
                 ) : (
                     <p className="text-center text-gray-500 py-8">
-                        No hay reportes generados para este trabajador.
+                        No hay informes generados para este trabajador.
                     </p>
                 )}
             </div>

@@ -377,11 +377,12 @@ export const WorkerTestTakingPage = () => {
             case QuestionType.SCALE:
                 return (
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                            {[1, 2, 3, 4, 5].map((value) => (
+                        {/* Mobile: 3 arriba, 2 abajo centrados | Desktop: 5 en fila */}
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
+                            {[1, 2, 3].map((value) => (
                                 <label
                                     key={value}
-                                    className={`flex flex-col items-center cursor-pointer p-4 border-2 rounded-lg transition-colors ${
+                                    className={`flex flex-col items-center cursor-pointer p-3 sm:p-4 border-2 rounded-lg transition-colors ${
                                         currentAnswer === value
                                             ? "border-blue-600 bg-blue-50"
                                             : "border-gray-300 hover:bg-gray-50"
@@ -399,13 +400,39 @@ export const WorkerTestTakingPage = () => {
                                         }
                                         className="sr-only"
                                     />
-                                    <span className="text-2xl font-bold">
+                                    <span className="text-xl sm:text-2xl font-bold">
+                                        {value}
+                                    </span>
+                                </label>
+                            ))}
+                            {[4, 5].map((value) => (
+                                <label
+                                    key={value}
+                                    className={`flex flex-col items-center cursor-pointer p-3 sm:p-4 border-2 rounded-lg transition-colors ${
+                                        currentAnswer === value
+                                            ? "border-blue-600 bg-blue-50"
+                                            : "border-gray-300 hover:bg-gray-50"
+                                    } ${value === 4 ? 'col-start-1 sm:col-start-4' : ''}`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name={`question-${currentQ.id}`}
+                                        value={value}
+                                        checked={currentAnswer === value}
+                                        onChange={(e) =>
+                                            handleAnswerChange(
+                                                Number(e.target.value)
+                                            )
+                                        }
+                                        className="sr-only"
+                                    />
+                                    <span className="text-xl sm:text-2xl font-bold">
                                         {value}
                                     </span>
                                 </label>
                             ))}
                         </div>
-                        <div className="flex justify-between text-sm text-gray-600">
+                        <div className="flex justify-between text-xs sm:text-sm text-gray-600 px-1">
                             <span>Totalmente en desacuerdo</span>
                             <span>Totalmente de acuerdo</span>
                         </div>
@@ -469,15 +496,15 @@ export const WorkerTestTakingPage = () => {
 
                 return (
                     <div className="space-y-6">
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                            <p className="text-sm font-medium text-blue-900">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4">
+                            <p className="text-xs sm:text-sm font-medium text-blue-900">
                                 Instrucciones: Para cada una de las siguientes palabras, selecciona:
                             </p>
-                            <ul className="text-sm text-blue-800 mt-2 space-y-1">
+                            <ul className="text-xs sm:text-sm text-blue-800 mt-2 space-y-1">
                                 <li>• <strong>MÁS</strong> si te describe más</li>
                                 <li>• <strong>MENOS</strong> si te describe menos</li>
                             </ul>
-                            <p className="text-xs text-blue-700 mt-3 italic">
+                            <p className="text-[10px] sm:text-xs text-blue-700 mt-3 italic">
                                 Debes marcar una opción (MÁS o MENOS) para cada una de las 4 palabras
                             </p>
                         </div>
@@ -489,14 +516,14 @@ export const WorkerTestTakingPage = () => {
                                 return (
                                     <div
                                         key={idx}
-                                        className={`flex items-center justify-between p-4 border-2 rounded-lg transition-colors ${
+                                        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border-2 rounded-lg transition-colors gap-3 sm:gap-0 ${
                                             currentSelection
                                                 ? 'border-blue-400 bg-blue-50'
                                                 : 'border-gray-300'
                                         }`}
                                     >
-                                        <span className="font-medium">{word}</span>
-                                        <div className="flex gap-4">
+                                        <span className="font-medium text-sm sm:text-base">{word}</span>
+                                        <div className="flex gap-3 sm:gap-4 justify-center sm:justify-end">
                                             <label className="flex items-center cursor-pointer">
                                                 <input
                                                     type="radio"
@@ -511,7 +538,7 @@ export const WorkerTestTakingPage = () => {
                                                     }
                                                     className="mr-2 w-4 h-4 text-green-600"
                                                 />
-                                                <span className="text-sm font-medium text-green-700">
+                                                <span className="text-xs sm:text-sm font-medium text-green-700">
                                                     MÁS
                                                 </span>
                                             </label>
@@ -529,7 +556,7 @@ export const WorkerTestTakingPage = () => {
                                                     }
                                                     className="mr-2 w-4 h-4 text-red-600"
                                                 />
-                                                <span className="text-sm font-medium text-red-700">
+                                                <span className="text-xs sm:text-sm font-medium text-red-700">
                                                     MENOS
                                                 </span>
                                             </label>
@@ -546,11 +573,12 @@ export const WorkerTestTakingPage = () => {
                 // Test CFR - Escala Likert 1-5
                 return (
                     <div className="space-y-4">
-                        <div className="flex justify-between items-stretch gap-2">
-                            {[1, 2, 3, 4, 5].map((value) => (
+                        {/* Mobile: 3 arriba, 2 abajo centrados | Desktop: 5 en fila */}
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
+                            {[1, 2, 3].map((value) => (
                                 <label
                                     key={value}
-                                    className={`flex-1 flex flex-col items-center justify-center cursor-pointer p-4 border-2 rounded-lg transition-all ${
+                                    className={`flex flex-col items-center justify-center cursor-pointer p-3 sm:p-4 border-2 rounded-lg transition-all ${
                                         currentAnswer === value
                                             ? "border-blue-600 bg-blue-50 scale-105 shadow-md"
                                             : "border-gray-300 hover:bg-gray-50 hover:border-gray-400"
@@ -568,13 +596,41 @@ export const WorkerTestTakingPage = () => {
                                         }
                                         className="sr-only"
                                     />
-                                    <span className="text-3xl font-bold mb-2">
+                                    <span className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
                                         {value}
                                     </span>
-                                    <span className="text-xs text-center text-gray-600">
+                                    <span className="text-[10px] sm:text-xs text-center text-gray-600 leading-tight">
                                         {value === 1 && "Totalmente en desacuerdo"}
                                         {value === 2 && "En desacuerdo"}
                                         {value === 3 && "Neutral"}
+                                    </span>
+                                </label>
+                            ))}
+                            {[4, 5].map((value) => (
+                                <label
+                                    key={value}
+                                    className={`flex flex-col items-center justify-center cursor-pointer p-3 sm:p-4 border-2 rounded-lg transition-all ${
+                                        currentAnswer === value
+                                            ? "border-blue-600 bg-blue-50 scale-105 shadow-md"
+                                            : "border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                                    } ${value === 4 ? 'col-start-1 sm:col-start-4' : ''}`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name={`question-${currentQ.id}`}
+                                        value={value}
+                                        checked={currentAnswer === value}
+                                        onChange={(e) =>
+                                            handleAnswerChange(
+                                                Number(e.target.value)
+                                            )
+                                        }
+                                        className="sr-only"
+                                    />
+                                    <span className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
+                                        {value}
+                                    </span>
+                                    <span className="text-[10px] sm:text-xs text-center text-gray-600 leading-tight">
                                         {value === 4 && "De acuerdo"}
                                         {value === 5 && "Totalmente de acuerdo"}
                                     </span>

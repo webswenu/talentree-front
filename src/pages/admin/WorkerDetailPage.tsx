@@ -205,7 +205,7 @@ export const WorkerDetailPage = () => {
                             </span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-600">Reportes Generados:</span>
+                            <span className="font-medium text-gray-600">Informes Generados:</span>
                             <span className="font-bold text-purple-600 text-lg">
                                 {reports.length}
                             </span>
@@ -441,11 +441,11 @@ export const WorkerDetailPage = () => {
                 </div>
             )}
 
-            {/* Reportes */}
+            {/* Informes */}
             <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold mb-4">Reportes Generados</h2>
+                <h2 className="text-lg font-semibold mb-4">Informes Generados</h2>
                 <p className="text-sm text-gray-600 mb-6">
-                    Los reportes se generan automáticamente cuando el trabajador completa todos los tests de un proceso.
+                    Los informes se generan automáticamente cuando el trabajador completa todos los tests de un proceso.
                 </p>
 
                 {reports.length > 0 ? (
@@ -644,7 +644,7 @@ export const WorkerDetailPage = () => {
                     </div>
                 ) : (
                     <p className="text-center text-gray-500 py-8">
-                        No hay reportes generados para este trabajador.
+                        No hay informes generados para este trabajador.
                     </p>
                 )}
             </div>
