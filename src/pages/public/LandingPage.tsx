@@ -13,6 +13,13 @@ export const LandingPage = () => {
     const navigate = useNavigate();
     const { user } = useAuthStore();
     const [applyingProcessId, setApplyingProcessId] = useState<string | null>(null);
+    const [contactFormSubmitted, setContactFormSubmitted] = useState(false);
+    const [contactForm, setContactForm] = useState({
+        nombre: '',
+        telefono: '',
+        correo: '',
+        asunto: ''
+    });
 
     const about = useScrollAnimation();
     const services = useScrollAnimation();
@@ -57,6 +64,40 @@ export const LandingPage = () => {
         }
     };
 
+    const handleContactSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // Validar que todos los campos estén llenos
+        if (!contactForm.nombre || !contactForm.telefono || !contactForm.correo || !contactForm.asunto) {
+            toast.error("Por favor completa todos los campos");
+            return;
+        }
+
+        // Validar formato de email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(contactForm.correo)) {
+            toast.error("Por favor ingresa un correo válido");
+            return;
+        }
+
+        // Por ahora solo mostramos el mensaje de éxito
+        // TODO: Integrar con backend para enviar el email a contacto@talentree.cl
+        console.log("Datos del formulario:", contactForm);
+
+        setContactFormSubmitted(true);
+        setContactForm({
+            nombre: '',
+            telefono: '',
+            correo: '',
+            asunto: ''
+        });
+
+        // Ocultar mensaje después de 5 segundos
+        setTimeout(() => {
+            setContactFormSubmitted(false);
+        }, 5000);
+    };
+
     return (
         <div className="font-sans text-gray-800">
             {/* ====== NAVBAR ====== */}
@@ -74,12 +115,14 @@ export const LandingPage = () => {
                             Optimiza cada etapa del proceso de selección con una herramienta diseñada para simplificar el trabajo de tu equipo y ofrecer una experiencia moderna y fluida a tus candidatos. Desde la filtración inicial hasta la decisión final, centraliza todo en un solo lugar.
                         </p>
                         <div className="flex gap-4">
-                            <button className="border border-gray-400 px-6 py-3 rounded-full hover:bg-gray-100 hover:scale-105 transition-all duration-300">
-                                Saber más
-                            </button>
-                            <button className="bg-teal-500 text-white px-6 py-3 rounded-full hover:bg-teal-600 hover:scale-105 transition-all duration-300">
-                                Comienza aquí →
-                            </button>
+                            <a
+                                href="https://wa.me/56963717583"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="bg-teal-500 text-white px-6 py-3 rounded-full hover:bg-teal-600 hover:scale-105 transition-all duration-300 inline-block"
+                            >
+                                Conversemos →
+                            </a>
                         </div>
                     </div>
 
@@ -148,7 +191,9 @@ export const LandingPage = () => {
                                 Conoce nuestros servicios
                             </a>
                             <a
-                                href="#contact"
+                                href="https://wa.me/56963717583"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="border border-gray-400 px-6 py-3 rounded-full hover:bg-gray-100 hover:scale-105 transition-all duration-300"
                             >
                                 Contáctanos
@@ -409,9 +454,14 @@ export const LandingPage = () => {
                     <p className="text-lg max-w-xl text-justify">
                         Haz que tu equipo seleccione mejor, más rápido y con datos reales. Moderniza tu proceso con herramientas que automatizan, evalúan y conectan talento con oportunidades reales.
                     </p>
-                    <button className="mt-6 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-full hover:scale-105 transition-all duration-300">
+                    <a
+                        href="https://wa.me/56963717583"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-6 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-full hover:scale-105 transition-all duration-300 inline-block"
+                    >
                         Agenda una demostración
-                    </button>
+                    </a>
                 </div>
             </section>
 
@@ -421,45 +471,83 @@ export const LandingPage = () => {
                 id="contact"
                 className="py-20 bg-gradient-to-b from-white to-teal-50 overflow-hidden"
             >
-                <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 px-6 items-start">
-                    <div className={`animate-on-scroll ${contact.isVisible ? 'visible' : ''}`}>
-                        <iframe
-                            src="https://www.google.com/maps?q=santiago%20chile&output=embed"
-                            className="w-full h-80 rounded-xl border-0 shadow-lg hover:shadow-xl transition-shadow duration-500"
-                        ></iframe>
+                <div className="max-w-6xl mx-auto px-6">
+                    {/* Título de la sección */}
+                    <div className="text-center mb-12">
+                        <h2 className={`text-3xl font-bold mb-3 animate-on-scroll ${contact.isVisible ? 'visible' : ''}`}>
+                            Contáctanos
+                        </h2>
                     </div>
 
-                    <form
-                        className={`bg-white shadow-xl rounded-2xl p-8 space-y-5 animate-on-scroll hover:shadow-2xl transition-shadow duration-500 ${contact.isVisible ? 'visible' : ''}`}
-                        style={{ transitionDelay: '200ms' }}
-                    >
-                        <h3 className="text-2xl font-bold mb-2">
-                            Formulario de Contacto
-                        </h3>
-                        <input
-                            type="text"
-                            placeholder="Nombre"
-                            className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300"
-                        />
-                        <input
-                            type="text"
-                            placeholder="Teléfono"
-                            className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300"
-                        />
-                        <input
-                            type="email"
-                            placeholder="Correo"
-                            className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300"
-                        />
-                        <input
-                            type="text"
-                            placeholder="Asunto"
-                            className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300"
-                        />
-                        <button className="bg-gray-400 text-white px-6 py-3 rounded-lg hover:bg-gray-500 hover:scale-105 transition-all duration-300 w-full">
-                            Enviar
-                        </button>
-                    </form>
+                    <div className="grid md:grid-cols-2 gap-12 items-start">
+                        <div className={`animate-on-scroll ${contact.isVisible ? 'visible' : ''}`}>
+                            <iframe
+                                src="https://www.google.com/maps?q=santiago%20chile&output=embed"
+                                className="w-full h-80 rounded-xl border-0 shadow-lg hover:shadow-xl transition-shadow duration-500"
+                            ></iframe>
+                        </div>
+
+                        <form
+                            onSubmit={handleContactSubmit}
+                            className={`bg-white shadow-xl rounded-2xl p-8 space-y-5 animate-on-scroll hover:shadow-2xl transition-shadow duration-500 ${contact.isVisible ? 'visible' : ''}`}
+                            style={{ transitionDelay: '200ms' }}
+                        >
+                            <div className="mb-4">
+                                <h3 className="text-xl font-bold mb-2">
+                                    Formulario de Contacto
+                                </h3>
+                                <p className="text-sm text-gray-600">
+                                    Llena este formulario para que un ejecutivo de Talentree se ponga en contacto con tu empresa
+                                </p>
+                            </div>
+
+                            {contactFormSubmitted && (
+                                <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+                                    <p className="font-semibold">¡Gracias por contactarnos!</p>
+                                    <p className="text-sm mt-1">Hemos recibido tu mensaje y nos pondremos en contacto contigo pronto.</p>
+                                </div>
+                            )}
+
+                            <input
+                                type="text"
+                                placeholder="Nombre *"
+                                required
+                                value={contactForm.nombre}
+                                onChange={(e) => setContactForm({ ...contactForm, nombre: e.target.value })}
+                                className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300"
+                            />
+                            <input
+                                type="tel"
+                                placeholder="Teléfono *"
+                                required
+                                value={contactForm.telefono}
+                                onChange={(e) => setContactForm({ ...contactForm, telefono: e.target.value })}
+                                className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300"
+                            />
+                            <input
+                                type="email"
+                                placeholder="Correo *"
+                                required
+                                value={contactForm.correo}
+                                onChange={(e) => setContactForm({ ...contactForm, correo: e.target.value })}
+                                className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300"
+                            />
+                            <textarea
+                                placeholder="Tu mensaje... *"
+                                required
+                                rows={6}
+                                value={contactForm.asunto}
+                                onChange={(e) => setContactForm({ ...contactForm, asunto: e.target.value })}
+                                className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300 resize-none"
+                            />
+                            <button
+                                type="submit"
+                                className="bg-teal-500 text-white px-6 py-3 rounded-lg hover:bg-teal-600 hover:scale-105 transition-all duration-300 w-full font-medium"
+                            >
+                                Enviar
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </section>
 

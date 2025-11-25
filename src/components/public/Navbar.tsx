@@ -10,6 +10,17 @@ export const Navbar = () => {
         setIsMenuOpen(!isMenuOpen);
     };
 
+    const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+        e.preventDefault();
+        const section = document.querySelector(sectionId);
+        if (section) {
+            const navbarHeight = 160; // Altura del navbar
+            const sectionTop = section.getBoundingClientRect().top + window.pageYOffset - navbarHeight;
+            window.scrollTo({ top: sectionTop, behavior: 'smooth' });
+        }
+        setIsMenuOpen(false);
+    };
+
     return (
         <nav className="bg-white shadow fixed w-full z-50 top-0">
             <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
@@ -23,19 +34,19 @@ export const Navbar = () => {
 
                 {/* Desktop Menu */}
                 <div className="hidden md:flex gap-8 items-center">
-                    <a href="/#home" className="hover:text-teal-500 transition">
+                    <a href="/#home" onClick={(e) => handleNavClick(e, "#home")} className="hover:text-teal-500 transition">
                         Home
                     </a>
-                    <a href="/#about" className="hover:text-teal-500 transition">
+                    <a href="/#about" onClick={(e) => handleNavClick(e, "#about")} className="hover:text-teal-500 transition">
                         Quienes Somos
                     </a>
-                    <a href="/#services" className="hover:text-teal-500 transition">
+                    <a href="/#services" onClick={(e) => handleNavClick(e, "#services")} className="hover:text-teal-500 transition">
                         Servicios
                     </a>
-                    <a href="/#processes" className="hover:text-teal-500 transition">
-                        Procesos
+                    <a href="/#processes" onClick={(e) => handleNavClick(e, "#processes")} className="hover:text-teal-500 transition">
+                        Oportunidades Laborales
                     </a>
-                    <a href="/#contact" className="hover:text-teal-500 transition">
+                    <a href="/#contact" onClick={(e) => handleNavClick(e, "#contact")} className="hover:text-teal-500 transition">
                         Contacto
                     </a>
                     <Link
@@ -79,36 +90,36 @@ export const Navbar = () => {
                 <div className="flex flex-col gap-4 px-6 py-4">
                     <a
                         href="/#home"
+                        onClick={(e) => handleNavClick(e, "#home")}
                         className="hover:text-teal-500 transition"
-                        onClick={() => setIsMenuOpen(false)}
                     >
                         Home
                     </a>
                     <a
                         href="/#about"
+                        onClick={(e) => handleNavClick(e, "#about")}
                         className="hover:text-teal-500 transition"
-                        onClick={() => setIsMenuOpen(false)}
                     >
                         Quienes Somos
                     </a>
                     <a
                         href="/#services"
+                        onClick={(e) => handleNavClick(e, "#services")}
                         className="hover:text-teal-500 transition"
-                        onClick={() => setIsMenuOpen(false)}
                     >
                         Servicios
                     </a>
                     <a
                         href="/#processes"
+                        onClick={(e) => handleNavClick(e, "#processes")}
                         className="hover:text-teal-500 transition"
-                        onClick={() => setIsMenuOpen(false)}
                     >
-                        Procesos
+                        Oportunidades Laborales
                     </a>
                     <a
                         href="/#contact"
+                        onClick={(e) => handleNavClick(e, "#contact")}
                         className="hover:text-teal-500 transition"
-                        onClick={() => setIsMenuOpen(false)}
                     >
                         Contacto
                     </a>

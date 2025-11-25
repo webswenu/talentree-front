@@ -8,8 +8,7 @@ export const Footer = () => {
                         alt="Talentree"
                         className="h-40 mb-4"
                     />
-                    <p className="mb-2">Teléfonos: +56 9 6371 7583</p>
-                    <p className="mb-4">Dirección: Av. Nombre #123, Ciudad, Chile</p>
+                    <p className="mb-4">Teléfonos: +56 9 6371 7583</p>
                     <div className="flex gap-4 mt-4">
                         <a
                             href="https://facebook.com"
