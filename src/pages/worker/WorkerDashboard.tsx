@@ -15,7 +15,7 @@ import { Modal } from "../../components/common/Modal";
 import { toast } from "../../utils/toast";
 import { QuickActions } from "../../components/widgets/QuickActions";
 import { useMyProcessInvitations, useAcceptProcessInvitation } from "../../hooks/useProcessInvitations";
-import { Mail, X, Calendar, Building } from "lucide-react";
+import { Mail, Calendar } from "lucide-react";
 
 export const WorkerDashboard = () => {
     const { user } = useAuthStore();
@@ -318,12 +318,6 @@ export const WorkerDashboard = () => {
                                                     </h3>
                                                 </div>
                                                 <div className="space-y-1">
-                                                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                        <Building className="w-4 h-4" />
-                                                        <span className="font-medium">
-                                                            {invitation.process?.company?.name || "Empresa"}
-                                                        </span>
-                                                    </div>
                                                     <div className="flex items-center gap-2 text-sm text-gray-600">
                                                         <Calendar className="w-4 h-4" />
                                                         <span>
