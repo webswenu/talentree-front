@@ -97,6 +97,24 @@ class WorkersService {
         return response.data;
     }
 
+    /**
+     * Obtiene información de cupos de un proceso
+     */
+    async getProcessCapacity(processId: string): Promise<{
+        maxWorkers: number | null;
+        approvedCount: number;
+        availableSlots: number | null;
+        isFull: boolean;
+    }> {
+        const response = await apiService.get<{
+            maxWorkers: number | null;
+            approvedCount: number;
+            availableSlots: number | null;
+            isFull: boolean;
+        }>(`${this.basePath}/process/${processId}/capacity`);
+        return response.data;
+    }
+
     async updateWorkerProcessStatus(
         id: string,
         data: UpdateWorkerProcessStatusDto

@@ -74,6 +74,16 @@ class ProcessInvitationsService {
     }
 
     /**
+     * Obtiene las invitaciones pendientes del trabajador logueado
+     */
+    async getMyInvitations(): Promise<ProcessInvitation[]> {
+        const response = await apiService.get<ProcessInvitation[]>(
+            `${this.basePath}/my-invitations`
+        );
+        return response.data;
+    }
+
+    /**
      * Obtiene una invitación por ID
      */
     async findOne(id: string): Promise<ProcessInvitation> {

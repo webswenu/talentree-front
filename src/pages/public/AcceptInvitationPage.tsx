@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
     useProcessInvitationByToken,
@@ -7,13 +7,15 @@ import {
 import { useAuthStore } from "../../store/authStore";
 import { UserRole } from "../../types/user.types";
 import { ProcessInvitationStatus } from "../../types/process-invitation.types";
+import { Modal } from "../../components/common/Modal";
 
 export const AcceptInvitationPage = () => {
     const { token } = useParams<{ token: string }>();
     const navigate = useNavigate();
-    const { user } = useAuthStore();
+    const { user, logout } = useAuthStore();
     const { data: invitation, isLoading, error } = useProcessInvitationByToken(token!);
     const acceptMutation = useAcceptProcessInvitation();
+    const [showEmailMismatchModal, setShowEmailMismatchModal] = useState(false);
 
     useEffect(() => {
         // Si ya está aceptada y el usuario está logueado como worker, redirigir
@@ -23,7 +25,7 @@ export const AcceptInvitationPage = () => {
     }, [invitation, user, navigate]);
 
     const handleAccept = async () => {
-        if (!token) return;
+        if (!token || !invitation) return;
 
         // Si el usuario NO está logueado, redirigir a login con el token
         if (!user) {
@@ -31,7 +33,13 @@ export const AcceptInvitationPage = () => {
             return;
         }
 
-        // Si está logueado, aceptar directamente
+        // VALIDACIÓN: Verificar si el email del usuario coincide con el email de la invitación
+        if (user.email.toLowerCase() !== invitation.email.toLowerCase()) {
+            setShowEmailMismatchModal(true);
+            return;
+        }
+
+        // Si está logueado con el email correcto, aceptar directamente
         try {
             await acceptMutation.mutateAsync({ token });
             // Éxito! Redirigir al dashboard
@@ -40,6 +48,13 @@ export const AcceptInvitationPage = () => {
             // Error manejado por el hook
             console.error(error);
         }
+    };
+
+    const handleLogoutAndContinue = () => {
+        logout();
+        setShowEmailMismatchModal(false);
+        // Después del logout, redirigir a login con el token
+        navigate(`/login?fromInvitation=${token}`);
     };
 
     if (isLoading) {
@@ -260,6 +275,57 @@ export const AcceptInvitationPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Modal de confirmación de email diferente */}
+            <Modal
+                isOpen={showEmailMismatchModal}
+                onClose={() => setShowEmailMismatchModal(false)}
+                title="Email no coincide"
+            >
+                <div className="space-y-4">
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div className="flex">
+                            <svg className="w-6 h-6 text-yellow-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <div className="flex-1">
+                                <h3 className="font-semibold text-yellow-900 mb-2">
+                                    Cuenta incorrecta
+                                </h3>
+                                <div className="text-sm text-yellow-800 space-y-2">
+                                    <p>
+                                        Estás logueado como:{" "}
+                                        <span className="font-bold">{user?.email}</span>
+                                    </p>
+                                    <p>
+                                        Esta invitación es para:{" "}
+                                        <span className="font-bold">{invitation?.email}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p className="text-gray-700">
+                        Para aceptar esta invitación, necesitas cerrar sesión e iniciar sesión con la cuenta correcta.
+                    </p>
+
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setShowEmailMismatchModal(false)}
+                            className="flex-1 px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleLogoutAndContinue}
+                            className="flex-1 px-4 py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg font-semibold hover:from-teal-600 hover:to-teal-700 transition-colors"
+                        >
+                            Cerrar Sesión y Continuar
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };

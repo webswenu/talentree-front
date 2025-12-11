@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useProcess } from "../../hooks/useProcesses";
 import { ProcessStatusLabels } from "../../types/process.types";
-import { useProcessWorkers } from "../../hooks/useWorkers";
+import { useProcessWorkers, useProcessCapacity, useUpdateWorkerProcessStatus } from "../../hooks/useWorkers";
 import { videoService } from "../../services/video.service";
 import {
     useReportsByProcess,
@@ -46,7 +46,7 @@ import { FormatSelectionModal } from "../../components/common/FormatSelectionMod
 import { BulkInviteModal } from "../../components/admin/BulkInviteModal";
 import { toast } from "../../utils/toast";
 
-type TabType = "candidates" | "approved" | "reports" | "timeline";
+type TabType = "candidates" | "approved" | "final_decisions" | "reports" | "timeline";
 
 export const ProcessDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -75,11 +75,21 @@ export const ProcessDetailPage = () => {
     const { data: process, isLoading, error } = useProcess(id!);
     const { data: workersData } = useProcessWorkers(id!) as { data?: WorkerProcess[] };
     const { data: reportsData } = useReportsByProcess(id!);
+    const { data: capacity } = useProcessCapacity(id!);
     const downloadMutation = useDownloadReportFile();
     const uploadMutation = useUploadReportFile();
     const approveMutation = useApproveReport();
     const deleteMutation = useDeleteReport();
+    const updateWorkerStatusMutation = useUpdateWorkerProcessStatus();
     const { user } = useAuthStore();
+
+    // Estado para modal de cambio de estado de trabajador
+    const [workerStatusModal, setWorkerStatusModal] = useState<{
+        isOpen: boolean;
+        workerProcess: WorkerProcess | null;
+        newStatus: WorkerStatus | null;
+    }>({ isOpen: false, workerProcess: null, newStatus: null });
+    const [statusNotes, setStatusNotes] = useState("");
 
     // Invitations hooks
     const { data: invitationsData } = useProcessInvitations({ processId: id, page: 1, limit: 100 });
@@ -281,6 +291,36 @@ export const ProcessDetailPage = () => {
         }
     };
 
+    // Worker status change handlers
+    const handleWorkerStatusChange = (workerProcess: WorkerProcess, newStatus: WorkerStatus) => {
+        setWorkerStatusModal({ isOpen: true, workerProcess, newStatus });
+        setStatusNotes("");
+    };
+
+    const handleConfirmWorkerStatusChange = async () => {
+        if (!workerStatusModal.workerProcess || !workerStatusModal.newStatus) return;
+
+        try {
+            await updateWorkerStatusMutation.mutateAsync({
+                id: workerStatusModal.workerProcess.id,
+                data: {
+                    status: workerStatusModal.newStatus,
+                    notes: statusNotes || undefined,
+                },
+            });
+            toast.success(
+                workerStatusModal.newStatus === WorkerStatus.APPROVED
+                    ? "Trabajador aprobado exitosamente. Se ha enviado un email de notificación."
+                    : "Trabajador rechazado. Se ha enviado un email de notificación."
+            );
+            setWorkerStatusModal({ isOpen: false, workerProcess: null, newStatus: null });
+            setStatusNotes("");
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Error al cambiar el estado del trabajador";
+            toast.error(errorMessage);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -314,9 +354,22 @@ export const ProcessDetailPage = () => {
                 >
                     ← Volver a procesos
                 </button>
-                <h1 className="text-2xl font-bold text-gray-900">
-                    {process.name}
-                </h1>
+                <div className="flex items-center gap-4">
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        {process.name}
+                    </h1>
+                    {/* Indicador de cupos */}
+                    {capacity?.maxWorkers && (
+                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                            capacity.isFull
+                                ? "bg-red-100 text-red-700"
+                                : "bg-purple-100 text-purple-700"
+                        }`}>
+                            Cupos: {capacity.approvedCount}/{capacity.maxWorkers}
+                            {capacity.isFull && " (Lleno)"}
+                        </span>
+                    )}
+                </div>
                 <p className="text-gray-600 mt-1">
                     Visualiza y gestiona los candidatos, reportes y el progreso del proceso de selección
                 </p>
@@ -349,6 +402,28 @@ export const ProcessDetailPage = () => {
                                 (wp) => wp.status === WorkerStatus.COMPLETED || wp.status === WorkerStatus.APPROVED || wp.status === WorkerStatus.HIRED
                             ).length || 0}
                             )
+                        </button>
+                    )}
+                    {!isCompany && (
+                        <button
+                            onClick={() => setActiveTab("final_decisions")}
+                            className={`py-4 px-1 text-sm font-medium border-b-2 ${
+                                activeTab === "final_decisions"
+                                    ? "border-blue-500 text-blue-600"
+                                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                            }`}
+                        >
+                            <span className="flex items-center gap-2">
+                                Seleccionados/Rechazados
+                                <span className="flex gap-1">
+                                    <span className="px-1.5 py-0.5 text-xs rounded-full bg-green-100 text-green-700">
+                                        {workersData?.filter((wp) => wp.status === WorkerStatus.APPROVED).length || 0}
+                                    </span>
+                                    <span className="px-1.5 py-0.5 text-xs rounded-full bg-red-100 text-red-700">
+                                        {workersData?.filter((wp) => wp.status === WorkerStatus.REJECTED).length || 0}
+                                    </span>
+                                </span>
+                            </span>
                         </button>
                     )}
                     {!isCompany && (
@@ -603,15 +678,39 @@ export const ProcessDetailPage = () => {
                                                         </td>
                                                     </>
                                                 )}
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                                     <button
                                                         onClick={() =>
                                                             navigate(`${baseRoute}/trabajadores/${workerProcess.worker.id}`)
                                                         }
-                                                        className="text-blue-600 hover:text-blue-900 mr-3"
+                                                        className="text-blue-600 hover:text-blue-900"
                                                     >
                                                         Ver Detalle
                                                     </button>
+                                                    {/* Botones de aprobar/rechazar para candidatos completados */}
+                                                    {canEdit && workerProcess.status === WorkerStatus.COMPLETED && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleWorkerStatusChange(workerProcess, WorkerStatus.APPROVED)}
+                                                                disabled={updateWorkerStatusMutation.isPending || capacity?.isFull}
+                                                                className={`ml-2 px-2 py-1 text-xs font-medium rounded ${
+                                                                    capacity?.isFull
+                                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                                }`}
+                                                                title={capacity?.isFull ? 'No hay cupos disponibles' : 'Aprobar candidato'}
+                                                            >
+                                                                ✓ Aprobar
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleWorkerStatusChange(workerProcess, WorkerStatus.REJECTED)}
+                                                                disabled={updateWorkerStatusMutation.isPending}
+                                                                className="ml-1 px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                                                            >
+                                                                ✗ Rechazar
+                                                            </button>
+                                                        </>
+                                                    )}
                                                 </td>
                                             </tr>
                                         )})}
@@ -755,6 +854,177 @@ export const ProcessDetailPage = () => {
                                 </p>
                             );
                         })()}
+                    </div>
+                </div>
+            )}
+
+            {/* Tab Seleccionados/Rechazados */}
+            {activeTab === "final_decisions" && (
+                <div className="space-y-6">
+                    {/* Resumen de cupos */}
+                    {capacity?.maxWorkers && (
+                        <div className={`p-4 rounded-lg ${
+                            capacity.isFull
+                                ? "bg-red-50 border border-red-200"
+                                : "bg-green-50 border border-green-200"
+                        }`}>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className={`text-lg font-semibold ${
+                                        capacity.isFull ? "text-red-700" : "text-green-700"
+                                    }`}>
+                                        Estado de Cupos
+                                    </h3>
+                                    <p className={`text-sm ${
+                                        capacity.isFull ? "text-red-600" : "text-green-600"
+                                    }`}>
+                                        {capacity.isFull
+                                            ? "Todos los cupos han sido ocupados"
+                                            : `Quedan ${capacity.availableSlots} cupo${capacity.availableSlots !== 1 ? "s" : ""} disponible${capacity.availableSlots !== 1 ? "s" : ""}`
+                                        }
+                                    </p>
+                                </div>
+                                <div className={`text-3xl font-bold ${
+                                    capacity.isFull ? "text-red-700" : "text-green-700"
+                                }`}>
+                                    {capacity.approvedCount}/{capacity.maxWorkers}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Sección de Seleccionados */}
+                    <div className="bg-white rounded-lg shadow">
+                        <div className="p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                                <span className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                                    <span className="text-green-600 font-bold">✓</span>
+                                </span>
+                                <h2 className="text-lg font-semibold text-gray-900">
+                                    Candidatos Seleccionados ({workersData?.filter((wp) => wp.status === WorkerStatus.APPROVED).length || 0})
+                                </h2>
+                            </div>
+                            {(() => {
+                                const approvedWorkers = workersData?.filter((wp) => wp.status === WorkerStatus.APPROVED) || [];
+                                return approvedWorkers.length > 0 ? (
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-green-50">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Candidato</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Aprobación</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Puntaje</th>
+                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                {approvedWorkers.map((wp) => (
+                                                    <tr key={wp.id} className="hover:bg-green-50">
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                                                <span className="text-sm font-medium text-gray-900">
+                                                                    {wp.worker.firstName} {wp.worker.lastName}
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            {wp.worker.email}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            {wp.evaluatedAt ? new Date(wp.evaluatedAt).toLocaleDateString() : "-"}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                            {wp.totalScore || "-"}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                            <button
+                                                                onClick={() => navigate(`${baseRoute}/trabajadores/${wp.worker.id}`)}
+                                                                className="text-blue-600 hover:text-blue-900"
+                                                            >
+                                                                Ver Detalle
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <p className="text-center text-gray-500 py-8">
+                                        No hay candidatos seleccionados aún
+                                    </p>
+                                );
+                            })()}
+                        </div>
+                    </div>
+
+                    {/* Sección de Rechazados */}
+                    <div className="bg-white rounded-lg shadow">
+                        <div className="p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                                <span className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                                    <span className="text-red-600 font-bold">✗</span>
+                                </span>
+                                <h2 className="text-lg font-semibold text-gray-900">
+                                    Candidatos Rechazados ({workersData?.filter((wp) => wp.status === WorkerStatus.REJECTED).length || 0})
+                                </h2>
+                            </div>
+                            {(() => {
+                                const rejectedWorkers = workersData?.filter((wp) => wp.status === WorkerStatus.REJECTED) || [];
+                                return rejectedWorkers.length > 0 ? (
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-red-50">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Candidato</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Rechazo</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notas</th>
+                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                {rejectedWorkers.map((wp) => (
+                                                    <tr key={wp.id} className="hover:bg-red-50">
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                                                                <span className="text-sm font-medium text-gray-900">
+                                                                    {wp.worker.firstName} {wp.worker.lastName}
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            {wp.worker.email}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            {wp.evaluatedAt ? new Date(wp.evaluatedAt).toLocaleDateString() : "-"}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                                                            {wp.notes || "-"}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                            <button
+                                                                onClick={() => navigate(`${baseRoute}/trabajadores/${wp.worker.id}`)}
+                                                                className="text-blue-600 hover:text-blue-900"
+                                                            >
+                                                                Ver Detalle
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <p className="text-center text-gray-500 py-8">
+                                        No hay candidatos rechazados
+                                    </p>
+                                );
+                            })()}
+                        </div>
                     </div>
                 </div>
             )}
@@ -1340,6 +1610,101 @@ export const ProcessDetailPage = () => {
                 processId={id!}
                 onClose={() => setBulkInviteModal(false)}
             />
+
+            {/* Modal de Cambio de Estado de Trabajador */}
+            {workerStatusModal.isOpen && workerStatusModal.workerProcess && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                            {workerStatusModal.newStatus === WorkerStatus.APPROVED
+                                ? "✓ Aprobar Candidato"
+                                : "✗ Rechazar Candidato"}
+                        </h3>
+
+                        <div className="mb-4">
+                            <p className="text-gray-600">
+                                ¿Estás seguro de {workerStatusModal.newStatus === WorkerStatus.APPROVED ? "aprobar" : "rechazar"} a{" "}
+                                <span className="font-semibold">
+                                    {workerStatusModal.workerProcess.worker.firstName}{" "}
+                                    {workerStatusModal.workerProcess.worker.lastName}
+                                </span>
+                                ?
+                            </p>
+                            {workerStatusModal.newStatus === WorkerStatus.APPROVED && (
+                                <p className="text-sm text-green-600 mt-2">
+                                    Se enviará un email de felicitación al candidato.
+                                </p>
+                            )}
+                            {workerStatusModal.newStatus === WorkerStatus.REJECTED && (
+                                <p className="text-sm text-red-600 mt-2">
+                                    Se enviará un email de notificación al candidato.
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Info de cupos */}
+                        {workerStatusModal.newStatus === WorkerStatus.APPROVED && capacity?.maxWorkers && (
+                            <div className={`mb-4 p-3 rounded-lg ${
+                                capacity.isFull
+                                    ? "bg-red-50 border border-red-200"
+                                    : "bg-blue-50 border border-blue-200"
+                            }`}>
+                                <p className={`text-sm font-medium ${
+                                    capacity.isFull ? "text-red-700" : "text-blue-700"
+                                }`}>
+                                    Cupos: {capacity.approvedCount}/{capacity.maxWorkers}
+                                    {capacity.isFull
+                                        ? " - No hay cupos disponibles"
+                                        : ` - ${capacity.availableSlots} disponible${capacity.availableSlots !== 1 ? "s" : ""}`
+                                    }
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Notas (opcional):
+                            </label>
+                            <textarea
+                                rows={3}
+                                value={statusNotes}
+                                onChange={(e) => setStatusNotes(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                                placeholder="Agrega comentarios sobre esta decisión..."
+                            />
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleConfirmWorkerStatusChange}
+                                disabled={updateWorkerStatusMutation.isPending || (workerStatusModal.newStatus === WorkerStatus.APPROVED && capacity?.isFull)}
+                                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    workerStatusModal.newStatus === WorkerStatus.APPROVED
+                                        ? "bg-green-600 text-white hover:bg-green-700"
+                                        : "bg-red-600 text-white hover:bg-red-700"
+                                }`}
+                            >
+                                {updateWorkerStatusMutation.isPending
+                                    ? "Procesando..."
+                                    : workerStatusModal.newStatus === WorkerStatus.APPROVED
+                                        ? "Confirmar Aprobación"
+                                        : "Confirmar Rechazo"
+                                }
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setWorkerStatusModal({ isOpen: false, workerProcess: null, newStatus: null });
+                                    setStatusNotes("");
+                                }}
+                                disabled={updateWorkerStatusMutation.isPending}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

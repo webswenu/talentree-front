@@ -19,6 +19,8 @@ export const workerKeys = {
         [...workerKeys.all, "process-workers", processId] as const,
     workerProcess: (id: string) =>
         [...workerKeys.all, "worker-process", id] as const,
+    processCapacity: (processId: string) =>
+        [...workerKeys.all, "process-capacity", processId] as const,
 };
 
 export const useWorkers = (filters?: WorkerFilters) => {
@@ -50,6 +52,17 @@ export const useProcessWorkers = (processId: string) => {
     return useQuery({
         queryKey: workerKeys.processWorkers(processId),
         queryFn: () => workersService.getProcessWorkers(processId),
+        enabled: !!processId,
+    });
+};
+
+/**
+ * Hook para obtener información de cupos de un proceso
+ */
+export const useProcessCapacity = (processId: string) => {
+    return useQuery({
+        queryKey: workerKeys.processCapacity(processId),
+        queryFn: () => workersService.getProcessCapacity(processId),
         enabled: !!processId,
     });
 };
@@ -134,6 +147,13 @@ export const useUpdateWorkerProcessStatus = () => {
                 queryKey: workerKeys.workerProcess(variables.id),
             });
             queryClient.invalidateQueries({ queryKey: workerKeys.all });
+            // Invalidar capacidad de todos los procesos para actualizar cupos
+            queryClient.invalidateQueries({
+                predicate: (query) => {
+                    const key = query.queryKey;
+                    return Array.isArray(key) && key.includes("process-capacity");
+                },
+            });
         },
     });
 };

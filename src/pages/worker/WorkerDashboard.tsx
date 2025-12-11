@@ -14,6 +14,8 @@ import { useDebounce } from "../../hooks/useDebounce";
 import { Modal } from "../../components/common/Modal";
 import { toast } from "../../utils/toast";
 import { QuickActions } from "../../components/widgets/QuickActions";
+import { useMyProcessInvitations, useAcceptProcessInvitation } from "../../hooks/useProcessInvitations";
+import { Mail, X, Calendar, Building } from "lucide-react";
 
 export const WorkerDashboard = () => {
     const { user } = useAuthStore();
@@ -27,6 +29,10 @@ export const WorkerDashboard = () => {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const applyMutation = useApplyToProcess();
+
+    // Obtener invitaciones pendientes del trabajador
+    const { data: myInvitations } = useMyProcessInvitations();
+    const acceptInvitationMutation = useAcceptProcessInvitation();
 
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearch = useDebounce(searchTerm, 300);
@@ -243,6 +249,15 @@ export const WorkerDashboard = () => {
         setSelectedProcessId(null);
     };
 
+    const handleAcceptInvitation = async (token: string) => {
+        try {
+            await acceptInvitationMutation.mutateAsync({ token });
+            toast.success("Invitación aceptada exitosamente");
+        } catch {
+            toast.error("Error al aceptar la invitación. Por favor intenta nuevamente.");
+        }
+    };
+
     return (
         <div className="space-y-8 animate-fade-in">
             {/* Header */}
@@ -254,6 +269,92 @@ export const WorkerDashboard = () => {
                     Bienvenido, <span className="text-primary-600/80">{user?.firstName}</span>
                 </p>
             </div>
+
+            {/* Invitaciones a Procesos */}
+            {myInvitations && myInvitations.length > 0 && (
+                <>
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t-2 border-gradient-to-r from-transparent via-purple-300 to-transparent"></div>
+                        </div>
+                        <div className="relative flex justify-center">
+                            <span className="bg-gray-50 px-4 text-sm font-semibold text-purple-600">Invitaciones a Procesos</span>
+                        </div>
+                    </div>
+
+                    <div className="glass-white rounded-2xl p-4 sm:p-6 border-2 border-purple-200/50">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Mail className="w-6 h-6 text-purple-600" />
+                            <h2 className="text-xl font-bold text-gray-900">
+                                Tienes {myInvitations.length} invitación{myInvitations.length > 1 ? 'es' : ''} pendiente{myInvitations.length > 1 ? 's' : ''}
+                            </h2>
+                        </div>
+                        <div className="space-y-3">
+                            {myInvitations.map((invitation) => {
+                                const daysLeft = Math.ceil(
+                                    (new Date(invitation.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                                );
+                                const isExpiringSoon = daysLeft <= 2;
+
+                                return (
+                                    <div
+                                        key={invitation.id}
+                                        className={`p-4 rounded-xl border transition-all duration-300 ${
+                                            isExpiringSoon
+                                                ? "bg-red-50/50 border-red-300/50"
+                                                : "bg-purple-50/30 border-purple-200/50"
+                                        }`}
+                                    >
+                                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                    {isExpiringSoon && (
+                                                        <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-bold rounded-xl flex-shrink-0">
+                                                            ⏰ ¡VENCE PRONTO!
+                                                        </span>
+                                                    )}
+                                                    <h3 className="text-base sm:text-lg font-bold text-gray-900 break-words">
+                                                        {invitation.processName || "Proceso"}
+                                                    </h3>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                        <Building className="w-4 h-4" />
+                                                        <span className="font-medium">
+                                                            {invitation.process?.company?.name || "Empresa"}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                        <Calendar className="w-4 h-4" />
+                                                        <span>
+                                                            Vence en {daysLeft} día{daysLeft !== 1 ? 's' : ''}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 self-start lg:self-center">
+                                                <button
+                                                    onClick={() => handleAcceptInvitation(invitation.id)}
+                                                    disabled={acceptInvitationMutation.isPending}
+                                                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 shadow-md whitespace-nowrap ${
+                                                        isExpiringSoon
+                                                            ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+                                                            : "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                                                    } disabled:opacity-50`}
+                                                >
+                                                    {acceptInvitationMutation.isPending
+                                                        ? "Aceptando..."
+                                                        : "Aceptar Invitación"}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </>
+            )}
 
             {/* Separator */}
             <div className="relative">

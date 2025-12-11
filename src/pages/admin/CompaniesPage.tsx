@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useCompanies, useDeleteCompany } from "../../hooks/useCompanies";
+import { useCompanies, useDeleteCompany, useUpdateCompany } from "../../hooks/useCompanies";
 import { Company } from "../../types/company.types";
 import { CompanyModal } from "../../components/admin/CompanyModal";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
@@ -8,7 +8,7 @@ import { useAuthStore } from "../../store/authStore";
 import { Permission, hasPermission } from "../../utils/permissions";
 import { toast } from "../../utils/toast";
 import { EditIcon, TrashIcon } from "../../components/common/ActionIcons";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, PowerOff, Power } from "lucide-react";
 
 export const CompaniesPage = () => {
     const { user } = useAuthStore();
@@ -20,6 +20,7 @@ export const CompaniesPage = () => {
     const baseRoute = location.pathname.includes("/evaluador") ? "/evaluador" : "/admin";
     const allCompanies = companiesData?.data || [];
     const deleteMutation = useDeleteCompany();
+    const updateMutation = useUpdateCompany();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(
         null
@@ -106,6 +107,42 @@ export const CompaniesPage = () => {
     const handleCancelDelete = () => {
         setIsConfirmDeleteOpen(false);
         setCompanyToDelete(null);
+    };
+
+    const handleToggleActive = async (company: Company) => {
+        try {
+            await updateMutation.mutateAsync({
+                id: company.id,
+                data: { isActive: !company.isActive },
+            });
+            toast.success(
+                `Empresa ${!company.isActive ? "activada" : "desactivada"} correctamente`
+            );
+        } catch (err: unknown) {
+            let errorMessage = "Error al cambiar el estado de la empresa";
+
+            if (err && typeof err === "object" && "response" in err) {
+                const axiosError = err as {
+                    response?: {
+                        data?: {
+                            message?: string | string[];
+                        };
+                    };
+                };
+
+                const message = axiosError.response?.data?.message;
+
+                if (typeof message === "string") {
+                    errorMessage = message;
+                } else if (Array.isArray(message) && message.length > 0) {
+                    errorMessage = message[0];
+                }
+            } else if (err instanceof Error) {
+                errorMessage = err.message;
+            }
+
+            toast.error(errorMessage);
+        }
     };
 
     const handleCloseModal = () => {
@@ -290,6 +327,32 @@ export const CompaniesPage = () => {
                                         >
                                             <ClipboardList size={20} />
                                         </button>
+                                        {canEdit && (
+                                            <button
+                                                onClick={() =>
+                                                    handleToggleActive(company)
+                                                }
+                                                disabled={
+                                                    updateMutation.isPending
+                                                }
+                                                className={`mr-4 p-2 rounded-lg transition-colors inline-flex items-center justify-center disabled:opacity-50 ${
+                                                    company.isActive
+                                                        ? "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                                                        : "text-green-600 hover:text-green-900 hover:bg-green-50"
+                                                }`}
+                                                title={
+                                                    company.isActive
+                                                        ? "Desactivar empresa"
+                                                        : "Activar empresa"
+                                                }
+                                            >
+                                                {company.isActive ? (
+                                                    <PowerOff size={20} />
+                                                ) : (
+                                                    <Power size={20} />
+                                                )}
+                                            </button>
+                                        )}
                                         {canEdit && (
                                             <button
                                                 onClick={() =>

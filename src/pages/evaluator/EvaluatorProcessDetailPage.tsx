@@ -5,6 +5,7 @@ import { processService } from "../../services/process.service";
 import {
     useProcessWorkers,
     useUpdateWorkerProcessStatus,
+    useProcessCapacity,
 } from "../../hooks/useWorkers";
 import {
     WorkerStatus,
@@ -30,6 +31,7 @@ export const EvaluatorProcessDetailPage = () => {
     const { data: candidates, isLoading: candidatesLoading } =
         useProcessWorkers(id || "");
     const updateStatusMutation = useUpdateWorkerProcessStatus();
+    const { data: capacity } = useProcessCapacity(id || "");
 
     const [activeTab, setActiveTab] = useState<
         "info" | "candidates" | "pending" | "video"
@@ -144,7 +146,7 @@ export const EvaluatorProcessDetailPage = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-6 gap-4">
                 <div className="bg-white rounded-lg shadow p-4">
                     <h3 className="text-sm font-medium text-gray-500">
                         Pendientes
@@ -182,6 +184,26 @@ export const EvaluatorProcessDetailPage = () => {
                     <p className="text-2xl font-bold text-gray-800 mt-2">
                         {stats.total}
                     </p>
+                </div>
+                {/* Card de Cupos */}
+                <div className={`rounded-lg shadow p-4 ${capacity?.isFull ? 'bg-red-50 border-2 border-red-200' : 'bg-white'}`}>
+                    <h3 className="text-sm font-medium text-gray-500">
+                        Cupos
+                    </h3>
+                    {capacity?.maxWorkers ? (
+                        <>
+                            <p className={`text-2xl font-bold mt-2 ${capacity.isFull ? 'text-red-600' : 'text-purple-600'}`}>
+                                {capacity.approvedCount}/{capacity.maxWorkers}
+                            </p>
+                            <p className={`text-xs mt-1 ${capacity.isFull ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                                {capacity.isFull ? 'Proceso lleno' : `${capacity.availableSlots} disponible${capacity.availableSlots !== 1 ? 's' : ''}`}
+                            </p>
+                        </>
+                    ) : (
+                        <p className="text-2xl font-bold text-gray-400 mt-2">
+                            Sin límite
+                        </p>
+                    )}
                 </div>
             </div>
 
@@ -404,9 +426,14 @@ export const EvaluatorProcessDetailPage = () => {
                                                                 )
                                                             }
                                                             disabled={
-                                                                updateStatusMutation.isPending
+                                                                updateStatusMutation.isPending || capacity?.isFull
                                                             }
-                                                            className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                                                            className={`disabled:opacity-50 disabled:cursor-not-allowed ${
+                                                                capacity?.isFull
+                                                                    ? 'text-gray-400'
+                                                                    : 'text-green-600 hover:text-green-900'
+                                                            }`}
+                                                            title={capacity?.isFull ? 'No hay cupos disponibles' : 'Aprobar candidato'}
                                                         >
                                                             Aprobar
                                                         </button>

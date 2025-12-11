@@ -6,6 +6,7 @@ import { useAuthStore } from "../../store/authStore";
 import { UserRole } from "../../types/user.types";
 import { useNavigate } from "react-router-dom";
 import { workersService } from "../../services/workers.service";
+import { contactService } from "../../services/contact.service";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -14,6 +15,7 @@ export const LandingPage = () => {
     const { user } = useAuthStore();
     const [applyingProcessId, setApplyingProcessId] = useState<string | null>(null);
     const [contactFormSubmitted, setContactFormSubmitted] = useState(false);
+    const [isSubmittingContact, setIsSubmittingContact] = useState(false);
     const [contactForm, setContactForm] = useState({
         nombre: '',
         telefono: '',
@@ -64,7 +66,7 @@ export const LandingPage = () => {
         }
     };
 
-    const handleContactSubmit = (e: React.FormEvent) => {
+    const handleContactSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         // Validar que todos los campos estén llenos
@@ -80,22 +82,34 @@ export const LandingPage = () => {
             return;
         }
 
-        // Por ahora solo mostramos el mensaje de éxito
-        // TODO: Integrar con backend para enviar el email a contacto@talentree.cl
-        console.log("Datos del formulario:", contactForm);
+        try {
+            setIsSubmittingContact(true);
 
-        setContactFormSubmitted(true);
-        setContactForm({
-            nombre: '',
-            telefono: '',
-            correo: '',
-            asunto: ''
-        });
+            // Enviar formulario al backend
+            const response = await contactService.sendContactForm(contactForm);
 
-        // Ocultar mensaje después de 5 segundos
-        setTimeout(() => {
-            setContactFormSubmitted(false);
-        }, 5000);
+            // Mostrar mensaje de éxito
+            toast.success(response.message);
+            setContactFormSubmitted(true);
+
+            // Limpiar formulario
+            setContactForm({
+                nombre: '',
+                telefono: '',
+                correo: '',
+                asunto: ''
+            });
+
+            // Ocultar mensaje después de 5 segundos
+            setTimeout(() => {
+                setContactFormSubmitted(false);
+            }, 5000);
+        } catch (error: any) {
+            const message = error?.response?.data?.message || "Error al enviar el mensaje. Por favor intenta nuevamente.";
+            toast.error(message);
+        } finally {
+            setIsSubmittingContact(false);
+        }
     };
 
     return (
@@ -542,9 +556,10 @@ export const LandingPage = () => {
                             />
                             <button
                                 type="submit"
-                                className="bg-teal-500 text-white px-6 py-3 rounded-lg hover:bg-teal-600 hover:scale-105 transition-all duration-300 w-full font-medium"
+                                disabled={isSubmittingContact}
+                                className="bg-teal-500 text-white px-6 py-3 rounded-lg hover:bg-teal-600 hover:scale-105 transition-all duration-300 w-full font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
-                                Enviar
+                                {isSubmittingContact ? "Enviando..." : "Enviar"}
                             </button>
                         </form>
                     </div>

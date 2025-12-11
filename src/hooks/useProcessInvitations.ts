@@ -15,6 +15,7 @@ export const processInvitationKeys = {
         [...processInvitationKeys.lists(), filters] as const,
     detail: (id: string) => [...processInvitationKeys.all, "detail", id] as const,
     byToken: (token: string) => [...processInvitationKeys.all, "token", token] as const,
+    myInvitations: () => [...processInvitationKeys.all, "my-invitations"] as const,
 };
 
 /**
@@ -47,6 +48,16 @@ export const useProcessInvitationByToken = (token: string) => {
         queryKey: processInvitationKeys.byToken(token),
         queryFn: () => processInvitationsService.findByToken(token),
         enabled: !!token,
+    });
+};
+
+/**
+ * Hook para obtener las invitaciones pendientes del trabajador logueado
+ */
+export const useMyProcessInvitations = () => {
+    return useQuery({
+        queryKey: processInvitationKeys.myInvitations(),
+        queryFn: () => processInvitationsService.getMyInvitations(),
     });
 };
 
@@ -118,6 +129,8 @@ export const useAcceptProcessInvitation = () => {
             processInvitationsService.accept(dto),
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: processInvitationKeys.all });
+            queryClient.invalidateQueries({ queryKey: processInvitationKeys.myInvitations() });
+            queryClient.invalidateQueries({ queryKey: ["worker-processes"] });
 
             if (data.status === "applied") {
                 toast.success(data.message);
