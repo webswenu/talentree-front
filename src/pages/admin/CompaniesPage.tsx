@@ -1,6 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useCompanies, useDeleteCompany, useUpdateCompany } from "../../hooks/useCompanies";
+import {
+    useCompanies,
+    useCompaniesStats,
+    useDeleteCompany,
+    useUpdateCompany,
+} from "../../hooks/useCompanies";
 import { Company } from "../../types/company.types";
 import { CompanyModal } from "../../components/admin/CompanyModal";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
@@ -10,15 +15,47 @@ import { toast } from "../../utils/toast";
 import { EditIcon, TrashIcon } from "../../components/common/ActionIcons";
 import { ClipboardList, PowerOff, Power } from "lucide-react";
 
+const PAGE_SIZE = 10;
+
 export const CompaniesPage = () => {
     const { user } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
-    const { data: companiesData, isLoading, error } = useCompanies();
+
+    const [searchTerm, setSearchTerm] = useState("");
+    const [appliedSearch, setAppliedSearch] = useState("");
+    const [page, setPage] = useState(1);
+
+    // La búsqueda se resuelve en el backend sobre TODAS las empresas, no solo
+    // sobre la página cargada. Se espera a que el usuario deje de escribir.
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setAppliedSearch(searchTerm.trim());
+            setPage(1);
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    const {
+        data: companiesData,
+        isLoading,
+        isFetching,
+        error,
+    } = useCompanies({
+        page,
+        limit: PAGE_SIZE,
+        search: appliedSearch || undefined,
+    });
+
+    // Los totales salen del endpoint de estadísticas: cuentan sobre toda la
+    // base, no sobre la página que se está mostrando.
+    const { data: stats } = useCompaniesStats();
 
     // Detect if in admin or evaluador
     const baseRoute = location.pathname.includes("/evaluador") ? "/evaluador" : "/admin";
-    const allCompanies = companiesData?.data || [];
+    const companies = companiesData?.data || [];
+    const meta = companiesData?.meta;
+    const totalPages = meta?.totalPages || 1;
     const deleteMutation = useDeleteCompany();
     const updateMutation = useUpdateCompany();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,26 +66,12 @@ export const CompaniesPage = () => {
     const [companyToDelete, setCompanyToDelete] = useState<Company | null>(
         null
     );
-    const [searchTerm, setSearchTerm] = useState("");
 
     const canCreate =
         user && hasPermission(user.role, Permission.COMPANIES_CREATE);
     const canEdit = user && hasPermission(user.role, Permission.COMPANIES_EDIT);
     const canDelete =
         user && hasPermission(user.role, Permission.COMPANIES_DELETE);
-
-    // Filtrar empresas por búsqueda
-    const companies = allCompanies.filter((company) => {
-        if (!searchTerm) return true;
-        const search = searchTerm.toLowerCase();
-        return (
-            company.name.toLowerCase().includes(search) ||
-            company.rut?.toLowerCase().includes(search) ||
-            company.industry?.toLowerCase().includes(search) ||
-            company.city?.toLowerCase().includes(search) ||
-            company.user?.email?.toLowerCase().includes(search)
-        );
-    });
 
     const handleEdit = (company: Company) => {
         setSelectedCompany(company);
@@ -196,19 +219,19 @@ export const CompaniesPage = () => {
                 <div className="card">
                     <p className="text-sm text-gray-600">Total Empresas</p>
                     <p className="text-3xl font-bold text-primary-600">
-                        {allCompanies?.length || 0}
+                        {stats?.total ?? "-"}
                     </p>
                 </div>
                 <div className="card">
                     <p className="text-sm text-gray-600">Empresas Activas</p>
                     <p className="text-3xl font-bold text-green-600">
-                        {allCompanies?.filter((c) => c.isActive).length || 0}
+                        {stats?.active ?? "-"}
                     </p>
                 </div>
                 <div className="card">
                     <p className="text-sm text-gray-600">Empresas Inactivas</p>
                     <p className="text-3xl font-bold text-gray-600">
-                        {allCompanies?.filter((c) => !c.isActive).length || 0}
+                        {stats?.inactive ?? "-"}
                     </p>
                 </div>
             </div>
@@ -225,9 +248,12 @@ export const CompaniesPage = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="input w-full"
                 />
-                {searchTerm && (
+                {appliedSearch && (
                     <p className="text-sm text-gray-500 mt-2">
-                        Mostrando {companies.length} de {allCompanies.length} empresas
+                        {meta?.total ?? 0} empresa
+                        {(meta?.total ?? 0) === 1 ? "" : "s"} coinciden con "
+                        {appliedSearch}"
+                        {isFetching && " · buscando..."}
                     </p>
                 )}
             </div>
@@ -387,9 +413,11 @@ export const CompaniesPage = () => {
                     {companies?.length === 0 && (
                         <div className="text-center py-12">
                             <p className="text-gray-500">
-                                No hay empresas registradas
+                                {appliedSearch
+                                    ? `No se encontraron empresas para "${appliedSearch}"`
+                                    : "No hay empresas registradas"}
                             </p>
-                            {canCreate && (
+                            {!appliedSearch && canCreate && (
                                 <button
                                     onClick={handleCreate}
                                     className="btn-primary mt-4"
@@ -400,6 +428,45 @@ export const CompaniesPage = () => {
                         </div>
                     )}
                 </div>
+
+                {/* Paginación */}
+                {meta && meta.total > 0 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-4 border-t">
+                        <p className="text-sm text-gray-600">
+                            Mostrando{" "}
+                            <span className="font-medium">
+                                {(meta.page - 1) * meta.limit + 1}
+                            </span>
+                            {" - "}
+                            <span className="font-medium">
+                                {Math.min(meta.page * meta.limit, meta.total)}
+                            </span>{" "}
+                            de <span className="font-medium">{meta.total}</span>{" "}
+                            empresas
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                disabled={page <= 1 || isFetching}
+                                className="btn-secondary px-3 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Anterior
+                            </button>
+                            <span className="text-sm text-gray-600 px-2">
+                                Página {meta.page} de {totalPages}
+                            </span>
+                            <button
+                                onClick={() =>
+                                    setPage((p) => Math.min(totalPages, p + 1))
+                                }
+                                disabled={page >= totalPages || isFetching}
+                                className="btn-secondary px-3 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Siguiente
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Modal */}
