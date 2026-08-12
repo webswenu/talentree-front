@@ -35,7 +35,9 @@ export const useCreateCompany = () => {
         mutationFn: (companyData: CreateCompanyDto) =>
             companiesService.create(companyData),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: companyKeys.lists() });
+            // companyKeys.all cubre listados, detalles y estadísticas: si solo
+            // se invalidan los listados, las tarjetas de totales quedan viejas.
+            queryClient.invalidateQueries({ queryKey: companyKeys.all });
             // Invalidar usuarios porque pueden tener companyId actualizado
             queryClient.invalidateQueries({ queryKey: ["users"] });
         },
@@ -48,11 +50,8 @@ export const useUpdateCompany = () => {
     return useMutation({
         mutationFn: ({ id, data }: { id: string; data: UpdateCompanyDto }) =>
             companiesService.update(id, data),
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({
-                queryKey: companyKeys.detail(variables.id),
-            });
-            queryClient.invalidateQueries({ queryKey: companyKeys.lists() });
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: companyKeys.all });
             // Invalidar usuarios porque pueden tener companyId actualizado
             queryClient.invalidateQueries({ queryKey: ["users"] });
         },
@@ -65,7 +64,7 @@ export const useDeleteCompany = () => {
     return useMutation({
         mutationFn: (id: string) => companiesService.delete(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: companyKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: companyKeys.all });
         },
     });
 };

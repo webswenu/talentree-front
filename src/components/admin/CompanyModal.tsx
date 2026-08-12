@@ -8,6 +8,8 @@ import {
 import { Company } from "../../types/company.types";
 import { UserRole } from "../../types/user.types";
 import { toast } from "../../utils/toast";
+import { getApiErrorMessage } from "../../utils/apiError";
+import { getRutError } from "../../utils/rut";
 
 interface CompanyModalProps {
     company: Company | null;
@@ -137,29 +139,7 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
             setShowConfirmPassword(false);
             setShowUserForm(false);
         } catch (err: unknown) {
-            let errorMessage = "Error al crear usuario";
-            
-            if (err && typeof err === "object" && "response" in err) {
-                const axiosError = err as {
-                    response?: {
-                        data?: {
-                            message?: string | string[];
-                        };
-                    };
-                };
-                
-                const message = axiosError.response?.data?.message;
-                
-                if (typeof message === "string") {
-                    errorMessage = message;
-                } else if (Array.isArray(message) && message.length > 0) {
-                    errorMessage = message[0];
-                }
-            } else if (err instanceof Error) {
-                errorMessage = err.message;
-            }
-            
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(err, "Error al crear usuario"));
         }
     };
 
@@ -200,34 +180,32 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
             setShowResetPass(false);
             setShowResetConfirmPass(false);
         } catch (err: unknown) {
-            let errorMessage = "Error al cambiar contraseña";
-            
-            if (err && typeof err === "object" && "response" in err) {
-                const axiosError = err as {
-                    response?: {
-                        data?: {
-                            message?: string | string[];
-                        };
-                    };
-                };
-                
-                const message = axiosError.response?.data?.message;
-                
-                if (typeof message === "string") {
-                    errorMessage = message;
-                } else if (Array.isArray(message) && message.length > 0) {
-                    errorMessage = message[0];
-                }
-            } else if (err instanceof Error) {
-                errorMessage = err.message;
-            }
-            
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(err, "Error al cambiar contraseña"));
         }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!isEditing) {
+            // Al abrir el formulario de creación rápida de usuario, el <select required>
+            // se desmonta y se pierde su validación nativa. Sin esta guarda se enviaría
+            // userId vacío y el backend responde 400 "userId must be a UUID".
+            if (!formData.userId) {
+                toast.error(
+                    showUserForm
+                        ? "Primero presiona '✓ Crear y Seleccionar' para confirmar el usuario representante"
+                        : "Debes seleccionar un usuario representante"
+                );
+                return;
+            }
+
+            const rutError = getRutError(formData.rut);
+            if (rutError) {
+                toast.error(rutError);
+                return;
+            }
+        }
 
         try {
             if (isEditing) {
@@ -244,36 +222,17 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
             }
             onClose();
         } catch (err: unknown) {
-            let errorMessage = "Error al guardar la empresa";
-
-            if (err && typeof err === "object" && "response" in err) {
-                const axiosError = err as {
-                    response?: {
-                        data?: {
-                            message?: string | string[];
-                        };
-                    };
-                };
-
-                const message = axiosError.response?.data?.message;
-
-                if (typeof message === "string") {
-                    errorMessage = message;
-                } else if (Array.isArray(message) && message.length > 0) {
-                    errorMessage = message[0];
-                }
-            } else if (err instanceof Error) {
-                errorMessage = err.message;
-            }
-
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(err, "Error al guardar la empresa"));
         }
     };
 
     const mutation = isEditing ? updateMutation : createMutation;
 
+    // Un usuario solo puede representar a UNA empresa: la relación es uno a uno y la
+    // columna user_id es única. Si se ofrece un usuario ya asignado, el guardado falla
+    // con un error de base de datos que llega al usuario como un 400 genérico.
     const availableUsers =
-        users?.filter((u) => u.role === UserRole.COMPANY) || [];
+        users?.filter((u) => u.role === UserRole.COMPANY && !u.company) || [];
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
@@ -286,9 +245,10 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
 
                 {mutation.isError && (
                     <div className="mx-6 mt-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                        {mutation.error instanceof Error
-                            ? mutation.error.message
-                            : "Error al guardar la empresa"}
+                        {getApiErrorMessage(
+                            mutation.error,
+                            "Error al guardar la empresa"
+                        )}
                     </div>
                 )}
 
@@ -389,27 +349,39 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                                 </div>
 
                                 {!showUserForm ? (
-                                    <select
-                                        name="userId"
-                                        value={formData.userId}
-                                        onChange={handleChange}
-                                        className="input"
-                                        required
-                                        disabled={mutation.isPending}
-                                    >
-                                        <option value="">
-                                            Seleccionar usuario...
-                                        </option>
-                                        {availableUsers.map((user) => (
-                                            <option
-                                                key={user.id}
-                                                value={user.id}
-                                            >
-                                                {user.firstName} {user.lastName}{" "}
-                                                ({user.email})
+                                    <>
+                                        <select
+                                            name="userId"
+                                            value={formData.userId}
+                                            onChange={handleChange}
+                                            className="input"
+                                            required
+                                            disabled={mutation.isPending}
+                                        >
+                                            <option value="">
+                                                Seleccionar usuario...
                                             </option>
-                                        ))}
-                                    </select>
+                                            {availableUsers.map((user) => (
+                                                <option
+                                                    key={user.id}
+                                                    value={user.id}
+                                                >
+                                                    {user.firstName}{" "}
+                                                    {user.lastName} (
+                                                    {user.email})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {availableUsers.length === 0 && (
+                                            <p className="text-sm text-gray-500 mt-1">
+                                                No hay usuarios disponibles: los
+                                                usuarios existentes ya
+                                                representan a otra empresa. Usa
+                                                "+ Crear Usuario" para agregar
+                                                uno nuevo.
+                                            </p>
+                                        )}
+                                    </>
                                 ) : (
                                     <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50 space-y-3">
                                         <p className="text-sm text-gray-700 mb-3">
