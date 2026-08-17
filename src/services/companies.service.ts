@@ -57,6 +57,20 @@ export interface CompanyDashboardStats {
     };
 }
 
+/**
+ * Qué se destruye al eliminar. Se pide ANTES de mostrar la confirmación:
+ * el borrado se lleva procesos, postulaciones, tests rendidos e informes,
+ * y nada de eso se recupera.
+ */
+export interface ImpactoBorrado {
+    procesos: number;
+    postulaciones: number;
+    respuestasDeTest: number;
+    informes: number;
+    invitaciones: number;
+    candidatosAfectados: number;
+}
+
 export interface CompanyFilters {
     active?: boolean;
     search?: string;
@@ -134,6 +148,13 @@ class CompaniesService {
     async getStats(id: string): Promise<CompanyDetailStats> {
         const { data } = await apiService.get<CompanyDetailStats>(
             `/companies/${id}/stats`
+        );
+        return data;
+    }
+
+    async getImpactoBorrado(id: string): Promise<ImpactoBorrado> {
+        const { data } = await apiService.get<ImpactoBorrado>(
+            `/companies/${id}/impacto-borrado`
         );
         return data;
     }

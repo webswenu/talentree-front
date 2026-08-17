@@ -1,4 +1,5 @@
 import { apiService } from "./api.service";
+import type { ImpactoBorrado } from "./companies.service";
 import {
     SelectionProcess,
     CreateProcessDto,
@@ -102,6 +103,13 @@ class ProcessesService {
             data
         );
         return response.data;
+    }
+
+    async getImpactoBorrado(id: string): Promise<ImpactoBorrado> {
+        const { data } = await apiService.get<ImpactoBorrado>(
+            `/processes/${id}/impacto-borrado`
+        );
+        return data;
     }
 
     async delete(id: string): Promise<void> {

@@ -18,6 +18,9 @@ import { EyeIcon, SettingsIcon, TrashIcon } from "../../components/common/Action
 import { ListError } from "../../components/common/ListError";
 import { useDebounce } from "../../hooks/useDebounce";
 import { formatDateShort } from "../../utils/formatters";
+import { AvisoBorrado } from "../../components/common/AvisoBorrado";
+import processesService from "../../services/processes.service";
+import type { ImpactoBorrado } from "../../services/companies.service";
 
 /**
  * IMPORTANTE: Patrón de filtros para inputs controlados
@@ -92,9 +95,23 @@ export default function ProcessesPage() {
     const [processToDelete, setProcessToDelete] =
         useState<SelectionProcess | null>(null);
 
-    const handleDelete = (process: SelectionProcess) => {
+    // Antes de confirmar se consulta qué arrastra el borrado: eliminar un
+    // proceso se lleva sus postulaciones, tests rendidos e informes.
+    const [impacto, setImpacto] = useState<ImpactoBorrado | undefined>();
+    const [cargandoImpacto, setCargandoImpacto] = useState(false);
+
+    const handleDelete = async (process: SelectionProcess) => {
         setProcessToDelete(process);
+        setImpacto(undefined);
         setIsConfirmDeleteOpen(true);
+        setCargandoImpacto(true);
+        try {
+            setImpacto(await processesService.getImpactoBorrado(process.id));
+        } catch {
+            // Si no se puede consultar, la confirmación cae al texto genérico.
+        } finally {
+            setCargandoImpacto(false);
+        }
     };
 
     const handleConfirmDelete = async () => {
@@ -452,7 +469,13 @@ export default function ProcessesPage() {
                     onClose={handleCancelDelete}
                     onConfirm={handleConfirmDelete}
                     title="Eliminar Proceso"
-                    message={`¿Estás seguro de eliminar el proceso "${processToDelete?.name}"? Esta acción no se puede deshacer.`}
+                    message={
+                        <AvisoBorrado
+                            queSeElimina={`el proceso "${processToDelete?.name}"`}
+                            impacto={impacto}
+                            cargando={cargandoImpacto}
+                        />
+                    }
                     confirmText="Eliminar"
                     cancelText="Cancelar"
                     isLoading={deleteMutation.isPending}

@@ -15,6 +15,9 @@ import { toast } from "../../utils/toast";
 import { EditIcon, TrashIcon } from "../../components/common/ActionIcons";
 import { ClipboardList, PowerOff, Power } from "lucide-react";
 import { ListError } from "../../components/common/ListError";
+import { AvisoBorrado } from "../../components/common/AvisoBorrado";
+import companiesService from "../../services/companies.service";
+import type { ImpactoBorrado } from "../../services/companies.service";
 
 const PAGE_SIZE = 10;
 
@@ -85,9 +88,23 @@ export const CompaniesPage = () => {
         setIsModalOpen(true);
     };
 
-    const handleDelete = (company: Company) => {
+    // Eliminar una empresa ahora SÍ es posible aunque tenga procesos, pero se
+    // lleva todo lo que cuelga de ellos. Se consulta antes de confirmar.
+    const [impacto, setImpacto] = useState<ImpactoBorrado | undefined>();
+    const [cargandoImpacto, setCargandoImpacto] = useState(false);
+
+    const handleDelete = async (company: Company) => {
         setCompanyToDelete(company);
+        setImpacto(undefined);
         setIsConfirmDeleteOpen(true);
+        setCargandoImpacto(true);
+        try {
+            setImpacto(await companiesService.getImpactoBorrado(company.id));
+        } catch {
+            // Si no se puede consultar, la confirmación cae al texto genérico.
+        } finally {
+            setCargandoImpacto(false);
+        }
     };
 
     const handleConfirmDelete = async () => {
@@ -495,7 +512,13 @@ export const CompaniesPage = () => {
                 onClose={handleCancelDelete}
                 onConfirm={handleConfirmDelete}
                 title="Eliminar Empresa"
-                message={`¿Estás seguro de eliminar la empresa "${companyToDelete?.name}"? Esta acción no se puede deshacer.`}
+                message={
+                    <AvisoBorrado
+                        queSeElimina={`la empresa "${companyToDelete?.name}"`}
+                        impacto={impacto}
+                        cargando={cargandoImpacto}
+                    />
+                }
                 confirmText="Eliminar"
                 cancelText="Cancelar"
                 isLoading={deleteMutation.isPending}
