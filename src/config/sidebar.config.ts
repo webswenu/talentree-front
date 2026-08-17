@@ -288,6 +288,42 @@ export const sidebarSections: SidebarSection[] = [
             beforeThis: true,
         },
     },
+
+    /*
+     * P-26. La pantalla de perfil existe y tiene ruta en los CINCO roles
+     * (/admin/perfil, /empresa/perfil, /evaluador/perfil, /invitado/perfil),
+     * pero solo el trabajador la tenía en el menú: en los otros cuatro no
+     * había forma de llegar a ella desde la interfaz, solo escribiendo la URL
+     * a mano. Se declaran por separado porque cada rol tiene su prefijo.
+     */
+    {
+        path: "/admin/perfil",
+        label: "Mi Perfil",
+        icon: User,
+        roles: [UserRole.ADMIN_TALENTREE],
+        separator: { label: "Perfil", beforeThis: true },
+    },
+    {
+        path: "/empresa/perfil",
+        label: "Mi Perfil",
+        icon: User,
+        roles: [UserRole.COMPANY],
+        separator: { label: "Perfil", beforeThis: true },
+    },
+    {
+        path: "/evaluador/perfil",
+        label: "Mi Perfil",
+        icon: User,
+        roles: [UserRole.EVALUATOR],
+        separator: { label: "Perfil", beforeThis: true },
+    },
+    {
+        path: "/invitado/perfil",
+        label: "Mi Perfil",
+        icon: User,
+        roles: [UserRole.GUEST],
+        separator: { label: "Perfil", beforeThis: true },
+    },
 ];
 
 

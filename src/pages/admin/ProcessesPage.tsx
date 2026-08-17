@@ -15,6 +15,9 @@ import { useAuthStore } from "../../store/authStore";
 import { Permission, hasPermission } from "../../utils/permissions";
 import { UserRole } from "../../types/user.types";
 import { EyeIcon, SettingsIcon, TrashIcon } from "../../components/common/ActionIcons";
+import { ListError } from "../../components/common/ListError";
+import { useDebounce } from "../../hooks/useDebounce";
+import { formatDateShort } from "../../utils/formatters";
 
 /**
  * IMPORTANTE: Patrón de filtros para inputs controlados
@@ -32,6 +35,8 @@ export default function ProcessesPage() {
     const [page, setPage] = useState(1);
     const [limit] = useState(10);
     const [search, setSearch] = useState("");
+    // P-36: sin esto se consultaba al servidor en cada tecla.
+    const busqueda = useDebounce(search, 300);
     const [statusFilter, setStatusFilter] = useState("");
     const [companyFilter, setCompanyFilter] = useState("");
 
@@ -42,6 +47,15 @@ export default function ProcessesPage() {
 
     // Initialize company filter from URL params or user company
     useEffect(() => {
+        // D-06. La tarjeta "Procesos Activos" del panel navega a
+        // /admin/procesos?status=active, pero este efecto solo leía companyId:
+        // el administrador pulsaba una tarjeta que decía "Procesos Activos" y
+        // aterrizaba en el listado con TODOS los procesos, sin filtrar.
+        const statusFromUrl = searchParams.get("status");
+        if (statusFromUrl) {
+            setStatusFilter(statusFromUrl);
+        }
+
         const companyIdFromUrl = searchParams.get("companyId");
         if (companyIdFromUrl) {
             setCompanyFilter(companyIdFromUrl);
@@ -59,14 +73,19 @@ export default function ProcessesPage() {
         () => ({
             page,
             limit,
-            ...(search && { search }),
+            ...(busqueda && { search: busqueda }),
             ...(statusFilter && { status: statusFilter }),
             ...(companyFilter && { companyId: companyFilter }),
         }),
-        [page, limit, search, statusFilter, companyFilter]
+        [page, limit, busqueda, statusFilter, companyFilter]
     );
 
-    const { data: processesData, isLoading } = useProcesses(filters);
+    const {
+        data: processesData,
+        isLoading,
+        error,
+        refetch,
+    } = useProcesses(filters);
     const deleteMutation = useDeleteProcess();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
@@ -118,6 +137,18 @@ export default function ProcessesPage() {
             <div className="flex items-center justify-center h-64">
                 <div className="text-gray-500">Cargando procesos...</div>
             </div>
+        );
+    }
+
+    // P-61: un fallo de red se veía como una lista vacía. Va DESPUÉS del
+    // estado de carga y ANTES del vacío, para no confundirlos.
+    if (error) {
+        return (
+            <ListError
+                error={error}
+                recurso="los procesos"
+                onReintentar={() => refetch()}
+            />
         );
     }
 
@@ -303,8 +334,11 @@ export default function ProcessesPage() {
                         {processes?.map((process) => (
                             <tr key={process.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm font-medium text-gray-900">
-                                        {process.name}
+                                    <div
+                                                    className="text-sm font-medium text-gray-900 max-w-[18rem] truncate"
+                                                    title={process.name}
+                                                >
+                                                    {process.name}
                                     </div>
                                     {process.description && (
                                         <div className="text-sm text-gray-500">
@@ -326,16 +360,16 @@ export default function ProcessesPage() {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {process.startDate
-                                        ? new Date(
+                                        ? formatDateShort(
                                               process.startDate
-                                          ).toLocaleDateString()
+                                          )
                                         : "-"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {process.endDate
-                                        ? new Date(
+                                        ? formatDateShort(
                                               process.endDate
-                                          ).toLocaleDateString()
+                                          )
                                         : "-"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

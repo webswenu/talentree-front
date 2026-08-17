@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useFixedTests } from "../../hooks/useTests";
 import { FixedTest } from "../../types/test.types";
+import { ListError } from "../../components/common/ListError";
 
 export default function TestsPage() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { data: tests, isLoading } = useFixedTests();
+    const { data: tests, isLoading, error, refetch } = useFixedTests();
     const [searchTerm, setSearchTerm] = useState("");
 
     // Detect if in admin or evaluador
@@ -17,6 +18,18 @@ export default function TestsPage() {
             <div className="flex items-center justify-center h-64">
                 <div className="text-gray-500">Cargando tests...</div>
             </div>
+        );
+    }
+
+    // P-61: un fallo de red se veía como una lista vacía. Va DESPUÉS del
+    // estado de carga y ANTES del vacío, para no confundirlos.
+    if (error) {
+        return (
+            <ListError
+                error={error}
+                recurso="los tests"
+                onReintentar={() => refetch()}
+            />
         );
     }
 

@@ -35,8 +35,39 @@ export const validateRUT = (rut: string): boolean => {
     return dv === calculatedDV;
 };
 
+/**
+ * P-47. Las fechas se mostraban UN DÍA ANTES del real.
+ *
+ * `new Date("2026-08-17")` —una fecha sin hora, que es como las devuelve el
+ * backend para contractStartDate, appliedAt, birthDate, etc.— se interpreta
+ * como medianoche UTC. En Chile (UTC-3 o UTC-4) eso cae a las 21:00 del día
+ * ANTERIOR, y al formatear en horario local se muestra el 16.
+ *
+ * Una fecha sin hora no representa un instante, sino un día del calendario:
+ * hay que construirla como local, no convertirla desde UTC.
+ */
+const SOLO_FECHA = /^\d{4}-\d{2}-\d{2}$/;
+
+export const aFechaLocal = (date: string | Date): Date => {
+    if (date instanceof Date) return date;
+
+    // Acepta también "2026-08-17T00:00:00.000Z" recortando la parte de hora
+    // cuando esta es exactamente medianoche UTC, que es como el backend
+    // serializa las columnas de tipo `date`.
+    const soloDia = date.length > 10 && date.endsWith("T00:00:00.000Z")
+        ? date.slice(0, 10)
+        : date;
+
+    if (SOLO_FECHA.test(soloDia)) {
+        const [anio, mes, dia] = soloDia.split("-").map(Number);
+        return new Date(anio, mes - 1, dia);
+    }
+
+    return new Date(date);
+};
+
 export const formatDate = (date: string | Date): string => {
-    const d = typeof date === "string" ? new Date(date) : date;
+    const d = aFechaLocal(date);
     return d.toLocaleDateString("es-CL", {
         year: "numeric",
         month: "long",
@@ -44,9 +75,19 @@ export const formatDate = (date: string | Date): string => {
     });
 };
 
+/** Formato corto (17-08-2026), para tablas donde el mes en letras no cabe. */
+export const formatDateShort = (date: string | Date): string => {
+    return aFechaLocal(date).toLocaleDateString("es-CL", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+    });
+};
+
 export const formatDateTime = (date: string | Date): string => {
-    const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleDateString("es-CL", {
+    // Aquí sí hay hora, así que la conversión de zona es correcta.
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toLocaleString("es-CL", {
         year: "numeric",
         month: "long",
         day: "numeric",

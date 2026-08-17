@@ -4,6 +4,7 @@ import { useTestResponse, useSubmitTest } from "../../hooks/useTestResponses";
 import { useTestTimers } from "../../hooks/useTestTimers";
 import { QuestionType, FixedTest } from "../../types/test.types";
 import { SubmitAnswerDto, TestResponse } from "../../types/test-response.types";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 interface ExtendedTestResponse extends TestResponse {
     fixedTest?: FixedTest & {
@@ -37,7 +38,8 @@ export const WorkerTestTakingPage = () => {
         testResponseId || ""
     ) as { data?: ExtendedTestResponse; isLoading: boolean };
     const submitMutation = useSubmitTest();
-    const { registerTimer, removeTimer, getTimeLeft } = useTestTimers();
+    // getTimeLeft ya no se usa aquí: ver P-30 más abajo.
+    const { registerTimer, removeTimer } = useTestTimers();
 
     const [currentQuestion, setCurrentQuestion] = useState(() => {
         // Restore current question from localStorage if exists
@@ -53,6 +55,8 @@ export const WorkerTestTakingPage = () => {
     });
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // P-75: el envío no tiene vuelta atrás, así que se pide confirmación.
+    const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
 
     // Support both regular tests and fixed tests
     const isFixedTest = !!(testResponse as ExtendedTestResponse)?.fixedTest;
@@ -168,10 +172,23 @@ export const WorkerTestTakingPage = () => {
         // Register with global timer system (only once, registerTimer handles duplicates)
         registerTimer(testResponseId, startedAt, duration, processId, workerProcessId);
 
-        // Update local timeLeft state for display
+        /**
+         * P-30. El temporizador no aparecía al entrar, solo tras recargar.
+         *
+         * Antes esto llamaba a `getTimeLeft(testResponseId)`, que está
+         * memoizado sobre el estado `timers`. En el primer render el timer se
+         * acaba de registrar en la línea de arriba, así que la versión de
+         * `getTimeLeft` que ve este efecto todavía tiene el estado ANTERIOR:
+         * no encuentra el timer y devuelve null. Y como el efecto llevaba un
+         * eslint-disable sin `getTimeLeft` en las dependencias, nunca se volvía
+         * a ejecutar. Al recargar sí funcionaba, porque el timer ya existía.
+         *
+         * El tiempo restante se calcula aquí con los dos valores que hacen
+         * falta y que ya están en el ámbito, sin depender de estado memoizado.
+         */
         const updateTimeLeft = () => {
-            const remaining = getTimeLeft(testResponseId);
-            setTimeLeft(remaining);
+            const restanteMs = duration * 60 * 1000 - (Date.now() - startedAt);
+            setTimeLeft(Math.max(0, Math.floor(restanteMs / 1000)));
         };
 
         // Update immediately
@@ -184,8 +201,14 @@ export const WorkerTestTakingPage = () => {
             clearInterval(interval);
             // Don't remove timer on unmount - it should continue globally
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [testResponse?.startedAt, testData?.duration, testResponse?.isCompleted, testResponseId]);
+    }, [
+        testResponse?.startedAt,
+        testData?.duration,
+        testResponse?.isCompleted,
+        testResponseId,
+        testResponse?.workerProcess,
+        registerTimer,
+    ]);
 
     // Redirect to applications when test is completed
     useEffect(() => {
@@ -272,10 +295,18 @@ export const WorkerTestTakingPage = () => {
         if (currentQuestion < totalQuestions - 1) {
             setCurrentQuestion(currentQuestion + 1);
         } else {
-            // Submit directly without confirmation modal
-            handleSubmit();
+            // P-75. Antes decía "Submit directly without confirmation modal" y
+            // enviaba en el acto. Enviar un test es irreversible: no se puede
+            // volver a rendir ni corregir una respuesta después.
+            setMostrarConfirmacion(true);
         }
     };
+
+    /** Preguntas sin responder, para avisarlo antes de enviar. */
+    const sinResponder = questions.filter((q) => {
+        const r = answers[q.id];
+        return r === null || r === undefined || r === "";
+    }).length;
 
     const renderQuestionInput = () => {
         const currentAnswer = answers[currentQ.id];
@@ -734,7 +765,31 @@ export const WorkerTestTakingPage = () => {
             }
 
             default:
-                return null;
+                /**
+                 * P-31. Antes esto era `return null`, y por eso el defecto pasó
+                 * inadvertido: cuando el tipo de pregunta no coincidía con
+                 * ninguna rama, la pantalla mostraba la pregunta SIN campo para
+                 * responder, sin error y sin explicación. El candidato quedaba
+                 * atrapado sin entender por qué no podía continuar.
+                 *
+                 * Un aviso visible convierte un fallo mudo en uno diagnosticable.
+                 */
+                return (
+                    <div
+                        role="alert"
+                        className="bg-amber-50 border border-amber-300 rounded-lg p-4"
+                    >
+                        <p className="text-amber-900 font-medium mb-1">
+                            No podemos mostrar esta pregunta
+                        </p>
+                        <p className="text-amber-800 text-sm">
+                            Su formato ({String(currentQ.type)}) no está
+                            soportado por esta versión. Avísale al equipo de
+                            Talentree para que lo revise; puedes continuar con
+                            las demás preguntas.
+                        </p>
+                    </div>
+                );
         }
     };
 
@@ -883,6 +938,26 @@ export const WorkerTestTakingPage = () => {
                 </div>
             </div>
 
+            {/* P-75: confirmación antes de un envío irreversible. */}
+            <ConfirmModal
+                isOpen={mostrarConfirmacion}
+                onClose={() => setMostrarConfirmacion(false)}
+                onConfirm={() => {
+                    setMostrarConfirmacion(false);
+                    handleSubmit();
+                }}
+                title="¿Enviar el test?"
+                message={
+                    sinResponder > 0
+                        ? `Vas a enviar el test con ${sinResponder} pregunta${
+                              sinResponder > 1 ? "s" : ""
+                          } sin responder. Una vez enviado no podrás modificar tus respuestas.`
+                        : "Respondiste todas las preguntas. Una vez enviado no podrás modificar tus respuestas."
+                }
+                confirmText="Sí, enviar"
+                cancelText="Seguir revisando"
+                isLoading={isSubmitting || submitMutation.isPending}
+            />
         </div>
     );
 };

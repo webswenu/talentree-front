@@ -55,12 +55,23 @@ export class ErrorBoundary extends Component<Props, State> {
                             Lo sentimos, ha ocurrido un error inesperado. Por
                             favor, intenta recargar la página.
                         </p>
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                        >
-                            Recargar Página
-                        </button>
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                            >
+                                Recargar Página
+                            </button>
+                            {/* Recargar no siempre basta: si lo que falla es la
+                                pantalla en la que se está, se queda en bucle.
+                                El inicio es la salida que sí funciona. */}
+                            <a
+                                href="/"
+                                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                            >
+                                Volver al inicio
+                            </a>
+                        </div>
                         {import.meta.env.DEV && this.state.error && (
                             <details className="mt-6 text-left">
                                 <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">

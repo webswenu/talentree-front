@@ -6,6 +6,7 @@ import { User, CreateUserDto, UpdateUserDto, UserRole } from "../../types/user.t
 import { useCompanies } from "../../hooks/useCompanies";
 import { useCreateCompany } from "../../hooks/useCompanies";
 import { toast } from "../../utils/toast";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { useState } from "react";
 
 interface UserModalProps {
@@ -39,8 +40,6 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                 companyId: "",
             },
             onSubmit: async (values) => {
-                console.log("🔵 onSubmit iniciado, values:", values);
-                console.log("🔵 isEditMode:", isEditMode, "role:", values.role);
                 if (isEditMode && user) {
                     const updateData: UpdateUserDto = {
                         firstName: values.firstName,
@@ -98,9 +97,6 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                             await createMutation.mutateAsync(createData);
                             toast.success("Usuario creado correctamente");
                         } catch (error: any) {
-                            console.log("❌ Error completo:", error);
-                            console.log("❌ Error.response:", error?.response);
-                            console.log("❌ Error.response.data:", error?.response?.data);
                             const errorMessage = error?.response?.data?.message || "Error al crear usuario";
                             toast.error(errorMessage);
                             throw error; // Re-throw to prevent onClose
@@ -141,9 +137,10 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
             queryClient.invalidateQueries({ queryKey: ["users"] });
             onClose();
         },
-        onError: (error: any) => {
-            console.log("❌ createMutation.onError ejecutado");
-            console.log("❌ Error:", error);
+        onError: (error: unknown) => {
+            // Antes esto solo escribía en la consola, así que para el usuario
+            // el alta simplemente no pasaba nada. Ahora se avisa.
+            toast.error(getApiErrorMessage(error, "No se pudo crear el usuario"));
         },
     });
 
@@ -171,7 +168,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="firstName">
                             Nombre *
                         </label>
                         <input
@@ -180,7 +177,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                             value={values.firstName}
                             onChange={handleChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        />
+                         id="firstName"/>
                         {errors.firstName && (
                             <p className="text-red-600 text-sm mt-1">
                                 {errors.firstName}
@@ -189,7 +186,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="lastName">
                             Apellido *
                         </label>
                         <input
@@ -198,7 +195,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                             value={values.lastName}
                             onChange={handleChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        />
+                         id="lastName"/>
                         {errors.lastName && (
                             <p className="text-red-600 text-sm mt-1">
                                 {errors.lastName}
@@ -208,7 +205,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
                         Email *
                     </label>
                     <input
@@ -217,7 +214,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                         value={values.email}
                         onChange={handleChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
+                     id="email"/>
                     {errors.email && (
                         <p className="text-red-600 text-sm mt-1">
                             {errors.email}
@@ -226,7 +223,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="role">
                         Rol *
                     </label>
                     <select
@@ -235,7 +232,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                         onChange={handleRoleChange}
                         disabled={isEditMode}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-                    >
+                     id="role">
                         <option value="admin_talentree">Admin Talentree</option>
                         <option value="company">Empresa</option>
                         <option value="evaluator">Evaluador</option>
@@ -251,7 +248,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                             Datos de la Empresa
                         </h3>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="companyName">
                                 Nombre de la Empresa *
                             </label>
                             <input
@@ -260,7 +257,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                                 value={values.companyName}
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                            />
+                             id="companyName"/>
                             {errors.companyName && (
                                 <p className="text-red-600 text-sm mt-1">
                                     {errors.companyName}
@@ -269,7 +266,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="companyRut">
                                     RUT
                                 </label>
                                 <input
@@ -279,10 +276,10 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                                     onChange={handleChange}
                                     placeholder="12345678-9"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                />
+                                 id="companyRut"/>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="companyIndustry">
                                     Industria
                                 </label>
                                 <input
@@ -292,7 +289,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                                     onChange={handleChange}
                                     placeholder="ej: Minería"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                />
+                                 id="companyIndustry"/>
                             </div>
                         </div>
                     </div>
@@ -301,7 +298,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                 {/* Select de empresa para EVALUATOR y GUEST */}
                 {!isEditMode && (selectedRole === UserRole.EVALUATOR || selectedRole === UserRole.GUEST) && (
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="companyId">
                             Empresa *
                         </label>
                         <select
@@ -309,7 +306,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                             value={values.companyId}
                             onChange={handleChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        >
+                         id="companyId">
                             <option value="">Seleccionar empresa...</option>
                             {companies.map((company) => (
                                 <option key={company.id} value={company.id}>
@@ -328,7 +325,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                 {/* Contraseña - Solo para roles que NO son GUEST */}
                 {!isEditMode && selectedRole !== UserRole.GUEST && (
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="password">
                             Contraseña *
                         </label>
                         <input
@@ -337,7 +334,7 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                             value={values.password}
                             onChange={handleChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        />
+                         id="password"/>
                         {errors.password && (
                             <p className="text-red-600 text-sm mt-1">
                                 {errors.password}

@@ -6,9 +6,11 @@ import {
     QuestionType,
     TestTypeLabels,
     QuestionTypeLabels,
+    TIPOS_DE_PREGUNTA_SOPORTADOS,
     CreateQuestionDto,
 } from "../../types/test.types";
 import { useCreateTest, useUpdateTest } from "../../hooks/useTests";
+import { ModalPortal } from "../common/ModalPortal";
 
 interface TestModalProps {
     test?: Test;
@@ -155,8 +157,10 @@ export default function TestModal({ test, onClose }: TestModalProps) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+
+        <ModalPortal onClose={onClose}>
+        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[85dvh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold text-gray-800">
                         {test ? "Editar Test" : "Nuevo Test"}
@@ -173,7 +177,7 @@ export default function TestModal({ test, onClose }: TestModalProps) {
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="name">
                                     Nombre *
                                 </label>
                                 <input
@@ -183,11 +187,11 @@ export default function TestModal({ test, onClose }: TestModalProps) {
                                     onChange={handleChange}
                                     required
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="name"/>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="type">
                                     Tipo *
                                 </label>
                                 <select
@@ -196,7 +200,7 @@ export default function TestModal({ test, onClose }: TestModalProps) {
                                     onChange={handleChange}
                                     required
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
+                                 id="type">
                                     {Object.values(TestType).map((type) => (
                                         <option key={type} value={type}>
                                             {TestTypeLabels[type]}
@@ -207,7 +211,7 @@ export default function TestModal({ test, onClose }: TestModalProps) {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="description">
                                 Descripción
                             </label>
                             <textarea
@@ -216,12 +220,12 @@ export default function TestModal({ test, onClose }: TestModalProps) {
                                 onChange={handleChange}
                                 rows={2}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
+                             id="description"/>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="duration">
                                     Duración (minutos)
                                 </label>
                                 <input
@@ -231,11 +235,11 @@ export default function TestModal({ test, onClose }: TestModalProps) {
                                     onChange={handleChange}
                                     min="1"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="duration"/>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="passingScore">
                                     Puntaje Mínimo
                                 </label>
                                 <input
@@ -245,7 +249,7 @@ export default function TestModal({ test, onClose }: TestModalProps) {
                                     onChange={handleChange}
                                     min="0"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="passingScore"/>
                             </div>
                         </div>
 
@@ -368,9 +372,10 @@ export default function TestModal({ test, onClose }: TestModalProps) {
                                                     }
                                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                                 >
-                                                    {Object.values(
-                                                        QuestionType
-                                                    ).map((type) => (
+                                                    {/* P-32: solo los tipos que
+                                                        el backend acepta, no
+                                                        los 9 del enum. */}
+                                                    {TIPOS_DE_PREGUNTA_SOPORTADOS.map((type) => (
                                                         <option
                                                             key={type}
                                                             value={type}
@@ -528,5 +533,7 @@ export default function TestModal({ test, onClose }: TestModalProps) {
                 </form>
             </div>
         </div>
+
+        </ModalPortal>
     );
 }

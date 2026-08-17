@@ -115,7 +115,6 @@ export const useTestTimers = () => {
      * Auto-submit a test when time expires
      */
     const autoSubmitTest = useCallback(async (testResponseId: string) => {
-        console.log(`⏰ Auto-submitting test ${testResponseId} - time expired`);
 
         try {
             // Get answers from localStorage if they exist
@@ -128,7 +127,6 @@ export const useTestTimers = () => {
                 data: { answers }
             });
 
-            console.log(`✅ Test ${testResponseId} auto-submitted successfully`);
 
             // Remove timer after successful submit
             removeTimer(testResponseId);

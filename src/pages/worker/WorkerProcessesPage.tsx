@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDebounce } from "../../hooks/useDebounce";
 import { useNavigate } from "react-router-dom";
 import { useProcesses } from "../../hooks/useProcesses";
 import { useApplyToProcess, useWorkerProcesses } from "../../hooks/useWorkers";
@@ -7,6 +8,7 @@ import { ProcessStatus } from "../../types/process.types";
 import { ApplyProcessModal } from "../../components/worker/ApplyProcessModal";
 import { Modal } from "../../components/common/Modal";
 import { toast } from "../../utils/toast";
+import { formatDateShort } from "../../utils/formatters";
 
 export const WorkerProcessesPage = () => {
     const { user } = useAuthStore();
@@ -22,6 +24,8 @@ export const WorkerProcessesPage = () => {
     const [selectedProcessId, setSelectedProcessId] = useState<string | null>(
         null
     );
+    const [busqueda, setBusqueda] = useState("");
+    const busquedaAplicada = useDebounce(busqueda, 300);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
@@ -65,8 +69,27 @@ export const WorkerProcessesPage = () => {
 
     if (isLoading) return <div className="text-center py-8">Cargando...</div>;
 
-    const activeProcesses =
+    const activosTodos =
         processes?.filter((p) => p.status === ProcessStatus.ACTIVE) || [];
+
+    // P-53 (a): esta pantalla no tenía buscador, aunque el widget de ofertas
+    // del panel sí lo tiene. Se reutiliza el mismo retardo de tecleo.
+    const activeProcesses = activosTodos.filter((p) => {
+        if (!busquedaAplicada) return true;
+        const t = busquedaAplicada.toLowerCase();
+        return (
+            p.name?.toLowerCase().includes(t) ||
+            p.position?.toLowerCase().includes(t) ||
+            p.location?.toLowerCase().includes(t) ||
+            p.company?.name?.toLowerCase().includes(t)
+        );
+    });
+
+    // P-53 (b): el contador decía "N procesos disponibles" contando también
+    // los que la persona YA postuló, que no están disponibles para ella.
+    const postulables = activeProcesses.filter(
+        (p) => !isAlreadyApplied(p.id)
+    ).length;
     const selectedProcess =
         processes?.find((p) => p.id === selectedProcessId) || null;
 
@@ -78,9 +101,26 @@ export const WorkerProcessesPage = () => {
                 </h1>
                 <span className="text-sm text-gray-500">
                     {activeProcesses.length}{" "}
-                    {activeProcesses.length === 1 ? "proceso" : "procesos"}{" "}
-                    disponibles
+                    {activeProcesses.length === 1 ? "proceso" : "procesos"}
+                    {", "}
+                    {postulables === 0
+                        ? "ninguno disponible para postular"
+                        : `${postulables} disponible${postulables > 1 ? "s" : ""} para postular`}
                 </span>
+            </div>
+
+            <div>
+                <label htmlFor="buscar-ofertas" className="sr-only">
+                    Buscar ofertas
+                </label>
+                <input
+                    id="buscar-ofertas"
+                    type="search"
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    placeholder="Buscar por cargo, empresa o ubicación..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -148,9 +188,9 @@ export const WorkerProcessesPage = () => {
                                             Cierre
                                         </span>
                                         <span className="font-medium">
-                                            {new Date(
+                                            {formatDateShort(
                                                 process.endDate
-                                            ).toLocaleDateString("es-CL")}
+                                            )}
                                         </span>
                                     </div>
                                 )}

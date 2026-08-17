@@ -1,24 +1,8 @@
 import { useAuthStore } from "../../store/authStore";
-import { useProcessesByCompany } from "../../hooks/useProcesses";
 import { useCompanyDashboardStats } from "../../hooks/useCompanies";
-import {
-    ProcessStatus,
-    SelectionProcess,
-    WorkerStatus,
-} from "../../types/process.types";
 import { useNavigate } from "react-router-dom";
 import { QuickStats } from "../../components/widgets/QuickStats";
-
-// Tipo para workers en el contexto de este componente
-type WorkerInProcess = {
-    id: string;
-    status: WorkerStatus;
-    appliedAt?: Date;
-    worker?: {
-        firstName: string;
-        lastName: string;
-    };
-};
+import { formatDateShort } from "../../utils/formatters";
 
 export const CompanyDashboard = () => {
     const { user } = useAuthStore();
@@ -33,21 +17,25 @@ export const CompanyDashboard = () => {
         return "/empresa";
     };
 
-    const { data: processes } = useProcessesByCompany(companyId || "");
-
     const { data: dashboardStats, isLoading: isLoadingStats } =
         useCompanyDashboardStats(companyId);
 
     if (!companyId) {
         return (
             <div className="flex items-center justify-center h-screen">
-                <div className="text-center">
-                    <h2 className="text-2xl font-bold text-red-600">Error</h2>
-                    <p className="text-gray-600 mt-2">
-                        No se encontró información de la empresa
-                    </p>
-                    <p className="text-sm text-gray-500 mt-2">
-                        Por favor, cierre sesión e inicie sesión nuevamente
+                {/* P-24. Antes decía "Error / No se encontró información de la
+                    empresa / cierre sesión e inicie sesión nuevamente". El
+                    consejo no sirve de nada: volver a entrar no asigna una
+                    empresa, así que la persona repetía el ciclo sin entender.
+                    El mensaje ahora dice la causa real y a quién recurrir. */}
+                <div className="text-center max-w-md px-4">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                        Tu usuario todavía no tiene una empresa asignada
+                    </h2>
+                    <p className="text-gray-600 mt-3">
+                        Para ver el panel necesitas estar asociado a una
+                        empresa. Contacta al administrador de Talentree para
+                        que haga la asociación.
                     </p>
                 </div>
             </div>
@@ -61,53 +49,36 @@ export const CompanyDashboard = () => {
         completados: dashboardStats?.procesosCompletados.total || 0,
     };
 
-    const procesosActivos =
-        processes?.data
-            ?.filter(
-                (p: SelectionProcess) => p.status === ProcessStatus.ACTIVE
-            )
-            .map((proceso: SelectionProcess) => {
-                const workers =
-                    (proceso.workers as unknown as WorkerInProcess[]) || [];
-                const postulantes = workers.length;
-                const enEvaluacion = workers.filter(
-                    (w) => w.status === WorkerStatus.IN_PROCESS
-                ).length;
-                const aprobados = workers.filter(
-                    (w) => w.status === WorkerStatus.APPROVED
-                ).length;
+    // P-39. Antes esto contaba sobre `proceso.workers`, una relación que el
+    // listado de procesos NUNCA trae: el resultado era 0 postulantes en todos
+    // los procesos, siempre. Ahora los contadores vienen ya calculados desde
+    // /companies/:id/dashboard-stats, que además no expone la nómina completa
+    // de candidatos solo para contarla.
+    const procesosActivos = (dashboardStats?.procesosActivosDetalle ?? []).map(
+        (proceso) => ({
+            id: proceso.id,
+            titulo: proceso.titulo,
+            postulantes: proceso.postulantes,
+            enEvaluacion: proceso.enEvaluacion,
+            aprobados: proceso.aprobados,
+            fechaVencimiento: proceso.fechaVencimiento
+                ? formatDateShort(proceso.fechaVencimiento)
+                : "Sin fecha límite",
+        })
+    );
 
-                return {
-                    id: proceso.id,
-                    titulo: proceso.name,
-                    postulantes,
-                    enEvaluacion,
-                    aprobados,
-                    fechaVencimiento: proceso.endDate
-                        ? new Date(proceso.endDate).toLocaleDateString("es-CL")
-                        : "Sin fecha límite",
-                };
-            }) || [];
-
-    const actividadReciente =
-        processes?.data
-            ?.flatMap((proceso: SelectionProcess) => {
-                const workers =
-                    (proceso.workers as unknown as WorkerInProcess[]) || [];
-                return workers.map((worker: WorkerInProcess) => ({
-                    id: worker.id,
-                    tipo: "nuevo_postulante",
-                    nombre: `${worker.worker?.firstName || ''} ${worker.worker?.lastName || ''}`.trim() || 'Candidato',
-                    proceso: proceso.name,
-                    fecha: worker.appliedAt
-                        ? getRelativeTime(new Date(worker.appliedAt))
-                        : "Recientemente",
-                    appliedAt: worker.appliedAt ? new Date(worker.appliedAt).getTime() : 0,
-                }));
-            })
-            .filter(Boolean)
-            .sort((a, b) => b.appliedAt - a.appliedAt)
-            .slice(0, 5) || [];
+    // P-39: mismo motivo. El backend ya devuelve las 5 últimas, ordenadas.
+    const actividadReciente = (dashboardStats?.actividadReciente ?? []).map(
+        (item) => ({
+            id: item.id,
+            tipo: item.tipo,
+            nombre: item.nombre,
+            proceso: item.proceso,
+            fecha: item.appliedAt
+                ? getRelativeTime(new Date(item.appliedAt))
+                : "Recientemente",
+        })
+    );
 
     function getRelativeTime(date: Date): string {
         const now = new Date();

@@ -28,7 +28,6 @@ export const useNotifications = () => {
             });
 
             socket.on("connect", () => {
-                console.log("WebSocket connected");
             });
 
             socket.on("newNotification", (notification: Notification) => {
@@ -45,7 +44,6 @@ export const useNotifications = () => {
             });
 
             socket.on("disconnect", () => {
-                console.log("WebSocket disconnected");
             });
         }
 

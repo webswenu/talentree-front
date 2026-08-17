@@ -8,6 +8,7 @@ import {
 import { useCreateProcess, useUpdateProcess } from "../../hooks/useProcesses";
 import { useCompanies } from "../../hooks/useCompanies";
 import { toast } from "../../utils/toast";
+import { ModalPortal } from "../common/ModalPortal";
 
 interface ProcessModalProps {
     process?: SelectionProcess;
@@ -165,8 +166,9 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
     };
 
     return (
+        <ModalPortal>
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl my-8 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl my-8 shadow-xl max-h-[85dvh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold text-gray-800">
                         {process ? "Editar Proceso" : "Nuevo Proceso"}
@@ -183,7 +185,7 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="name">
                                     Nombre *
                                 </label>
                                 <input
@@ -193,11 +195,11 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                                     onChange={handleChange}
                                     required
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="name"/>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="code">
                                     Código *
                                 </label>
                                 <input
@@ -208,12 +210,12 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                                     required
                                     disabled={!!process}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                                />
+                                 id="code"/>
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="description">
                                 Descripción
                             </label>
                             <textarea
@@ -222,11 +224,11 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                                 onChange={handleChange}
                                 rows={3}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
+                             id="description"/>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="companyId">
                                 Empresa *
                             </label>
                             <select
@@ -236,7 +238,7 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                                 required
                                 disabled={!!process}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                            >
+                             id="companyId">
                                 <option value="">Seleccione una empresa</option>
                                 {companies?.data?.map((company) => (
                                     <option key={company.id} value={company.id}>
@@ -248,7 +250,7 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="position">
                                     Posición *
                                 </label>
                                 <input
@@ -258,11 +260,11 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                                     onChange={handleChange}
                                     required
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="position"/>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="department">
                                     Departamento
                                 </label>
                                 <input
@@ -271,12 +273,12 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                                     value={formData.department || ""}
                                     onChange={handleChange}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="department"/>
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="location">
                                 Ubicación
                             </label>
                             <input
@@ -285,11 +287,11 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                                 value={formData.location || ""}
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
+                             id="location"/>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="status">
                                 Estado *
                             </label>
                             <select
@@ -298,7 +300,7 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                                 onChange={handleChange}
                                 required
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
+                             id="status">
                                 {Object.values(ProcessStatus).map((status) => (
                                     <option key={status} value={status}>
                                         {ProcessStatusLabels[status]}
@@ -309,7 +311,7 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="startDate">
                                     Fecha Inicio
                                 </label>
                                 <input
@@ -324,11 +326,11 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                                     }
                                     onChange={handleChange}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="startDate"/>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="endDate">
                                     Fecha Fin
                                 </label>
                                 <input
@@ -343,12 +345,12 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                                     }
                                     onChange={handleChange}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="endDate"/>
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="maxWorkers">
                                 Máximo de Trabajadores
                             </label>
                             <input
@@ -358,7 +360,7 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                                 onChange={handleChange}
                                 min="1"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
+                             id="maxWorkers"/>
                         </div>
                     </div>
 
@@ -387,5 +389,6 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
                 </form>
             </div>
         </div>
+        </ModalPortal>
     );
 }

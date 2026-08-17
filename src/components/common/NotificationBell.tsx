@@ -45,7 +45,7 @@ export default function NotificationBell() {
         <div className="relative">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none"
+                className="relative p-2 text-gray-600 hover:text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
             >
                 <svg
                     className="w-6 h-6"
@@ -60,9 +60,13 @@ export default function NotificationBell() {
                         d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                     />
                 </svg>
-                {unreadCount && unreadCount > 0 && (
+                {/* P-73: la condición era `unreadCount && unreadCount > 0`.
+                    Con 0, el && devuelve el número 0 —no false— y React lo
+                    dibuja: quedaba un "0" pegado a la campana. Comparar
+                    primero devuelve un booleano y no dibuja nada. */}
+                {(unreadCount ?? 0) > 0 && (
                     <span className="absolute top-0.5 right-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold leading-none text-white bg-red-600 rounded-full">
-                        {unreadCount > 9 ? "9+" : unreadCount}
+                        {(unreadCount ?? 0) > 9 ? "9+" : unreadCount}
                     </span>
                 )}
             </button>

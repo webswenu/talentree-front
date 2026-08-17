@@ -26,24 +26,17 @@ export const useWebSocket = () => {
         socketRef.current = socket;
 
         socket.on("connect", () => {
-            if (import.meta.env.DEV) {
-                console.log("✅ WebSocket connected:", socket.id);
-            }
+            // Sin cuerpo: la conexión no requiere ninguna acción.
         });
 
-        socket.on("newNotification", (notification: Notification) => {
-            console.log("🔔 Nueva notificación:", notification);
-
+        socket.on("newNotification", () => {
             queryClient.invalidateQueries({ queryKey: ["notifications"] });
             queryClient.invalidateQueries({
                 queryKey: ["notifications", "unread-count"],
             });
         });
 
-        socket.on("unreadCount", (count: number) => {
-            if (import.meta.env.DEV) {
-                console.log("📊 Unread count updated:", count);
-            }
+        socket.on("unreadCount", () => {
             queryClient.invalidateQueries({
                 queryKey: ["notifications", "unread-count"],
             });
@@ -51,7 +44,6 @@ export const useWebSocket = () => {
 
         socket.on("notifications", (notifications: unknown[]) => {
             if (import.meta.env.DEV) {
-                console.log("📋 Notifications received:", notifications.length);
             }
             queryClient.setQueryData(["notifications"], notifications);
         });
@@ -68,7 +60,6 @@ export const useWebSocket = () => {
                 reason !== "io client disconnect" &&
                 reason !== "io server disconnect"
             ) {
-                console.log("🔌 WebSocket disconnected:", reason);
             }
         });
 

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { processInvitationsService } from "../services/process-invitations.service";
+import { workerKeys } from "./useWorkers";
 import {
     CreateProcessInvitationDto,
     BulkInviteWorkersDto,
@@ -130,11 +131,42 @@ export const useAcceptProcessInvitation = () => {
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: processInvitationKeys.all });
             queryClient.invalidateQueries({ queryKey: processInvitationKeys.myInvitations() });
-            queryClient.invalidateQueries({ queryKey: ["worker-processes"] });
+            // OJO: la clave real de las postulaciones del trabajador es
+            // ["workers", "processes", workerId] (workerKeys.processes).
+            // Invalidar ["worker-processes"] no coincide con ninguna query.
+            queryClient.invalidateQueries({ queryKey: workerKeys.all });
 
             if (data.status === "applied") {
                 toast.success(data.message);
             }
+        },
+        onError: (error: any) => {
+            const message =
+                error?.response?.data?.message ||
+                "Error al aceptar la invitación";
+            toast.error(message);
+        },
+    });
+};
+
+/**
+ * Hook para que el trabajador autenticado acepte una invitación desde su
+ * dashboard. Usa el endpoint por ID porque el listado de "mis invitaciones"
+ * no expone el token.
+ */
+export const useAcceptProcessInvitationById = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: string) => processInvitationsService.acceptById(id),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: processInvitationKeys.all });
+            queryClient.invalidateQueries({ queryKey: processInvitationKeys.myInvitations() });
+            // OJO: la clave real de las postulaciones del trabajador es
+            // ["workers", "processes", workerId] (workerKeys.processes).
+            // Invalidar ["worker-processes"] no coincide con ninguna query.
+            queryClient.invalidateQueries({ queryKey: workerKeys.all });
+            toast.success(data.message || "Invitación aceptada exitosamente");
         },
         onError: (error: any) => {
             const message =

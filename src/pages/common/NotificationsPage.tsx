@@ -11,6 +11,7 @@ import { Pagination } from "../../components/common/Pagination";
 import { toast } from "../../utils/toast";
 import { NotificationType } from "../../types/notification.types";
 import type { Notification as AppNotification } from "../../types/notification.types";
+import { formatDateShort } from "../../utils/formatters";
 
 type Notification = AppNotification;
 
@@ -156,7 +157,7 @@ export const NotificationsPage = () => {
             return `Hace ${diffHours} hora${diffHours > 1 ? "s" : ""}`;
         if (diffDays < 7)
             return `Hace ${diffDays} día${diffDays > 1 ? "s" : ""}`;
-        return new Date(date).toLocaleDateString("es-CL");
+        return formatDateShort(date);
     };
 
     if (isLoading) {

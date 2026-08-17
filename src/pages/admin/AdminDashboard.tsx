@@ -13,6 +13,7 @@ import { useProcessesStats, useProcesses } from "../../hooks/useProcesses";
 import { useWorkersStats } from "../../hooks/useWorkers";
 import { useAuditStats } from "../../hooks/useAudit";
 import { ProcessStatusLabels } from "../../types/process.types";
+import { AuditAction } from "../../types/audit.types";
 
 export const AdminDashboard = () => {
     const { user } = useAuthStore();
@@ -297,7 +298,9 @@ export const AdminDashboard = () => {
                     <div className="w-full border-t-2 border-gradient-to-r from-transparent via-orange-200 to-transparent"></div>
                 </div>
                 <div className="relative flex justify-center">
-                    <span className="bg-gray-50 px-4 text-sm font-semibold text-orange-600">Estadísticas</span>
+                    {/* P-58: orange-600 sobre gray-50 da 3.41 de contraste y el mínimo AA
+                        es 4.5. orange-700 da 4.96. */}
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-orange-700">Estadísticas</span>
                 </div>
             </div>
 
@@ -336,7 +339,8 @@ export const AdminDashboard = () => {
                     <div className="w-full border-t-2 border-gradient-to-r from-transparent via-teal-200 to-transparent"></div>
                 </div>
                 <div className="relative flex justify-center">
-                    <span className="bg-gray-50 px-4 text-sm font-semibold text-teal-600">Actividad Reciente</span>
+                    {/* P-58: teal-600 da 3.58; teal-700 da 5.24. */}
+                    <span className="bg-gray-50 px-4 text-sm font-semibold text-teal-700">Actividad Reciente</span>
                 </div>
             </div>
 
@@ -385,30 +389,48 @@ function getStatusColor(
     return colorMap[status] || "gray";
 }
 
+/**
+ * P-45. Las acciones de la bitácora salían sin traducir en el panel.
+ *
+ * La causa: este mapa usaba las claves "created", "updated", "deleted" y
+ * "view", pero el backend guarda los valores del enum AuditAction, que son
+ * "create", "update", "delete" y "read". NINGUNA clave coincidía, así que
+ * siempre caía en el `|| action` y mostraba el valor crudo en inglés.
+ *
+ * Ahora las claves vienen del propio enum, así que no pueden volver a
+ * desalinearse sin que el compilador avise. Se conserva el verbo en pasado
+ * (y no las etiquetas de AuditActionLabels, que están en infinitivo) porque
+ * aquí se lee dentro de una frase: "Fulano creó una empresa".
+ */
 function getActionLabel(action: string): string {
-    const actionLabels: Record<string, string> = {
-        created: "creó",
-        updated: "actualizó",
-        deleted: "eliminó",
-        login: "inició sesión",
-        logout: "cerró sesión",
-        view: "visualizó",
+    const actionLabels: Record<AuditAction, string> = {
+        [AuditAction.CREATE]: "creó",
+        [AuditAction.UPDATE]: "actualizó",
+        [AuditAction.DELETE]: "eliminó",
+        [AuditAction.READ]: "consultó",
+        [AuditAction.LOGIN]: "inició sesión",
+        [AuditAction.LOGOUT]: "cerró sesión",
+        [AuditAction.EXPORT]: "exportó",
+        [AuditAction.IMPORT]: "importó",
     };
-    return actionLabels[action] || action;
+    return actionLabels[action as AuditAction] || action;
 }
 
+/** Mismo desajuste de claves que getActionLabel: todo caía en "info". */
 function getActivityType(
     action: string
 ): "create" | "update" | "delete" | "info" {
-    const typeMap: Record<string, "create" | "update" | "delete" | "info"> = {
-        created: "create",
-        updated: "update",
-        deleted: "delete",
-        login: "info",
-        logout: "info",
-        view: "info",
+    const typeMap: Record<AuditAction, "create" | "update" | "delete" | "info"> = {
+        [AuditAction.CREATE]: "create",
+        [AuditAction.UPDATE]: "update",
+        [AuditAction.DELETE]: "delete",
+        [AuditAction.READ]: "info",
+        [AuditAction.LOGIN]: "info",
+        [AuditAction.LOGOUT]: "info",
+        [AuditAction.EXPORT]: "info",
+        [AuditAction.IMPORT]: "info",
     };
-    return typeMap[action] || "info";
+    return typeMap[action as AuditAction] || "info";
 }
 
 function getTimeAgo(date: Date | string): string {

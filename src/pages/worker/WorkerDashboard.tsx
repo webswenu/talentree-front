@@ -14,8 +14,9 @@ import { useDebounce } from "../../hooks/useDebounce";
 import { Modal } from "../../components/common/Modal";
 import { toast } from "../../utils/toast";
 import { QuickActions } from "../../components/widgets/QuickActions";
-import { useMyProcessInvitations, useAcceptProcessInvitation } from "../../hooks/useProcessInvitations";
+import { useMyProcessInvitations, useAcceptProcessInvitationById } from "../../hooks/useProcessInvitations";
 import { Mail, Calendar } from "lucide-react";
+import { formatDateShort } from "../../utils/formatters";
 
 export const WorkerDashboard = () => {
     const { user } = useAuthStore();
@@ -32,7 +33,11 @@ export const WorkerDashboard = () => {
 
     // Obtener invitaciones pendientes del trabajador
     const { data: myInvitations } = useMyProcessInvitations();
-    const acceptInvitationMutation = useAcceptProcessInvitation();
+    const acceptInvitationMutation = useAcceptProcessInvitationById();
+    // Guarda cuál invitación se está aceptando para no deshabilitar todas a la vez
+    const [acceptingInvitationId, setAcceptingInvitationId] = useState<
+        string | null
+    >(null);
 
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearch = useDebounce(searchTerm, 300);
@@ -62,7 +67,7 @@ export const WorkerDashboard = () => {
                 estadoLabel: getStatusLabel(app.status),
                 estadoColor: getStatusColor(app.status),
                 fechaAplicacion: app.appliedAt
-                    ? new Date(app.appliedAt).toLocaleDateString("es-CL")
+                    ? formatDateShort(app.appliedAt)
                     : "N/A",
                 fechaAplicacionRaw: app.appliedAt
                     ? new Date(app.appliedAt).getTime()
@@ -137,7 +142,7 @@ export const WorkerDashboard = () => {
                     salario: "A convenir",
                     vacantes: process.vacancies || 1,
                     vence: process.endDate
-                        ? new Date(process.endDate).toLocaleDateString("es-CL")
+                        ? formatDateShort(process.endDate)
                         : "Sin fecha límite",
                     nuevo: false,
                     createdAt: process.createdAt
@@ -249,12 +254,14 @@ export const WorkerDashboard = () => {
         setSelectedProcessId(null);
     };
 
-    const handleAcceptInvitation = async (token: string) => {
+    const handleAcceptInvitation = async (invitationId: string) => {
+        setAcceptingInvitationId(invitationId);
         try {
-            await acceptInvitationMutation.mutateAsync({ token });
-            toast.success("Invitación aceptada exitosamente");
+            await acceptInvitationMutation.mutateAsync(invitationId);
         } catch {
-            toast.error("Error al aceptar la invitación. Por favor intenta nuevamente.");
+            // El hook ya muestra el mensaje real que devuelve el backend
+        } finally {
+            setAcceptingInvitationId(null);
         }
     };
 
@@ -336,7 +343,7 @@ export const WorkerDashboard = () => {
                                                             : "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
                                                     } disabled:opacity-50`}
                                                 >
-                                                    {acceptInvitationMutation.isPending
+                                                    {acceptingInvitationId === invitation.id
                                                         ? "Aceptando..."
                                                         : "Aceptar Invitación"}
                                                 </button>

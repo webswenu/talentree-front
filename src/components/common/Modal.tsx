@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { ModalPortal } from "./ModalPortal";
 
 interface ModalProps {
     isOpen: boolean;
@@ -28,6 +29,7 @@ export const Modal = ({
     };
 
     return (
+        <ModalPortal>
         <div className="fixed inset-0 z-50 overflow-y-auto">
             {/* Backdrop */}
             <div
@@ -73,5 +75,6 @@ export const Modal = ({
                 </div>
             </div>
         </div>
+        </ModalPortal>
     );
 };

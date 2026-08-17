@@ -7,6 +7,7 @@ import ProcessModal from "../../components/admin/ProcessModal";
 import { VideoRequirementsConfig } from "../../components/admin/VideoRequirementsConfig";
 import { useAuthStore } from "../../store/authStore";
 import { UserRole } from "../../types/user.types";
+import { formatDateShort } from "../../utils/formatters";
 
 type TabType = "edit" | "tests" | "video";
 
@@ -160,9 +161,9 @@ export const ProcessConfigPage = () => {
                                         </label>
                                         <p className="text-gray-900">
                                             {process.startDate
-                                                ? new Date(
+                                                ? formatDateShort(
                                                       process.startDate
-                                                  ).toLocaleDateString("es-CL")
+                                                  )
                                             : "N/A"}
                                         </p>
                                     </div>
@@ -172,9 +173,9 @@ export const ProcessConfigPage = () => {
                                         </label>
                                         <p className="text-gray-900">
                                             {process.endDate
-                                                ? new Date(
+                                                ? formatDateShort(
                                                       process.endDate
-                                                  ).toLocaleDateString("es-CL")
+                                                  )
                                             : "N/A"}
                                         </p>
                                     </div>

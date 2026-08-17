@@ -218,7 +218,7 @@ export const FAQPage = () => {
                                 placeholder="Buscar preguntas..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-14 pr-6 py-3 bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none text-lg"
+                                className="w-full pl-14 pr-6 py-3 bg-transparent text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 text-lg"
                             />
                         </div>
                     </div>

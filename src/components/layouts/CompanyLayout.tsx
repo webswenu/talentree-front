@@ -3,7 +3,7 @@ import { Sidebar } from "../common/Sidebar";
 
 export const CompanyLayout = () => {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-primary-100/15 via-secondary-100/15 to-primary-200/15 relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-primary-100/15 via-secondary-100/15 to-primary-200/15 relative">
             {/* Fondo animado con burbujas sutiles */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-20 left-20 w-96 h-96 bg-primary-400/8 rounded-full mix-blend-multiply filter blur-3xl animate-float"></div>
@@ -12,9 +12,12 @@ export const CompanyLayout = () => {
             </div>
 
             <Sidebar />
-            <div className="lg:ml-72 p-6 md:p-8 lg:p-12 xl:p-16 pt-20 lg:pt-8 relative z-10">
+            {/* P-58: el contenido principal no estaba marcado. Con <main> los
+                lectores de pantalla ofrecen "saltar al contenido" y no obligan
+                a recorrer el menú entero en cada pantalla. */}
+            <main className="lg:ml-72 p-6 md:p-8 lg:p-12 xl:p-16 pt-20 lg:pt-8 relative z-10">
                 <Outlet />
-            </div>
+            </main>
         </div>
     );
 };

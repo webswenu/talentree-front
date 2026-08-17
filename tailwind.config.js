@@ -53,35 +53,10 @@ export default {
       backdropBlur: {
         xs: '2px',
       },
-      animation: {
-        'fade-in': 'fade-in 2s ease-out',
-        'slide-up': 'slide-up 2s ease-out',
-        'slide-down': 'slide-down 2s ease-out',
-        'scale-in': 'scale-in 2s ease-out',
-        'float': 'float 6s ease-in-out infinite',
-      },
-      keyframes: {
-        'fade-in': {
-          '0%': { opacity: '0', transform: 'translateY(-1rem)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        'slide-up': {
-          '0%': { opacity: '0', transform: 'translateY(2rem)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        'slide-down': {
-          '0%': { opacity: '0', transform: 'translateY(-2rem)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        'scale-in': {
-          '0%': { opacity: '0', transform: 'scale(0.9)' },
-          '100%': { opacity: '1', transform: 'scale(1)' },
-        },
-        'float': {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-20px)' },
-        },
-      },
+      // Las animaciones animate-fade-in, animate-slide-up y animate-float
+      // se definen en src/index.css. No duplicarlas aquí: las utilidades que
+      // genera Tailwind pertenecen a una capa posterior y pisarían la
+      // definición de index.css con otra duración y otros keyframes.
     },
   },
   plugins: [],

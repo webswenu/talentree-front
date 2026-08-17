@@ -54,13 +54,21 @@ export const RecentList = ({
                         {emptyMessage}
                     </div>
                 ) : (
-                    items.map((item) => (
-                        <div
+                    items.map((item) => {
+                        // P-11: mismo criterio que StatCard. Un elemento de
+                        // lista que navega a otra pantalla es un botón, no un
+                        // div con onClick: así se alcanza con Tab y se activa
+                        // con Enter o Espacio sin escribir nada a mano.
+                        const Item = item.onClick ? "button" : "div";
+                        return (
+                        <Item
                             key={item.id}
-                            onClick={item.onClick}
-                            className={`p-3 sm:p-4 rounded-xl border border-white/15 bg-white/8 transition-all duration-300 ${
+                            {...(item.onClick
+                                ? { type: "button" as const, onClick: item.onClick }
+                                : {})}
+                            className={`w-full text-left p-3 sm:p-4 rounded-xl border border-white/15 bg-white/8 transition-all duration-300 ${
                                 item.onClick
-                                    ? "cursor-pointer hover:bg-white/12"
+                                    ? "cursor-pointer hover:bg-white/12 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-1"
                                     : ""
                             }`}
                         >
@@ -90,8 +98,9 @@ export const RecentList = ({
                                     {item.meta}
                                 </p>
                             )}
-                        </div>
-                    ))
+                        </Item>
+                        );
+                    })
                 )}
             </div>
         </div>

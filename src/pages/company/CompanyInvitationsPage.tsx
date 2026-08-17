@@ -9,6 +9,7 @@ import {
 } from "../../hooks/useInvitations";
 import { InviteGuestModal } from "../../components/company/InviteGuestModal";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { formatDateShort } from "../../utils/formatters";
 
 type InvitationTab = "sent" | "registered" | "pending";
 
@@ -160,21 +161,27 @@ export const CompanyInvitationsPage = () => {
                                             className="hover:bg-gray-50"
                                         >
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-900">
+                                                <div
+                                                    className="text-sm font-medium text-gray-900 max-w-[18rem] truncate"
+                                                    title={invitation.firstName}
+                                                >
                                                     {invitation.firstName}{" "}
                                                     {invitation.lastName}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-500">
+                                                <div
+                                                    className="text-sm text-gray-500 max-w-[18rem] truncate"
+                                                    title={invitation.email}
+                                                >
                                                     {invitation.email}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm text-gray-500">
-                                                    {new Date(
+                                                    {formatDateShort(
                                                         invitation.createdAt
-                                                    ).toLocaleDateString("es-CL")}
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
@@ -286,23 +293,27 @@ export const CompanyInvitationsPage = () => {
                                                 className="hover:bg-gray-50"
                                             >
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm font-medium text-gray-900">
-                                                        {invitation.firstName}{" "}
+                                                    <div
+                                                    className="text-sm font-medium text-gray-900 max-w-[18rem] truncate"
+                                                    title={invitation.firstName}
+                                                >
+                                                    {invitation.firstName}{" "}
                                                         {invitation.lastName}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-gray-500">
-                                                        {invitation.email}
+                                                    <div
+                                                    className="text-sm text-gray-500 max-w-[18rem] truncate"
+                                                    title={invitation.email}
+                                                >
+                                                    {invitation.email}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="text-sm text-gray-500">
                                                         {invitation.acceptedAt
-                                                            ? new Date(
+                                                            ? formatDateShort(
                                                                   invitation.acceptedAt
-                                                              ).toLocaleDateString(
-                                                                  "es-CL"
                                                               )
                                                             : "-"}
                                                     </div>
@@ -311,11 +322,9 @@ export const CompanyInvitationsPage = () => {
                                                     <div className="text-sm text-gray-500">
                                                         {invitation.user
                                                             ?.lastLogin
-                                                            ? new Date(
+                                                            ? formatDateShort(
                                                                   invitation.user
                                                                       .lastLogin
-                                                              ).toLocaleDateString(
-                                                                  "es-CL"
                                                               )
                                                             : "Nunca"}
                                                     </div>
@@ -423,22 +432,26 @@ export const CompanyInvitationsPage = () => {
                                                 className="hover:bg-gray-50"
                                             >
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm font-medium text-gray-900">
-                                                        {invitation.firstName}{" "}
+                                                    <div
+                                                    className="text-sm font-medium text-gray-900 max-w-[18rem] truncate"
+                                                    title={invitation.firstName}
+                                                >
+                                                    {invitation.firstName}{" "}
                                                         {invitation.lastName}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-gray-500">
-                                                        {invitation.email}
+                                                    <div
+                                                    className="text-sm text-gray-500 max-w-[18rem] truncate"
+                                                    title={invitation.email}
+                                                >
+                                                    {invitation.email}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="text-sm text-gray-500">
-                                                        {new Date(
+                                                        {formatDateShort(
                                                             invitation.createdAt
-                                                        ).toLocaleDateString(
-                                                            "es-CL"
                                                         )}
                                                     </div>
                                                 </td>

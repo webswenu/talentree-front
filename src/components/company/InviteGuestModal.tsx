@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useCreateInvitation } from "../../hooks/useInvitations";
+import { ModalPortal } from "../common/ModalPortal";
 
 interface InviteGuestModalProps {
     isOpen: boolean;
@@ -37,7 +38,9 @@ export const InviteGuestModal = ({ isOpen, onClose }: InviteGuestModalProps) => 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+
+        <ModalPortal onClose={onClose}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold text-gray-800">
@@ -66,7 +69,7 @@ export const InviteGuestModal = ({ isOpen, onClose }: InviteGuestModalProps) => 
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
                             Email *
                         </label>
                         <input
@@ -78,11 +81,11 @@ export const InviteGuestModal = ({ isOpen, onClose }: InviteGuestModalProps) => 
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="invitado@ejemplo.com"
                             disabled={createMutation.isPending}
-                        />
+                         id="email"/>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="firstName">
                             Nombre *
                         </label>
                         <input
@@ -94,11 +97,11 @@ export const InviteGuestModal = ({ isOpen, onClose }: InviteGuestModalProps) => 
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Juan"
                             disabled={createMutation.isPending}
-                        />
+                         id="firstName"/>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="lastName">
                             Apellido *
                         </label>
                         <input
@@ -110,7 +113,7 @@ export const InviteGuestModal = ({ isOpen, onClose }: InviteGuestModalProps) => 
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Pérez"
                             disabled={createMutation.isPending}
-                        />
+                         id="lastName"/>
                     </div>
 
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -143,5 +146,7 @@ export const InviteGuestModal = ({ isOpen, onClose }: InviteGuestModalProps) => 
                 </form>
             </div>
         </div>
+
+        </ModalPortal>
     );
 };

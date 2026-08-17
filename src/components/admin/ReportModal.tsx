@@ -8,6 +8,7 @@ import {
 import { useCreateReport, useUpdateReport } from "../../hooks/useReports";
 import { useProcesses } from "../../hooks/useProcesses";
 import { useWorkers } from "../../hooks/useWorkers";
+import { ModalPortal } from "../common/ModalPortal";
 
 interface ReportModalProps {
     report?: Report;
@@ -107,8 +108,10 @@ export default function ReportModal({ report, onClose }: ReportModalProps) {
     const isLoading = createMutation.isPending || updateMutation.isPending;
 
     return (
-        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+
+        <ModalPortal onClose={onClose}>
+        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[85dvh] overflow-y-auto">
                 <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
                     <h2 className="text-xl font-semibold text-gray-800">
                         {report ? "Editar Reporte" : "Nuevo Reporte"}
@@ -137,7 +140,7 @@ export default function ReportModal({ report, onClose }: ReportModalProps) {
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     {/* Título */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="title">
                             Título <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -151,7 +154,7 @@ export default function ReportModal({ report, onClose }: ReportModalProps) {
                                     : "border-gray-300"
                             }`}
                             disabled={isLoading}
-                        />
+                         id="title"/>
                         {errors.title && (
                             <p className="mt-1 text-sm text-red-500">
                                 {errors.title}
@@ -161,7 +164,7 @@ export default function ReportModal({ report, onClose }: ReportModalProps) {
 
                     {/* Tipo */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="type">
                             Tipo <span className="text-red-500">*</span>
                         </label>
                         <select
@@ -174,7 +177,7 @@ export default function ReportModal({ report, onClose }: ReportModalProps) {
                                     : "border-gray-300"
                             }`}
                             disabled={isLoading}
-                        >
+                         id="type">
                             {Object.values(ReportType).map((type) => (
                                 <option key={type} value={type}>
                                     {ReportTypeLabels[type]}
@@ -190,7 +193,7 @@ export default function ReportModal({ report, onClose }: ReportModalProps) {
 
                     {/* Descripción */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="description">
                             Descripción
                         </label>
                         <textarea
@@ -200,12 +203,12 @@ export default function ReportModal({ report, onClose }: ReportModalProps) {
                             rows={3}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             disabled={isLoading}
-                        />
+                         id="description"/>
                     </div>
 
                     {/* Proceso */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="processId">
                             Proceso (Opcional)
                         </label>
                         <select
@@ -214,7 +217,7 @@ export default function ReportModal({ report, onClose }: ReportModalProps) {
                             onChange={handleChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             disabled={isLoading}
-                        >
+                         id="processId">
                             <option value="">Ninguno</option>
                             {processes?.data?.map((process) => (
                                 <option key={process.id} value={process.id}>
@@ -226,7 +229,7 @@ export default function ReportModal({ report, onClose }: ReportModalProps) {
 
                     {/* Trabajador */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="workerId">
                             Trabajador (Opcional)
                         </label>
                         <select
@@ -235,7 +238,7 @@ export default function ReportModal({ report, onClose }: ReportModalProps) {
                             onChange={handleChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             disabled={isLoading}
-                        >
+                         id="workerId">
                             <option value="">Ninguno</option>
                             {workers?.data?.map((worker) => (
                                 <option key={worker.id} value={worker.id}>
@@ -248,7 +251,7 @@ export default function ReportModal({ report, onClose }: ReportModalProps) {
 
                     {/* URL del Archivo */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="fileUrl">
                             URL del Archivo
                         </label>
                         <input
@@ -259,12 +262,12 @@ export default function ReportModal({ report, onClose }: ReportModalProps) {
                             placeholder="https://ejemplo.com/reporte.pdf"
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             disabled={isLoading}
-                        />
+                         id="fileUrl"/>
                     </div>
 
                     {/* Nombre del Archivo */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="fileName">
                             Nombre del Archivo
                         </label>
                         <input
@@ -275,7 +278,7 @@ export default function ReportModal({ report, onClose }: ReportModalProps) {
                             placeholder="reporte-evaluacion.pdf"
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             disabled={isLoading}
-                        />
+                         id="fileName"/>
                     </div>
 
                     {/* Botones */}
@@ -303,5 +306,7 @@ export default function ReportModal({ report, onClose }: ReportModalProps) {
                 </form>
             </div>
         </div>
+
+        </ModalPortal>
     );
 }

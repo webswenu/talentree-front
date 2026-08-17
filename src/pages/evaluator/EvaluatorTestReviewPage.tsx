@@ -4,6 +4,7 @@ import {
     useTestResponse,
     useEvaluateAnswer,
     useRecalculateScore,
+    useSaveEvaluatorNotes,
 } from "../../hooks/useTestResponses";
 import {
     QuestionType,
@@ -21,6 +22,7 @@ export const EvaluatorTestReviewPage = () => {
     );
     const evaluateAnswerMutation = useEvaluateAnswer();
     const recalculateMutation = useRecalculateScore();
+    const saveNotesMutation = useSaveEvaluatorNotes();
 
     const [answerScores, setAnswerScores] = useState<
         Record<string, { score: number; comment: string }>
@@ -66,6 +68,14 @@ export const EvaluatorTestReviewPage = () => {
                     },
                 });
             }
+
+            // P-66: las notas generales se escribían en el textarea y se
+            // perdían: handleSaveReview mandaba el puntaje de cada respuesta
+            // pero nunca las notas. Ahora se guardan antes de recalcular.
+            await saveNotesMutation.mutateAsync({
+                responseId: testResponseId,
+                evaluatorNotes: generalNotes,
+            });
 
             await recalculateMutation.mutateAsync(testResponseId);
 

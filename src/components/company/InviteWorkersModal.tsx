@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { workersService } from "../../services/workers.service";
 import { Modal } from "../common/Modal";
+import { ModalPortal } from "../common/ModalPortal";
 
 interface InviteWorkersModalProps {
     processId: string;
@@ -119,8 +120,10 @@ export const InviteWorkersModal = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] flex flex-col">
+
+        <ModalPortal onClose={onClose}>
+        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[85dvh] flex flex-col">
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-gray-200">
                     <div className="flex items-center justify-between">
@@ -384,5 +387,7 @@ export const InviteWorkersModal = ({
                 </div>
             </Modal>
         </div>
+
+        </ModalPortal>
     );
 };

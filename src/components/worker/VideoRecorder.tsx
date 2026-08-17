@@ -214,18 +214,41 @@ export const VideoRecorder = ({
 
             // El useEffect se encargará de asignar el stream cuando el videoRef esté listo
         } catch (error: unknown) {
-            let errorMsg = "No se pudo acceder a la cámara y micrófono. Por favor verifica los permisos.";
-            
-            if (error instanceof Error) {
-                errorMsg = error.message || errorMsg;
-            } else if (error && typeof error === "object" && "name" in error) {
-                const mediaError = error as { name?: string };
-                if (mediaError.name === "NotAllowedError") {
-                    errorMsg = "Permisos de cámara y micrófono denegados. Por favor permite el acceso en la configuración del navegador.";
-                } else if (mediaError.name === "NotFoundError") {
-                    errorMsg = "No se encontró cámara o micrófono. Por favor verifica que estén conectados.";
-                }
-            }
+            /**
+             * P-79. Los mensajes en español de abajo eran CÓDIGO MUERTO.
+             *
+             * La rama `if (error instanceof Error)` iba primero y siempre
+             * ganaba: getUserMedia lanza un DOMException, que hereda de Error,
+             * así que la ejecución nunca llegaba al `else if` que distingue
+             * NotAllowedError de NotFoundError. Al usuario le llegaba el
+             * mensaje crudo del navegador, en inglés y sin decirle qué hacer.
+             *
+             * Ahora se mira `error.name` PRIMERO, que es el dato fiable, y el
+             * `message` del navegador queda solo como último recurso.
+             */
+            const nombre =
+                error && typeof error === "object" && "name" in error
+                    ? (error as { name?: string }).name
+                    : undefined;
+
+            const porNombre: Record<string, string> = {
+                NotAllowedError:
+                    "Bloqueaste el acceso a la cámara y el micrófono. Para habilitarlo, pulsa el icono de la cámara en la barra de direcciones del navegador, permite el acceso y vuelve a intentarlo.",
+                NotFoundError:
+                    "No encontramos ninguna cámara o micrófono conectados. Verifica que estén enchufados y vuelve a intentarlo.",
+                NotReadableError:
+                    "Otra aplicación está usando la cámara. Ciérrala (por ejemplo Zoom, Meet o Teams) y vuelve a intentarlo.",
+                OverconstrainedError:
+                    "Tu cámara no admite la calidad que necesitamos para la grabación. Prueba con otra cámara si tienes.",
+                AbortError:
+                    "Se interrumpió el acceso a la cámara. Vuelve a intentarlo.",
+                SecurityError:
+                    "El navegador bloqueó el acceso a la cámara por seguridad. Verifica que la página se esté abriendo con https.",
+            };
+
+            const errorMsg =
+                (nombre && porNombre[nombre]) ||
+                "No se pudo acceder a la cámara y el micrófono. Revisa los permisos del navegador e intenta nuevamente.";
             
             setErrorMessage(errorMsg);
             setState("error");

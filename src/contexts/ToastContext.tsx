@@ -2,10 +2,15 @@ import {
     createContext,
     useContext,
     useState,
+    useEffect,
     ReactNode,
     useCallback,
 } from "react";
 import { Toast, ToastType } from "../components/common/Toast";
+import {
+    registrarAvisoDeError,
+    desregistrarAvisoDeError,
+} from "../utils/toastBridge";
 
 interface ToastContextType {
     showToast: (message: string, type: ToastType) => void;
@@ -52,12 +57,21 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
         [showToast]
     );
 
+    // P-78. Deja el aviso de error al alcance del interceptor de axios, que
+    // corre fuera de React y por tanto no puede usar este contexto.
+    useEffect(() => {
+        registrarAvisoDeError(error);
+        return () => desregistrarAvisoDeError();
+    }, [error]);
+
     return (
         <ToastContext.Provider
             value={{ showToast, success, error, warning, info }}
         >
             {children}
-            <div className="fixed top-4 right-4 z-50 space-y-2">
+            {/* z-60: por encima de los modales (z-50). Un error disparado
+                desde un diálogo tiene que verse, no quedar detrás de él. */}
+            <div className="fixed top-4 right-4 z-[60] space-y-2">
                 {toasts.map((toast) => (
                     <Toast
                         key={toast.id}

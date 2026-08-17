@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useWorkerProcesses } from "../../hooks/useWorkers";
 import { useAuthStore } from "../../store/authStore";
 import {
@@ -9,6 +9,7 @@ import {
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { SearchInput } from "../../components/common/SearchInput";
 import { useDebounce } from "../../hooks/useDebounce";
+import { formatDateShort } from "../../utils/formatters";
 
 export const WorkerApplicationsPage = () => {
     const { user } = useAuthStore();
@@ -21,8 +22,22 @@ export const WorkerApplicationsPage = () => {
 
     // Si viene con results=true, mostrar solo resultados finales
     const showResults = searchParams.get("results") === "true";
-    const initialStatus = showResults ? "" : (searchParams.get("status") || "");
-    const [statusFilter, setStatusFilter] = useState(initialStatus);
+    const statusDeLaUrl = showResults ? "" : searchParams.get("status") || "";
+    const [statusFilter, setStatusFilter] = useState(statusDeLaUrl);
+
+    /**
+     * D-13 / P-13. `useState(inicial)` solo evalúa su argumento al MONTAR el
+     * componente. Si el usuario ya está en esta pantalla y navega a la misma
+     * ruta con otro querystring (por ejemplo desde dos acciones rápidas
+     * distintas del panel), React reutiliza el componente y el filtro se queda
+     * con el valor viejo, mostrando una lista que no corresponde al acceso que
+     * se acaba de pulsar.
+     *
+     * Se sincroniza con la URL, que es la fuente de verdad.
+     */
+    useEffect(() => {
+        setStatusFilter(statusDeLaUrl);
+    }, [statusDeLaUrl]);
 
     const { data: applications, isLoading } = useWorkerProcesses(
         workerId || ""
@@ -181,8 +196,11 @@ export const WorkerApplicationsPage = () => {
                             filteredApplications.map((app) => (
                                 <tr key={app.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm font-medium text-gray-900">
-                                            {app.process.name}
+                                        <div
+                                                    className="text-sm font-medium text-gray-900 max-w-[18rem] truncate"
+                                                    title={app.process.name}
+                                                >
+                                                    {app.process.name}
                                         </div>
                                         <div className="text-sm text-gray-500">
                                             {app.process.code}
@@ -196,12 +214,12 @@ export const WorkerApplicationsPage = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {app.appliedAt
-                                            ? new Date(
+                                            ? formatDateShort(
                                                   app.appliedAt
-                                              ).toLocaleDateString("es-CL")
-                                            : new Date(
+                                              )
+                                            : formatDateShort(
                                                   app.createdAt
-                                              ).toLocaleDateString("es-CL")}
+                                              )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span

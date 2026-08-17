@@ -80,6 +80,17 @@ export interface AcceptInvitationResponse {
     processId?: string;
 }
 
+/**
+ * Respuesta de POST /process-invitations/accept-by-id/:id
+ * El trabajador ya está autenticado, así que el backend siempre resuelve
+ * la postulación: no existen los estados intermedios de registro.
+ */
+export interface AcceptInvitationByIdResponse {
+    status: "applied";
+    message: string;
+    invitation: ProcessInvitation;
+}
+
 export interface QueryProcessInvitationsDto {
     page?: number;
     limit?: number;

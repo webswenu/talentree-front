@@ -79,7 +79,6 @@ export const useSubmitTest = () => {
                 : testResponse.workerProcess?.id;
 
             if (workerProcessId) {
-                console.log('Invalidating worker process:', workerProcessId);
                 queryClient.invalidateQueries({
                     queryKey: ["workers", "worker-process", workerProcessId],
                 });
@@ -90,7 +89,6 @@ export const useSubmitTest = () => {
             }
 
             // Invalidate all process tests queries to update test status badges
-            console.log('Invalidating all process tests queries');
             queryClient.invalidateQueries({
                 queryKey: ["processes", "tests"],
             });
@@ -136,6 +134,26 @@ export const useRecalculateScore = () => {
         mutationFn: (responseId: string) =>
             testResponsesService.recalculateScore(responseId),
         onSuccess: (_, responseId) => {
+            queryClient.invalidateQueries({
+                queryKey: testResponseKeys.detail(responseId),
+            });
+        },
+    });
+};
+
+/** P-66: guarda las notas generales de la evaluación. */
+export const useSaveEvaluatorNotes = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            responseId,
+            evaluatorNotes,
+        }: {
+            responseId: string;
+            evaluatorNotes: string;
+        }) => testResponsesService.saveEvaluatorNotes(responseId, evaluatorNotes),
+        onSuccess: (_, { responseId }) => {
             queryClient.invalidateQueries({
                 queryKey: testResponseKeys.detail(responseId),
             });

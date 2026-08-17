@@ -45,6 +45,8 @@ import { ApproveRejectModal } from "../../components/common/ApproveRejectModal";
 import { FormatSelectionModal } from "../../components/common/FormatSelectionModal";
 import { BulkInviteModal } from "../../components/admin/BulkInviteModal";
 import { toast } from "../../utils/toast";
+import { ModalPortal } from "../../components/common/ModalPortal";
+import { formatDateShort } from "../../utils/formatters";
 
 type TabType = "candidates" | "approved" | "final_decisions" | "reports" | "timeline";
 
@@ -513,13 +515,19 @@ export const ProcessDetailPage = () => {
                                             {invitationsData.data.map((invitation: ProcessInvitation) => (
                                                 <tr key={invitation.id} className="hover:bg-gray-50">
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm font-medium text-gray-900">
-                                                            {invitation.firstName} {invitation.lastName}
+                                                        <div
+                                                    className="text-sm font-medium text-gray-900 max-w-[18rem] truncate"
+                                                    title={invitation.firstName}
+                                                >
+                                                    {invitation.firstName} {invitation.lastName}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm text-gray-500">
-                                                            {invitation.email}
+                                                        <div
+                                                    className="text-sm text-gray-500 max-w-[18rem] truncate"
+                                                    title={invitation.email}
+                                                >
+                                                    {invitation.email}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -533,11 +541,11 @@ export const ProcessDetailPage = () => {
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         {invitation.sentAt
-                                                            ? new Date(invitation.sentAt).toLocaleDateString()
-                                                            : new Date(invitation.createdAt).toLocaleDateString()}
+                                                            ? formatDateShort(invitation.sentAt)
+                                                            : formatDateShort(invitation.createdAt)}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {new Date(invitation.expiresAt).toLocaleDateString()}
+                                                        {formatDateShort(invitation.expiresAt)}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                         <div className="flex justify-end gap-2">
@@ -618,12 +626,18 @@ export const ProcessDetailPage = () => {
                                             <tr key={workerProcess.id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div>
-                                                        <div className="text-sm font-medium text-gray-900">
-                                                            {workerProcess.worker.firstName}{" "}
+                                                        <div
+                                                    className="text-sm font-medium text-gray-900 max-w-[18rem] truncate"
+                                                    title={workerProcess.worker.firstName}
+                                                >
+                                                    {workerProcess.worker.firstName}{" "}
                                                             {workerProcess.worker.lastName}
                                                         </div>
-                                                        <div className="text-sm text-gray-500">
-                                                            {workerProcess.worker.email}
+                                                        <div
+                                                    className="text-sm text-gray-500 max-w-[18rem] truncate"
+                                                    title={workerProcess.worker.email}
+                                                >
+                                                    {workerProcess.worker.email}
                                                         </div>
                                                     </div>
                                                 </td>
@@ -640,7 +654,7 @@ export const ProcessDetailPage = () => {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {workerProcess.appliedAt
-                                                        ? new Date(workerProcess.appliedAt).toLocaleDateString()
+                                                        ? formatDateShort(workerProcess.appliedAt)
                                                         : "-"}
                                                 </td>
                                                 {!isCompany && (
@@ -777,12 +791,18 @@ export const ProcessDetailPage = () => {
                                                 <tr key={workerProcess.id} className="hover:bg-gray-50">
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div>
-                                                            <div className="text-sm font-medium text-gray-900">
-                                                                {workerProcess.worker.firstName}{" "}
+                                                            <div
+                                                    className="text-sm font-medium text-gray-900 max-w-[18rem] truncate"
+                                                    title={workerProcess.worker.firstName}
+                                                >
+                                                    {workerProcess.worker.firstName}{" "}
                                                                 {workerProcess.worker.lastName}
                                                             </div>
-                                                            <div className="text-sm text-gray-500">
-                                                                {workerProcess.worker.email}
+                                                            <div
+                                                    className="text-sm text-gray-500 max-w-[18rem] truncate"
+                                                    title={workerProcess.worker.email}
+                                                >
+                                                    {workerProcess.worker.email}
                                                             </div>
                                                         </div>
                                                     </td>
@@ -797,7 +817,7 @@ export const ProcessDetailPage = () => {
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         {workerProcess.evaluatedAt
-                                                            ? new Date(workerProcess.evaluatedAt).toLocaleDateString()
+                                                            ? formatDateShort(workerProcess.evaluatedAt)
                                                             : "-"}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -933,7 +953,7 @@ export const ProcessDetailPage = () => {
                                                             {wp.worker.email}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {wp.evaluatedAt ? new Date(wp.evaluatedAt).toLocaleDateString() : "-"}
+                                                            {wp.evaluatedAt ? formatDateShort(wp.evaluatedAt) : "-"}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                             {wp.totalScore || "-"}
@@ -1000,7 +1020,7 @@ export const ProcessDetailPage = () => {
                                                             {wp.worker.email}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {wp.evaluatedAt ? new Date(wp.evaluatedAt).toLocaleDateString() : "-"}
+                                                            {wp.evaluatedAt ? formatDateShort(wp.evaluatedAt) : "-"}
                                                         </td>
                                                         <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                                                             {wp.notes || "-"}
@@ -1313,7 +1333,7 @@ export const ProcessDetailPage = () => {
                                         <p className="text-xs text-gray-400 mt-1">
                                             Primera postulación:{" "}
                                             {workersData[0]?.appliedAt
-                                                ? new Date(workersData[0].appliedAt).toLocaleDateString()
+                                                ? formatDateShort(workersData[0].appliedAt)
                                                 : "N/A"}
                                         </p>
                                     </div>
@@ -1396,7 +1416,7 @@ export const ProcessDetailPage = () => {
                                     <p className="text-xs text-gray-400 mt-1">
                                         Última actualización:{" "}
                                         {process?.updatedAt
-                                            ? new Date(process.updatedAt).toLocaleDateString("es-CL")
+                                            ? formatDateShort(process.updatedAt)
                                             : "N/A"}
                                     </p>
                                 </div>
@@ -1428,12 +1448,13 @@ export const ProcessDetailPage = () => {
             />
 
             {selectedVideo && (
-                <div
-                    className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4"
-                    onClick={() => setSelectedVideo(null)}
-                >
+                <ModalPortal onClose={() => setSelectedVideo(null)}>
                     <div
-                        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto"
+                        className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+                        onClick={() => setSelectedVideo(null)}
+                    >
+                    <div
+                        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[85dvh] overflow-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="p-6">
@@ -1527,11 +1548,12 @@ export const ProcessDetailPage = () => {
                         </div>
                     </div>
                 </div>
+                </ModalPortal>
             )}
 
             {/* Invitation Modal */}
             {invitationModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
                     <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">
                             Invitar Candidato
@@ -1613,7 +1635,7 @@ export const ProcessDetailPage = () => {
 
             {/* Modal de Cambio de Estado de Trabajador */}
             {workerStatusModal.isOpen && workerStatusModal.workerProcess && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
                     <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">
                             {workerStatusModal.newStatus === WorkerStatus.APPROVED

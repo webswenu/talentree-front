@@ -5,6 +5,7 @@ import {
     VideoQuestion,
     CreateProcessVideoRequirementDto,
 } from "../../types/process.types";
+import { ModalPortal } from "../common/ModalPortal";
 
 interface VideoRequirementsConfigProps {
     processId: string;
@@ -453,6 +454,7 @@ export const VideoRequirementsConfig = ({
 
             {/* Modal */}
             {modal.type && (
+                <ModalPortal onClose={closeModal}>
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 bg-opacity-50 p-4">
                     <div className="bg-white rounded-lg shadow-xl max-w-md w-full animate-in fade-in zoom-in duration-200">
                         {/* Modal Header */}
@@ -572,6 +574,7 @@ export const VideoRequirementsConfig = ({
                         </div>
                     </div>
                 </div>
+                </ModalPortal>
             )}
         </div>
     );

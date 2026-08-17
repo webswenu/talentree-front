@@ -1,14 +1,39 @@
 import apiService from "./api.service";
 import { User, CreateUserDto, UpdateUserDto } from "../types/user.types";
+import type { PaginatedResult } from "../types/api.types";
+
+export interface UserFilters {
+    role?: string;
+    isActive?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+}
 
 class UsersService {
-    async getAll(params?: {
-        role?: string;
-        status?: string;
-        search?: string;
-    }): Promise<User[]> {
-        const { data } = await apiService.get<User[]>("/users", { params });
+    // P-69: el endpoint pasó a devolver una respuesta paginada, como el resto
+    // de los listados. Antes descargaba TODOS los usuarios y el navegador
+    // filtraba en memoria.
+    async getAll(params?: UserFilters): Promise<PaginatedResult<User>> {
+        const { data } = await apiService.get<PaginatedResult<User>>(
+            "/users",
+            { params }
+        );
         return data;
+    }
+
+    /**
+     * Todos los usuarios sin paginar, para los combos que necesitan la lista
+     * completa (por ejemplo elegir representante de una empresa). Se pide un
+     * límite alto de forma explícita en vez de depender de que el backend no
+     * pagine, que era el defecto P-69.
+     */
+    async getAllForSelect(params?: UserFilters): Promise<User[]> {
+        const { data } = await apiService.get<PaginatedResult<User>>(
+            "/users",
+            { params: { ...params, limit: 100 } }
+        );
+        return data.data;
     }
 
     async getOne(id: string): Promise<User> {

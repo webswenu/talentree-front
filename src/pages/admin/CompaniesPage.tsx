@@ -14,6 +14,7 @@ import { Permission, hasPermission } from "../../utils/permissions";
 import { toast } from "../../utils/toast";
 import { EditIcon, TrashIcon } from "../../components/common/ActionIcons";
 import { ClipboardList, PowerOff, Power } from "lucide-react";
+import { ListError } from "../../components/common/ListError";
 
 const PAGE_SIZE = 10;
 
@@ -41,6 +42,7 @@ export const CompaniesPage = () => {
         isLoading,
         isFetching,
         error,
+        refetch,
     } = useCompanies({
         page,
         limit: PAGE_SIZE,
@@ -184,11 +186,15 @@ export const CompaniesPage = () => {
         );
     }
 
+    // P-61: había mensaje, pero sin motivo y sin salida: la única forma de
+    // recuperarse era recargar la página a mano.
     if (error) {
         return (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                Error al cargar las empresas
-            </div>
+            <ListError
+                error={error}
+                recurso="las empresas"
+                onReintentar={() => refetch()}
+            />
         );
     }
 
@@ -310,10 +316,16 @@ export const CompaniesPage = () => {
                                                 )}
                                             </div>
                                             <div className="ml-4">
-                                                <div className="text-sm font-medium text-gray-900">
+                                                <div
+                                                    className="text-sm font-medium text-gray-900 max-w-[18rem] truncate"
+                                                    title={company.name}
+                                                >
                                                     {company.name}
                                                 </div>
-                                                <div className="text-sm text-gray-500">
+                                                <div
+                                                    className="text-sm text-gray-500 max-w-[18rem] truncate"
+                                                    title={company.user?.email}
+                                                >
                                                     {company.user?.email}
                                                 </div>
                                             </div>

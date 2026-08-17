@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { userService } from "../../services/user.service";
 import companiesService from "../../services/companies.service";
@@ -9,7 +9,6 @@ import { Pagination } from "../../components/common/Pagination";
 import { InputField, SelectField } from "../../components/common/FormField";
 import { useForm } from "../../hooks/useForm";
 import { useDebounce } from "../../hooks/useDebounce";
-import { usePagination } from "../../hooks/usePagination";
 import { useFilter } from "../../hooks/useFilter";
 import { toast } from "../../utils/toast";
 import { UserRole, User } from "../../types/user.types";
@@ -18,6 +17,7 @@ import { Permission, hasPermission } from "../../utils/permissions";
 import { EditIcon, TrashIcon } from "../../components/common/ActionIcons";
 import { useCompanies, useCreateCompany } from "../../hooks/useCompanies";
 import { useCreateInvitation } from "../../hooks/useInvitations";
+import { formatDateShort } from "../../utils/formatters";
 
 interface UserFormData extends Record<string, unknown> {
     firstName: string;
@@ -72,46 +72,39 @@ export const UsersPage = () => {
         status: "all",
     });
 
-    const { data: users, isLoading } = useQuery({
-        queryKey: ["users"],
-        queryFn: () => userService.getAll(),
+    // P-69. Antes: userService.getAll() sin parámetros descargaba la nómina
+    // completa con sus relaciones y el filtrado ocurría aquí, en el navegador.
+    // Ahora la búsqueda, los filtros y la paginación los resuelve el servidor,
+    // igual que en empresas, procesos y trabajadores.
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Volver a la primera página al cambiar la búsqueda o los filtros: si no,
+    // se puede quedar en una página que ya no existe y la tabla sale vacía.
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [debouncedSearch, filters.role, filters.status]);
+
+    const { data: usersPage, isLoading } = useQuery({
+        queryKey: ["users", currentPage, debouncedSearch, filters],
+        queryFn: () =>
+            userService.getAll({
+                page: currentPage,
+                limit: 10,
+                search: debouncedSearch || undefined,
+                role: filters.role !== "all" ? filters.role : undefined,
+                isActive:
+                    filters.status === "all"
+                        ? undefined
+                        : String(filters.status === "active"),
+            }),
+        placeholderData: (anterior) => anterior,
     });
 
-    const {
-        currentPage,
-        totalPages,
-        paginatedData,
-        goToPage,
-        nextPage,
-        prevPage,
-    } = usePagination(
-        useMemo(() => {
-            if (!users) return [];
-
-            return users.filter((user: User) => {
-                const matchesSearch =
-                    user.firstName
-                        ?.toLowerCase()
-                        .includes(debouncedSearch.toLowerCase()) ||
-                    user.lastName
-                        ?.toLowerCase()
-                        .includes(debouncedSearch.toLowerCase()) ||
-                    user.email
-                        ?.toLowerCase()
-                        .includes(debouncedSearch.toLowerCase());
-
-                const matchesRole =
-                    filters.role === "all" || user.role === filters.role;
-                const matchesStatus =
-                    filters.status === "all" ||
-                    (filters.status === "active" && user.isActive) ||
-                    (filters.status === "inactive" && !user.isActive);
-
-                return matchesSearch && matchesRole && matchesStatus;
-            });
-        }, [users, debouncedSearch, filters]),
-        10
-    );
+    const paginatedData = usersPage?.data ?? [];
+    const totalPages = usersPage?.meta.totalPages ?? 1;
+    const goToPage = (pagina: number) => setCurrentPage(pagina);
+    const nextPage = () => setCurrentPage((p) => Math.min(p + 1, totalPages));
+    const prevPage = () => setCurrentPage((p) => Math.max(p - 1, 1));
 
     const createMutation = useMutation({
         mutationFn: (data: Required<UserFormData>) => userService.create(data),
@@ -122,9 +115,6 @@ export const UsersPage = () => {
             resetForm();
         },
         onError: (error: any) => {
-            console.log("❌ Error completo:", error);
-            console.log("❌ Error.response:", error?.response);
-            console.log("❌ Error.response.data:", error?.response?.data);
             const errorMessage = error?.response?.data?.message || error.message || "Error al crear usuario";
             toast.error(errorMessage);
         },
@@ -231,8 +221,6 @@ export const UsersPage = () => {
                         companyId: data.companyId,
                     };
 
-                    console.log('Datos de invitación a enviar:', invitationData);
-                    console.log('companyId:', data.companyId);
 
                     await createInvitationMutation.mutateAsync(invitationData);
                     setShowModal(false);
@@ -515,9 +503,9 @@ export const UsersPage = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                             {user.createdAt
-                                                ? new Date(
+                                                ? formatDateShort(
                                                       user.createdAt
-                                                  ).toLocaleDateString("es-CL")
+                                                  )
                                                 : "-"}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
@@ -651,7 +639,7 @@ export const UsersPage = () => {
                     {/* Select de empresa solo para GUEST */}
                     {!editingUser && selectedRole === UserRole.GUEST && (
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="companyId">
                                 Empresa *
                             </label>
                             <select
@@ -659,7 +647,7 @@ export const UsersPage = () => {
                                 value={values.companyId || ""}
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                            >
+                             id="companyId">
                                 <option value="">Seleccionar empresa...</option>
                                 {companies.map((company: { id: string; name: string }) => (
                                     <option key={company.id} value={company.id}>
