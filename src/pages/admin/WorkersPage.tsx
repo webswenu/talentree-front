@@ -15,6 +15,8 @@ import { useAuthStore } from "../../store/authStore";
 import { Permission, hasPermission } from "../../utils/permissions";
 import { UserRole } from "../../types/user.types";
 import { EyeIcon, EditIcon, TrashIcon } from "../../components/common/ActionIcons";
+import { ListError } from "../../components/common/ListError";
+import { useDebounce } from "../../hooks/useDebounce";
 
 export default function WorkersPage() {
     const { user } = useAuthStore();
@@ -23,6 +25,8 @@ export default function WorkersPage() {
     const [page, setPage] = useState(1);
     const [limit] = useState(10);
     const [search, setSearch] = useState("");
+    // P-36: sin esto se consultaba al servidor en cada tecla.
+    const busqueda = useDebounce(search, 300);
     const [statusFilter, setStatusFilter] = useState<string>("");
 
     // Detectar si estamos en admin o evaluador para usar la ruta correcta
@@ -40,14 +44,19 @@ export default function WorkersPage() {
         () => ({
             page,
             limit,
-            ...(search && { search }),
+            ...(busqueda && { search: busqueda }),
             ...(statusFilter && { status: statusFilter }),
             ...(companyId && { companyId }),
         }),
-        [page, limit, search, statusFilter, companyId]
+        [page, limit, busqueda, statusFilter, companyId]
     );
 
-    const { data: workersData, isLoading } = useWorkers(filters);
+    const {
+        data: workersData,
+        isLoading,
+        error,
+        refetch,
+    } = useWorkers(filters);
     const deleteMutation = useDeleteWorker();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedWorker, setSelectedWorker] = useState<Worker | undefined>();
@@ -126,6 +135,18 @@ export default function WorkersPage() {
         );
     }
 
+    // P-61: un fallo de red se veía como una lista vacía. Va DESPUÉS del
+    // estado de carga y ANTES del vacío, para no confundirlos.
+    if (error) {
+        return (
+            <ListError
+                error={error}
+                recurso="los candidatos"
+                onReintentar={() => refetch()}
+            />
+        );
+    }
+
     const workers = workersData?.data || [];
     const meta = workersData?.meta;
 
@@ -180,8 +201,20 @@ export default function WorkersPage() {
                         />
                     </div>
                     <div>
+                        {/*
+                            P-67. El desplegable ofrecía Activo/Inactivo/Pendiente
+                            y filtraba por `worker.status`, un campo que no existe
+                            en la tabla: la consulta fallaba con un error de base
+                            de datos que llegaba como un 400 sin explicación.
+
+                            El estado de un candidato es su situación EN UN
+                            PROCESO (worker_processes.status), no un atributo
+                            suyo: la misma persona puede estar aprobada en un
+                            proceso y rechazada en otro. La etiqueta y las
+                            opciones ahora dicen eso.
+                        */}
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Estado
+                            Estado en el proceso
                         </label>
                         <select
                             value={statusFilter}
@@ -192,9 +225,12 @@ export default function WorkersPage() {
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="">Todos los estados</option>
-                            <option value="active">Activo</option>
-                            <option value="inactive">Inactivo</option>
-                            <option value="pending">Pendiente</option>
+                            <option value="pending">Postulado</option>
+                            <option value="in_process">En evaluación</option>
+                            <option value="completed">Tests completados</option>
+                            <option value="approved">Aprobado</option>
+                            <option value="rejected">Rechazado</option>
+                            <option value="hired">Contratado</option>
                         </select>
                     </div>
                 </div>
@@ -275,8 +311,11 @@ export default function WorkersPage() {
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
                                         <div>
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {worker.firstName}{" "}
+                                            <div
+                                                    className="text-sm font-medium text-gray-900 max-w-[18rem] truncate"
+                                                    title={worker.firstName}
+                                                >
+                                                    {worker.firstName}{" "}
                                                 {worker.lastName}
                                             </div>
                                             {worker.education && (

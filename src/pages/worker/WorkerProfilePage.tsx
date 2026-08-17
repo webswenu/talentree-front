@@ -143,12 +143,29 @@ export const WorkerProfilePage = () => {
                 },
             });
 
-            // Actualizar Worker (rut, birthDate) si existe
+            /**
+             * P-54. Aquí solo se guardaban `rut` y `birthDate` en Worker, y el
+             * nombre, el apellido y el teléfono únicamente en User.
+             *
+             * El problema es que las entidades User y Worker DUPLICAN esos
+             * campos, y las pantallas del administrador y de la empresa leen
+             * los de Worker. Resultado: el candidato cambiaba su nombre, veía
+             * el cambio guardado en su perfil, y admin y empresa seguían viendo
+             * el nombre viejo indefinidamente.
+             *
+             * Se escriben los dos lados. La solución de fondo —decidir cuál de
+             * las dos entidades es la fuente de verdad y que la otra la
+             * referencie— queda anotada en el plan: es un cambio de modelo de
+             * datos, no de esta pantalla.
+             */
             const workerIdToUpdate = user?.worker?.id || currentWorker?.id;
             if (workerIdToUpdate) {
                 await updateWorkerMutation.mutateAsync({
                     id: workerIdToUpdate,
                     data: {
+                        firstName: profileForm.firstName,
+                        lastName: profileForm.lastName,
+                        phone: profileForm.phone || undefined,
                         rut: profileForm.rut || undefined,
                         birthDate: profileForm.birthDate || undefined,
                     },

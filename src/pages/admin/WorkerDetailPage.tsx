@@ -27,6 +27,8 @@ import {
     reportKeys,
 } from "../../hooks/useReports";
 import { Permission, hasPermission } from "../../utils/permissions";
+import { ModalPortal } from "../../components/common/ModalPortal";
+import { formatDateShort } from "../../utils/formatters";
 
 export const WorkerDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -268,9 +270,7 @@ export const WorkerDetailPage = () => {
                             </label>
                             <p className="text-gray-900 mt-1">
                                 {worker.birthDate
-                                    ? new Date(worker.birthDate).toLocaleDateString(
-                                          "es-CL"
-                                      )
+                                    ? formatDateShort(worker.birthDate)
                                     : "-"}
                             </p>
                         </div>
@@ -395,10 +395,8 @@ export const WorkerDetailPage = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {wp.appliedAt
-                                                    ? new Date(
+                                                    ? formatDateShort(
                                                           wp.appliedAt
-                                                      ).toLocaleDateString(
-                                                          "es-CL"
                                                       )
                                                     : "-"}
                                             </td>
@@ -525,7 +523,7 @@ export const WorkerDetailPage = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {new Date(report.generatedDate || report.createdAt).toLocaleDateString()}
+                                            {formatDateShort(report.generatedDate || report.createdAt)}
                                         </td>
                                         {/* Columna Archivos */}
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -651,12 +649,13 @@ export const WorkerDetailPage = () => {
 
             {/* Video Modal */}
             {selectedVideo && (
-                <div
-                    className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4"
-                    onClick={() => setSelectedVideo(null)}
-                >
+                <ModalPortal onClose={() => setSelectedVideo(null)}>
                     <div
-                        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto"
+                        className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+                        onClick={() => setSelectedVideo(null)}
+                    >
+                    <div
+                        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[85dvh] overflow-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="p-6">
@@ -736,12 +735,13 @@ export const WorkerDetailPage = () => {
                         </div>
                     </div>
                 </div>
+                </ModalPortal>
             )}
 
             {/* Modal de Rechazo de Reporte */}
             {rejectModal.isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4"
+                    className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
                     onClick={() => {
                         setRejectModal({ isOpen: false, reportId: null });
                         setRejectionReason("");

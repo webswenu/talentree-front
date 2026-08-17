@@ -39,11 +39,30 @@ export const StatCard = ({
         gray: "bg-gradient-to-br from-gray-500/60 to-gray-600/60",
     };
 
+    /**
+     * D-11 / P-11. La tarjeta clickeable era un <div onClick>: sin role, sin
+     * tabIndex y sin manejador de teclado. Quien navega con teclado o con
+     * lector de pantalla no podía usar ninguno de los accesos del panel, y ni
+     * siquiera sabía que eran clickeables.
+     *
+     * Se renderiza como <button> cuando recibe onClick, que resuelve de una vez
+     * el foco, la activación con Enter y Espacio, y la semántica para el lector.
+     * Cuando no es clickeable sigue siendo un <div>, porque un botón que no
+     * hace nada también confunde.
+     */
+    const Contenedor = onClick ? "button" : "div";
+
     return (
-        <div
-            onClick={onClick}
-            className={`rounded-2xl p-6 hover:scale-[1.02] transition-all duration-300 animate-slide-up
-                group hover:shadow-xl border border-black/30 ${colorClasses[color]} ${onClick ? "cursor-pointer" : ""}`}
+        <Contenedor
+            {...(onClick
+                ? { type: "button" as const, onClick, "aria-label": `${title}: ${value}` }
+                : {})}
+            className={`w-full text-left rounded-2xl p-6 hover:scale-[1.02] transition-all duration-300 animate-slide-up
+                group hover:shadow-xl border border-black/30 ${colorClasses[color]} ${
+                onClick
+                    ? "cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2"
+                    : ""
+            }`}
         >
             <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -76,6 +95,6 @@ export const StatCard = ({
                     </div>
                 )}
             </div>
-        </div>
+        </Contenedor>
     );
 };

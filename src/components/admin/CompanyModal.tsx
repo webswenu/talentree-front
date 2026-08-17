@@ -10,6 +10,7 @@ import { UserRole } from "../../types/user.types";
 import { toast } from "../../utils/toast";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { getRutError } from "../../utils/rut";
+import { ModalPortal } from "../common/ModalPortal";
 
 interface CompanyModalProps {
     company: Company | null;
@@ -235,8 +236,9 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
         users?.filter((u) => u.role === UserRole.COMPANY && !u.company) || [];
 
     return (
+        <ModalPortal>
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-            <div className="bg-white rounded-lg max-w-2xl w-full my-8 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg max-w-2xl w-full my-8 shadow-xl max-h-[85dvh] overflow-y-auto">
                 <div className="p-6 border-b">
                     <h2 className="text-2xl font-bold">
                         {isEditing ? "Editar Empresa" : "Nueva Empresa"}
@@ -255,7 +257,7 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     <div className="grid md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="name">
                                 Nombre de la Empresa *
                             </label>
                             <input
@@ -266,11 +268,11 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                                 className="input"
                                 required
                                 disabled={mutation.isPending}
-                            />
+                             id="name"/>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="rut">
                                 RUT *
                             </label>
                             <input
@@ -282,11 +284,11 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                                 placeholder="12345678-9"
                                 required
                                 disabled={mutation.isPending || isEditing}
-                            />
+                             id="rut"/>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="industry">
                                 Industria
                             </label>
                             <input
@@ -297,11 +299,11 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                                 className="input"
                                 placeholder="ej: Minería"
                                 disabled={mutation.isPending}
-                            />
+                             id="industry"/>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="city">
                                 Ciudad
                             </label>
                             <input
@@ -311,11 +313,11 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                                 onChange={handleChange}
                                 className="input"
                                 disabled={mutation.isPending}
-                            />
+                             id="city"/>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="country">
                                 País
                             </label>
                             <input
@@ -325,7 +327,7 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                                 onChange={handleChange}
                                 className="input"
                                 disabled={mutation.isPending}
-                            />
+                             id="country"/>
                         </div>
 
                         {!isEditing && (
@@ -389,7 +391,7 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                                         </p>
                                         <div className="grid md:grid-cols-2 gap-3">
                                             <div>
-                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                <label className="block text-xs font-medium text-gray-700 mb-1" htmlFor="firstName">
                                                     Nombre *
                                                 </label>
                                                 <input
@@ -406,10 +408,10 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                                                     disabled={
                                                         createUserMutation.isPending
                                                     }
-                                                />
+                                                 id="firstName"/>
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                <label className="block text-xs font-medium text-gray-700 mb-1" htmlFor="lastName">
                                                     Apellido *
                                                 </label>
                                                 <input
@@ -424,10 +426,10 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                                                     disabled={
                                                         createUserMutation.isPending
                                                     }
-                                                />
+                                                 id="lastName"/>
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                <label className="block text-xs font-medium text-gray-700 mb-1" htmlFor="email">
                                                     Email *
                                                 </label>
                                                 <input
@@ -442,10 +444,10 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                                                     disabled={
                                                         createUserMutation.isPending
                                                     }
-                                                />
+                                                 id="email"/>
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                <label className="block text-xs font-medium text-gray-700 mb-1" htmlFor="phone">
                                                     Teléfono
                                                 </label>
                                                 <input
@@ -460,7 +462,7 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                                                     disabled={
                                                         createUserMutation.isPending
                                                     }
-                                                />
+                                                 id="phone"/>
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -568,7 +570,7 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                         )}
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="address">
                                 Dirección
                             </label>
                             <input
@@ -578,7 +580,7 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                                 onChange={handleChange}
                                 className="input"
                                 disabled={mutation.isPending}
-                            />
+                             id="address"/>
                         </div>
 
                         {/* Sección para cambiar contraseña en modo edición */}
@@ -780,5 +782,6 @@ export const CompanyModal = ({ company, onClose }: CompanyModalProps) => {
                 </form>
             </div>
         </div>
+        </ModalPortal>
     );
 };

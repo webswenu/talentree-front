@@ -1,3 +1,12 @@
+import * as XLSX from "xlsx";
+
+/**
+ * P-62. Este módulo no lo usa nadie todavía (los casos de exportación quedaron
+ * marcados "No aplica" en el QA), pero tenía dos defectos que iban a aparecer
+ * el día que se conectara. Se corrigen ahora, que es barato, en vez de borrar
+ * el archivo: la funcionalidad puede estar prevista y eliminarla no me
+ * corresponde.
+ */
 type Row = Record<string, unknown>;
 
 export const exportToCSV = (data: Row[], filename: string) => {
@@ -22,7 +31,14 @@ export const exportToCSV = (data: Row[], filename: string) => {
         ),
     ].join("\n");
 
-    downloadFile(csvContent, `${filename}.csv`, "text/csv;charset=utf-8;");
+    // P-62 (a): sin la marca de orden de bytes al principio, Excel abre el CSV
+    // como ANSI y los acentos y la ñ salen corruptos ("Muñoz" -> "MuÃ±oz").
+    // Es el defecto que TAB-08 iba a encontrar.
+    downloadFile(
+        "﻿" + csvContent,
+        `${filename}.csv`,
+        "text/csv;charset=utf-8;"
+    );
 };
 
 export const exportToJSON = (data: unknown, filename: string) => {
@@ -33,44 +49,21 @@ export const exportToJSON = (data: unknown, filename: string) => {
 export const exportToExcel = (data: Row[], filename: string) => {
     if (data.length === 0) return;
 
-    const headers = Object.keys(data[0]);
+    /**
+     * P-62 (b): antes esto generaba HTML y lo guardaba con extensión .xls.
+     * Excel lo abre, pero mostrando una advertencia de formato, y otras
+     * herramientas (LibreOffice, Google Sheets, cualquier lector de xlsx) lo
+     * rechazan directamente. Además interpolaba los valores sin escapar, así
+     * que un dato con "<" rompía la tabla.
+     *
+     * Se usa `xlsx`, que el proyecto YA tiene instalada, y que genera un
+     * archivo real. De paso desaparece el problema del escapado.
+     */
+    const hoja = XLSX.utils.json_to_sheet(data);
+    const libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, "Datos");
 
-    const htmlContent = `
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          table { border-collapse: collapse; width: 100%; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background-color: #4CAF50; color: white; }
-        </style>
-      </head>
-      <body>
-        <table>
-          <thead>
-            <tr>
-              ${headers.map((h) => `<th>${h}</th>`).join("")}
-            </tr>
-          </thead>
-          <tbody>
-            ${data
-                .map(
-                    (row) => `
-              <tr>
-                ${headers
-                    .map((h) => `<td>${String(row[h] ?? "")}</td>`) 
-                    .join("")}
-              </tr>
-            `
-                )
-                .join("")}
-          </tbody>
-        </table>
-      </body>
-    </html>
-  `;
-
-    downloadFile(htmlContent, `${filename}.xls`, "application/vnd.ms-excel");
+    XLSX.writeFile(libro, `${filename}.xlsx`);
 };
 
 const downloadFile = (content: string, filename: string, mimeType: string) => {

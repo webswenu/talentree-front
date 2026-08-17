@@ -11,6 +11,29 @@ import {
 } from "../../hooks/useUsers";
 import type { Company } from "../../types/company.types";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { getApiErrorMessage } from "../../utils/apiError";
+
+/** Mismo criterio que la pantalla declara al usuario y que aplica el backend. */
+const FORMATOS_LOGO = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "image/svg+xml",
+];
+const TAMANO_MAXIMO_LOGO = 5 * 1024 * 1024;
+
+const validarLogo = (file: File): string | null => {
+    if (!FORMATOS_LOGO.includes(file.type)) {
+        return "Ese formato no se admite. El logo debe ser JPG, PNG, GIF, WEBP o SVG.";
+    }
+    if (file.size > TAMANO_MAXIMO_LOGO) {
+        const mb = (file.size / (1024 * 1024)).toFixed(1);
+        return `El archivo pesa ${mb} MB y el máximo son 5 MB. Reduce su tamaño e intenta de nuevo.`;
+    }
+    return null;
+};
 
 export const CompanySettingsPage = () => {
     const { user, setUser } = useAuthStore();
@@ -36,6 +59,10 @@ export const CompanySettingsPage = () => {
         "info" | "notifications" | "account"
     >("info");
     const [successMessage, setSuccessMessage] = useState("");
+    // P-83: la pantalla solo sabía avisar de los aciertos. Un logo rechazado
+    // por formato o por tamaño no mostraba nada y el usuario no entendía por
+    // qué no había cambiado.
+    const [errorMessage, setErrorMessage] = useState("");
     const [showDeleteLogoModal, setShowDeleteLogoModal] = useState(false);
 
     const [companyForm, setCompanyForm] = useState({
@@ -183,6 +210,17 @@ export const CompanySettingsPage = () => {
         const file = e.target.files?.[0];
         if (!file || !companyData?.id) return;
 
+        setErrorMessage("");
+
+        // Se valida antes de enviar para responder al instante, repitiendo el
+        // mismo criterio que la propia pantalla declara más abajo.
+        const motivo = validarLogo(file);
+        if (motivo) {
+            setErrorMessage(motivo);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+            return;
+        }
+
         try {
             const updatedCompany = await uploadLogoMutation.mutateAsync({
                 id: companyData.id,
@@ -212,7 +250,13 @@ export const CompanySettingsPage = () => {
             if (fileInputRef.current) {
                 fileInputRef.current.value = "";
             }
-        } catch {
+        } catch (err) {
+            setErrorMessage(
+                getApiErrorMessage(
+                    err,
+                    "No pudimos subir el logo. Revisa que sea una imagen JPG, PNG, GIF, WEBP o SVG de menos de 5 MB."
+                )
+            );
             if (fileInputRef.current) {
                 fileInputRef.current.value = "";
             }
@@ -246,7 +290,10 @@ export const CompanySettingsPage = () => {
             setSuccessMessage("Logo eliminado correctamente");
             setTimeout(() => setSuccessMessage(""), 3000);
             setShowDeleteLogoModal(false);
-        } catch {
+        } catch (err) {
+            setErrorMessage(
+                getApiErrorMessage(err, "No pudimos eliminar el logo.")
+            );
             setShowDeleteLogoModal(false);
         }
     };
@@ -263,6 +310,23 @@ export const CompanySettingsPage = () => {
                         : "Administra la información de tu empresa y preferencias"}
                 </p>
             </div>
+
+            {errorMessage && (
+                <div
+                    role="alert"
+                    className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-start justify-between gap-3"
+                >
+                    <p className="text-red-800 text-sm">{errorMessage}</p>
+                    <button
+                        type="button"
+                        onClick={() => setErrorMessage("")}
+                        aria-label="Cerrar el aviso"
+                        className="text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 rounded"
+                    >
+                        &times;
+                    </button>
+                </div>
+            )}
 
             {successMessage && (
                 <div className="fixed top-4 right-4 z-50 animate-fade-in">

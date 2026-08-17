@@ -29,6 +29,7 @@ import {
 } from "../../types/worker.types";
 import { FormatSelectionModal } from "../../components/common/FormatSelectionModal";
 import { InviteWorkersModal } from "../../components/company/InviteWorkersModal";
+import { formatDateShort } from "../../utils/formatters";
 
 type TabType = "info" | "tests" | "candidates" | "approved" | "reports" | "timeline";
 
@@ -305,9 +306,9 @@ export const CompanyProcessDetailPage = () => {
                                     </label>
                                     <p className="text-gray-900">
                                         {process.startDate
-                                            ? new Date(
+                                            ? formatDateShort(
                                                   process.startDate
-                                              ).toLocaleDateString("es-CL")
+                                              )
                                         : "N/A"}
                                 </p>
                             </div>
@@ -317,9 +318,9 @@ export const CompanyProcessDetailPage = () => {
                                 </label>
                                 <p className="text-gray-900">
                                     {process.endDate
-                                        ? new Date(
+                                        ? formatDateShort(
                                               process.endDate
-                                          ).toLocaleDateString("es-CL")
+                                          )
                                         : "N/A"}
                                 </p>
                             </div>
@@ -543,12 +544,18 @@ export const CompanyProcessDetailPage = () => {
                                             <tr key={workerProcess.id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div>
-                                                        <div className="text-sm font-medium text-gray-900">
-                                                            {workerProcess.worker.firstName}{" "}
+                                                        <div
+                                                    className="text-sm font-medium text-gray-900 max-w-[18rem] truncate"
+                                                    title={workerProcess.worker.firstName}
+                                                >
+                                                    {workerProcess.worker.firstName}{" "}
                                                             {workerProcess.worker.lastName}
                                                         </div>
-                                                        <div className="text-sm text-gray-500">
-                                                            {workerProcess.worker.email}
+                                                        <div
+                                                    className="text-sm text-gray-500 max-w-[18rem] truncate"
+                                                    title={workerProcess.worker.email}
+                                                >
+                                                    {workerProcess.worker.email}
                                                         </div>
                                                     </div>
                                                 </td>
@@ -565,7 +572,7 @@ export const CompanyProcessDetailPage = () => {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {workerProcess.appliedAt
-                                                        ? new Date(workerProcess.appliedAt).toLocaleDateString()
+                                                        ? formatDateShort(workerProcess.appliedAt)
                                                         : "-"}
                                                 </td>
                                                 {/* Empresas e invitados no pueden ver puntaje ni reportes */}
@@ -640,12 +647,18 @@ export const CompanyProcessDetailPage = () => {
                                                 <tr key={workerProcess.id} className="hover:bg-gray-50">
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div>
-                                                            <div className="text-sm font-medium text-gray-900">
-                                                                {workerProcess.worker.firstName}{" "}
+                                                            <div
+                                                    className="text-sm font-medium text-gray-900 max-w-[18rem] truncate"
+                                                    title={workerProcess.worker.firstName}
+                                                >
+                                                    {workerProcess.worker.firstName}{" "}
                                                                 {workerProcess.worker.lastName}
                                                             </div>
-                                                            <div className="text-sm text-gray-500">
-                                                                {workerProcess.worker.email}
+                                                            <div
+                                                    className="text-sm text-gray-500 max-w-[18rem] truncate"
+                                                    title={workerProcess.worker.email}
+                                                >
+                                                    {workerProcess.worker.email}
                                                             </div>
                                                         </div>
                                                     </td>
@@ -660,7 +673,7 @@ export const CompanyProcessDetailPage = () => {
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         {workerProcess.evaluatedAt
-                                                            ? new Date(workerProcess.evaluatedAt).toLocaleDateString()
+                                                            ? formatDateShort(workerProcess.evaluatedAt)
                                                             : "-"}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -936,7 +949,7 @@ export const CompanyProcessDetailPage = () => {
                                         <p className="text-xs text-gray-400 mt-1">
                                             Primera postulación:{" "}
                                             {workersData[0]?.appliedAt
-                                                ? new Date(workersData[0].appliedAt).toLocaleDateString()
+                                                ? formatDateShort(workersData[0].appliedAt)
                                                 : "N/A"}
                                         </p>
                                     </div>
@@ -1018,7 +1031,7 @@ export const CompanyProcessDetailPage = () => {
                                     <p className="text-xs text-gray-400 mt-1">
                                         Última actualización:{" "}
                                         {process?.updatedAt
-                                            ? new Date(process.updatedAt).toLocaleDateString("es-CL")
+                                            ? formatDateShort(process.updatedAt)
                                             : "N/A"}
                                     </p>
                                 </div>

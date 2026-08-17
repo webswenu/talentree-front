@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { ModalPortal } from "./ModalPortal";
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -26,7 +27,9 @@ export const ConfirmModal = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4">
+
+        <ModalPortal onClose={onClose}>
+        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
             <div className="bg-white rounded-lg max-w-md w-full p-6">
                 {/* Header */}
                 <div className="mb-4">
@@ -89,5 +92,7 @@ export const ConfirmModal = ({
                 </div>
             </div>
         </div>
+
+        </ModalPortal>
     );
 };

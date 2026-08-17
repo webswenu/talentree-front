@@ -1,4 +1,5 @@
 import { SelectionProcess } from "../../types/process.types";
+import { ModalPortal } from "../common/ModalPortal";
 
 interface ApplyProcessModalProps {
     isOpen: boolean;
@@ -18,6 +19,7 @@ export const ApplyProcessModal = ({
     if (!isOpen || !process) return null;
 
     return (
+        <ModalPortal>
         <div className="fixed inset-0 z-50 overflow-y-auto">
             {/* Overlay */}
             <div
@@ -312,5 +314,6 @@ export const ApplyProcessModal = ({
                 </div>
             </div>
         </div>
+        </ModalPortal>
     );
 };

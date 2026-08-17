@@ -17,6 +17,8 @@ import { videoService } from "../../services/video.service";
 import { VideoRequirementsConfig } from "../../components/admin/VideoRequirementsConfig";
 import { WorkerVideoRequirement } from "../../types/video.types";
 import { toast } from "../../utils/toast";
+import { ModalPortal } from "../../components/common/ModalPortal";
+import { formatDateShort } from "../../utils/formatters";
 
 export const EvaluatorProcessDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -357,21 +359,20 @@ export const EvaluatorProcessDetailPage = () => {
                                                     }{" "}
                                                     {candidate.worker?.lastName}
                                                 </div>
-                                                <div className="text-sm text-gray-500">
+                                                <div
+                                                    className="text-sm text-gray-500 max-w-[18rem] truncate"
+                                                    title={candidate.worker?.email}
+                                                >
                                                     {candidate.worker?.email}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {candidate.appliedAt
-                                                    ? new Date(
+                                                    ? formatDateShort(
                                                           candidate.appliedAt
-                                                      ).toLocaleDateString(
-                                                          "es-CL"
                                                       )
-                                                    : new Date(
+                                                    : formatDateShort(
                                                           candidate.createdAt
-                                                      ).toLocaleDateString(
-                                                          "es-CL"
                                                       )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
@@ -529,12 +530,13 @@ export const EvaluatorProcessDetailPage = () => {
             />
 
             {selectedVideo && (
-                <div
-                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-                    onClick={() => setSelectedVideo(null)}
-                >
+                <ModalPortal onClose={() => setSelectedVideo(null)}>
                     <div
-                        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto"
+                        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+                        onClick={() => setSelectedVideo(null)}
+                    >
+                    <div
+                        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[85dvh] overflow-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="p-6">
@@ -628,6 +630,7 @@ export const EvaluatorProcessDetailPage = () => {
                         </div>
                     </div>
                 </div>
+                </ModalPortal>
             )}
         </div>
     );

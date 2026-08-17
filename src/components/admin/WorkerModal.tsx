@@ -4,6 +4,7 @@ import { useCreateWorker, useUpdateWorker } from "../../hooks/useWorkers";
 import { useResetPassword } from "../../hooks/useUsers";
 import { workersService } from "../../services/workers.service";
 import { toast } from "../../utils/toast";
+import { ModalPortal } from "../common/ModalPortal";
 
 interface WorkerModalProps {
     worker?: Worker;
@@ -243,8 +244,10 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+
+        <ModalPortal onClose={onClose}>
+        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[85dvh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold text-gray-800">
                         {worker ? "Editar Trabajador" : "Nuevo Trabajador"}
@@ -261,7 +264,7 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="firstName">
                                     Nombre *
                                 </label>
                                 <input
@@ -271,11 +274,11 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                                     onChange={handleChange}
                                     required
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="firstName"/>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="lastName">
                                     Apellido *
                                 </label>
                                 <input
@@ -285,13 +288,13 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                                     onChange={handleChange}
                                     required
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="lastName"/>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="rut">
                                     RUT *
                                 </label>
                                 <input
@@ -301,11 +304,11 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                                     onChange={handleChange}
                                     required
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="rut"/>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
                                     Email *
                                 </label>
                                 <input
@@ -315,13 +318,13 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                                     onChange={handleChange}
                                     required
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="email"/>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="phone">
                                     Teléfono
                                 </label>
                                 <input
@@ -330,11 +333,11 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                                     value={formData.phone}
                                     onChange={handleChange}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="phone"/>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="birthDate">
                                     Fecha de Nacimiento
                                 </label>
                                 <input
@@ -343,12 +346,12 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                                     value={formData.birthDate}
                                     onChange={handleChange}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="birthDate"/>
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="address">
                                 Dirección
                             </label>
                             <input
@@ -357,12 +360,12 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                                 value={formData.address}
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
+                             id="address"/>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="city">
                                     Ciudad
                                 </label>
                                 <input
@@ -371,11 +374,11 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                                     value={formData.city}
                                     onChange={handleChange}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="city"/>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="region">
                                     Región
                                 </label>
                                 <input
@@ -384,12 +387,12 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                                     value={formData.region}
                                     onChange={handleChange}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                 id="region"/>
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="education">
                                 Educación
                             </label>
                             <input
@@ -398,11 +401,11 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                                 value={formData.education}
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
+                             id="education"/>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="experience">
                                 Experiencia
                             </label>
                             <textarea
@@ -411,7 +414,7 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                                 onChange={handleChange}
                                 rows={3}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
+                             id="experience"/>
                         </div>
 
                         {/* Sección de contraseña para crear */}
@@ -981,5 +984,7 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                 </form>
             </div>
         </div>
+
+        </ModalPortal>
     );
 }

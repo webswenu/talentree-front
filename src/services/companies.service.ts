@@ -13,7 +13,30 @@ interface CompanyDetailStats {
     totalApplications: number;
 }
 
+/** Contadores por proceso, calculados en el backend (P-39). */
+export interface ProcesoActivoDetalle {
+    id: string;
+    titulo: string;
+    fechaVencimiento: string | null;
+    postulantes: number;
+    enEvaluacion: number;
+    aprobados: number;
+}
+
+export interface ActividadReciente {
+    id: string;
+    tipo: string;
+    nombre: string;
+    proceso: string;
+    appliedAt: string | null;
+}
+
 export interface CompanyDashboardStats {
+    // P-39: el panel contaba sobre `proceso.workers`, una relación que el
+    // listado de procesos no devuelve, así que mostraba 0 en todo. Estos dos
+    // campos vienen ya calculados y no exponen la nómina de candidatos.
+    procesosActivosDetalle: ProcesoActivoDetalle[];
+    actividadReciente: ActividadReciente[];
     procesosActivos: {
         total: number;
         nuevos: number;

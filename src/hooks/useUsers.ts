@@ -11,10 +11,22 @@ export const userKeys = {
     detail: (id: string) => [...userKeys.details(), id] as const,
 };
 
+/**
+ * Lista completa, para los combos de selección de usuario.
+ * Para el listado paginado del panel, ver useUsersPaginated.
+ */
 export const useUsers = () => {
     return useQuery({
-        queryKey: userKeys.lists(),
-        queryFn: () => usersService.getAll(),
+        queryKey: userKeys.list({ select: true }),
+        queryFn: () => usersService.getAllForSelect(),
+    });
+};
+
+/** P-69: listado del panel con búsqueda, filtros y paginación en el servidor. */
+export const useUsersPaginated = (filters?: Record<string, unknown>) => {
+    return useQuery({
+        queryKey: userKeys.list(filters),
+        queryFn: () => usersService.getAll(filters as never),
     });
 };
 

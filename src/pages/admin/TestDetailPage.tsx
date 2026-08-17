@@ -217,7 +217,8 @@ export const TestDetailPage = () => {
                                             <p className="text-sm text-gray-600 mb-2">
                                                 {dim.description}
                                             </p>
-                                            {dim.questionCount && (
+                                            {/* Mismo caso que P-73: con 0 se dibujaría el número. */}
+                                            {(dim.questionCount ?? 0) > 0 && (
                                                 <p className="text-xs text-gray-500">
                                                     {dim.questionCount} preguntas
                                                 </p>

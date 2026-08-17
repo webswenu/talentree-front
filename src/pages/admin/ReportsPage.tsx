@@ -20,10 +20,11 @@ import { ApproveRejectModal } from "../../components/common/ApproveRejectModal";
 import { FormatSelectionModal } from "../../components/common/FormatSelectionModal";
 import { useAuthStore } from "../../store/authStore";
 import { Permission, hasPermission } from "../../utils/permissions";
+import { ListError } from "../../components/common/ListError";
 
 export default function ReportsPage() {
     const { user } = useAuthStore();
-    const { data: reports, isLoading } = useReports();
+    const { data: reports, isLoading, error, refetch } = useReports();
     const deleteMutation = useDeleteReport();
     const uploadMutation = useUploadReportFile();
     const downloadMutation = useDownloadReportFile();
@@ -273,6 +274,18 @@ export default function ReportsPage() {
             <div className="flex items-center justify-center h-64">
                 <div className="text-gray-500">Cargando reportes...</div>
             </div>
+        );
+    }
+
+    // P-61: un fallo de red se veía como una lista vacía. Va DESPUÉS del
+    // estado de carga y ANTES del vacío, para no confundirlos.
+    if (error) {
+        return (
+            <ListError
+                error={error}
+                recurso="los informes"
+                onReintentar={() => refetch()}
+            />
         );
     }
 

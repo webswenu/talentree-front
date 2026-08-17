@@ -20,6 +20,7 @@ import { toast } from "../../utils/toast";
 import {
     useDownloadReportFile,
 } from "../../hooks/useReports";
+import { formatDateShort } from "../../utils/formatters";
 
 export const CompanyWorkerDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -192,9 +193,7 @@ export const CompanyWorkerDetailPage = () => {
                         </label>
                         <p className="text-gray-900 mt-1">
                             {worker.birthDate
-                                ? new Date(worker.birthDate).toLocaleDateString(
-                                      "es-CL"
-                                  )
+                                ? formatDateShort(worker.birthDate)
                                 : "-"}
                         </p>
                     </div>
@@ -324,10 +323,8 @@ export const CompanyWorkerDetailPage = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {wp.appliedAt
-                                                    ? new Date(
+                                                    ? formatDateShort(
                                                           wp.appliedAt
-                                                      ).toLocaleDateString(
-                                                          "es-CL"
                                                       )
                                                     : "-"}
                                             </td>
@@ -465,7 +462,7 @@ export const CompanyWorkerDetailPage = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {new Date(report.generatedDate || report.createdAt).toLocaleDateString()}
+                                            {formatDateShort(report.generatedDate || report.createdAt)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div className="flex gap-2">

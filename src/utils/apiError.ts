@@ -17,6 +17,22 @@ interface ApiErrorShape {
     code?: string;
 }
 
+/** Saca el texto del cuerpo de la respuesta, venga como string o como arreglo. */
+const extraerMensaje = (
+    data: { message?: string | string[] } | string | undefined
+): string | undefined => {
+    if (typeof data === "string") {
+        return data.trim() !== "" ? data : undefined;
+    }
+
+    const message = data?.message;
+
+    if (typeof message === "string" && message.trim() !== "") return message;
+    if (Array.isArray(message) && message.length > 0) return message.join(". ");
+
+    return undefined;
+};
+
 /**
  * Obtiene el mensaje de error legible de una excepción de axios.
  * @param err Error capturado
@@ -30,6 +46,26 @@ export const getApiErrorMessage = (err: unknown, fallback: string): string => {
         // Sin respuesta del servidor: problema de red, DNS, CORS o backend caído
         if (!axiosError.response) {
             return "No se pudo conectar con el servidor. Verifica tu conexión e intenta nuevamente.";
+        }
+
+        const status = axiosError.response.status ?? 0;
+
+        // P-72. Un 4xx trae una validación útil que conviene mostrar. Un 5xx,
+        // en cambio, trae el error interno del servidor, en inglés y sin nada
+        // accionable: "Internal server error", "connect ECONNREFUSED". Al
+        // usuario le sirve saber que el problema no es suyo y que sus datos
+        // siguen ahí.
+        if (status >= 500) {
+            return "No pudimos completar la operación. El problema es nuestro, no tuyo: tus datos siguen aquí. Intenta nuevamente en unos minutos.";
+        }
+
+        // P-78. El 403 se presentaba como un listado vacío, sin decir nada.
+        if (status === 403) {
+            const propio = extraerMensaje(axiosError.response.data);
+            return (
+                propio ??
+                "No tienes permiso para ver esta información. Si crees que deberías tenerlo, contacta al administrador."
+            );
         }
 
         const data = axiosError.response.data;

@@ -218,7 +218,7 @@ export const SettingsPage = () => {
                     </h2>
                     <form onSubmit={handleSaveGeneral} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="system_name">
                                 Nombre del Sistema
                             </label>
                             <input
@@ -229,10 +229,10 @@ export const SettingsPage = () => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50"
                                 disabled={isLoading || isEvaluator}
                                 readOnly={isEvaluator}
-                            />
+                             id="system_name"/>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="contact_email">
                                 Email de Contacto
                             </label>
                             <input
@@ -243,10 +243,10 @@ export const SettingsPage = () => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50"
                                 disabled={isLoading || isEvaluator}
                                 readOnly={isEvaluator}
-                            />
+                             id="contact_email"/>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="system_description">
                                 Descripción del Sistema
                             </label>
                             <textarea
@@ -257,10 +257,10 @@ export const SettingsPage = () => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50"
                                 disabled={isLoading || isEvaluator}
                                 readOnly={isEvaluator}
-                            />
+                             id="system_description"/>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="timezone">
                                 Zona Horaria
                             </label>
                             <select
@@ -269,7 +269,7 @@ export const SettingsPage = () => {
                                 onChange={handleGeneralChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50"
                                 disabled={isLoading || isEvaluator}
-                            >
+                             id="timezone">
                                 <option value="America/Santiago">
                                     America/Santiago
                                 </option>
@@ -288,7 +288,7 @@ export const SettingsPage = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="logo_url">
                                 URL del Logo
                             </label>
                             <input
@@ -300,7 +300,7 @@ export const SettingsPage = () => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50"
                                 disabled={isLoading || isEvaluator}
                                 readOnly={isEvaluator}
-                            />
+                             id="logo_url"/>
                         </div>
                         {!isEvaluator && (
                             <button
@@ -374,7 +374,7 @@ export const SettingsPage = () => {
                             </label>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="notification_frequency">
                                 Frecuencia de Notificaciones
                             </label>
                             <select
@@ -387,7 +387,7 @@ export const SettingsPage = () => {
                                     !notificationsForm.notifications_enabled ||
                                     isEvaluator
                                 }
-                            >
+                             id="notification_frequency">
                                 <option value="instant">Instantáneas</option>
                                 <option value="daily">Resumen Diario</option>
                                 <option value="weekly">Resumen Semanal</option>

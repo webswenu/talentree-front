@@ -3,6 +3,7 @@ import { useFixedTests } from "../../hooks/useTests";
 import { useAddFixedTest, useRemoveFixedTest } from "../../hooks/useProcesses";
 import { FixedTest } from "../../types/test.types";
 import { toast } from "../../utils/toast";
+import { ModalPortal } from "./ModalPortal";
 
 interface AssignTestsModalProps {
     isOpen: boolean;
@@ -77,6 +78,8 @@ export const AssignTestsModal = ({
     };
 
     return (
+
+        <ModalPortal onClose={onClose}>
         <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex min-h-screen items-center justify-center p-4">
                 {/* Backdrop */}
@@ -86,7 +89,7 @@ export const AssignTestsModal = ({
                 />
 
                 {/* Modal */}
-                <div className="relative bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] flex flex-col">
+                <div className="relative bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[80dvh] flex flex-col">
                     {/* Header */}
                     <div className="px-6 py-4 border-b border-gray-200">
                         <div className="flex items-center justify-between">
@@ -275,5 +278,7 @@ export const AssignTestsModal = ({
                 </div>
             </div>
         </div>
+
+        </ModalPortal>
     );
 };

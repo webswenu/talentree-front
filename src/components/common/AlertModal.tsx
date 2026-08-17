@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { ModalPortal } from "./ModalPortal";
 
 interface AlertModalProps {
     isOpen: boolean;
@@ -88,7 +89,9 @@ export const AlertModal = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4">
+
+        <ModalPortal onClose={onClose}>
+        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
             <div
                 className={`bg-white rounded-lg max-w-md w-full p-6 ${getBorderColor()}`}
             >
@@ -126,5 +129,7 @@ export const AlertModal = ({
                 </div>
             </div>
         </div>
+
+        </ModalPortal>
     );
 };

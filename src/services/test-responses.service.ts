@@ -60,6 +60,21 @@ class TestResponsesService {
         return response.data;
     }
 
+    /**
+     * P-66: las notas generales del evaluador no tenían dónde guardarse.
+     * La columna existía en la entidad, pero ningún endpoint la escribía.
+     */
+    async saveEvaluatorNotes(
+        responseId: string,
+        evaluatorNotes: string
+    ): Promise<TestResponse> {
+        const response = await apiService.patch<TestResponse>(
+            `${this.basePath}/${responseId}/evaluator-notes`,
+            { evaluatorNotes }
+        );
+        return response.data;
+    }
+
     async findOne(id: string): Promise<TestResponse> {
         const response = await apiService.get<TestResponse>(
             `${this.basePath}/${id}`

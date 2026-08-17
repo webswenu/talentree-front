@@ -26,7 +26,6 @@ export const Sidebar = () => {
         companyName,
         `${user.firstName} ${user.lastName}`
     );
-    console.log("Sidebar Title:", title);
 
     const isActive = (path: string) => {
         // Para las páginas de inicio (dashboard raíz), solo coincidir exactamente
@@ -49,10 +48,19 @@ export const Sidebar = () => {
 
     return (
         <>
-            {/* Botón hamburguesa para mobile */}
+            {/* Botón hamburguesa para mobile.
+                D-15: estaba en z-50, el mismo nivel que los overlays de modal,
+                así que en mobile podía quedar encima del encabezado del diálogo
+                tapando el título y la X. La escala ahora es explícita:
+                menú lateral y hamburguesa 40, modales 50, avisos 60. */}
             <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl glass-sidebar shadow-lg hover:scale-110 transition-transform"
+                // P-58: el botón solo contiene un icono SVG, así que para un
+                // lector de pantalla no tenía nombre: se anunciaba como
+                // "botón", sin más.
+                aria-label={isMobileMenuOpen ? "Cerrar el menú" : "Abrir el menú"}
+                aria-expanded={isMobileMenuOpen}
+                className="lg:hidden fixed top-4 left-4 z-40 p-3 rounded-xl glass-sidebar shadow-lg hover:scale-110 transition-transform"
             >
                 <svg className="w-6 h-6 text-gray-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     {isMobileMenuOpen ? (
@@ -103,7 +111,15 @@ export const Sidebar = () => {
                 </div>
 
                 {/* Navegación */}
-                <nav className="flex-1 overflow-y-auto px-3 py-2">
+                {/*
+                    `title` se calculaba con getTitleForRole y su ÚNICO consumidor
+                    era el console.log que se quitó en D-14: no se dibujaba en
+                    ninguna parte. En vez de borrarlo, se usa como nombre
+                    accesible del menú, que es lo que le faltaba: con varias
+                    zonas de navegación en la página, un lector de pantalla
+                    necesita poder distinguirlas.
+                */}
+                <nav aria-label={title} className="flex-1 overflow-y-auto px-3 py-2">
                     {sections.map((section) => (
                         <div key={section.path}>
                             {/* Separator */}

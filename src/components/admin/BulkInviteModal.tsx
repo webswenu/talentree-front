@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import * as XLSX from "xlsx";
 import { InviteeDto } from "../../types/process-invitation.types";
 import { useBulkCreateProcessInvitations } from "../../hooks/useProcessInvitations";
+import { ModalPortal } from "../common/ModalPortal";
 
 interface BulkInviteModalProps {
     isOpen: boolean;
@@ -135,8 +136,10 @@ export const BulkInviteModal = ({ isOpen, processId, onClose }: BulkInviteModalP
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+
+        <ModalPortal onClose={onClose}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[85dvh] overflow-y-auto">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
                     Invitación Masiva por Excel
                 </h3>
@@ -238,5 +241,7 @@ export const BulkInviteModal = ({ isOpen, processId, onClose }: BulkInviteModalP
                 </div>
             </div>
         </div>
+
+        </ModalPortal>
     );
 };

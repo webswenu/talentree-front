@@ -140,10 +140,20 @@ export const WorkerApplicationDetailPage = () => {
                 </div>
             </div>
 
-            {/* Available Tests Section - Wrapped with Video Gate */}
-            {processTests && (((processTests as ProcessTestsData).tests?.length ?? 0) > 0 || ((processTests as ProcessTestsData).fixedTests?.length ?? 0) > 0) && (
-                <div className="w-full">
-                    <VideoRequirementGate
+            {/*
+                P-80. Antes este bloque completo estaba dentro de la condición
+                "el proceso tiene tests", y el VideoRequirementGate iba dentro.
+                Resultado: si el proceso pedía video pero no tenía ningún test
+                asignado, el video NUNCA se solicitaba y nadie se enteraba. El
+                administrador marcaba la casilla y se quedaba con la impresión
+                de haberlo configurado.
+
+                La regla explícita es: si el proceso pide video, se pide, haya
+                tests o no. El gate ya sabe no estorbar cuando no se requiere
+                (renderiza sus hijos tal cual).
+            */}
+            <div className="w-full">
+                <VideoRequirementGate
                         processId={process.id}
                         workerId={user?.worker?.id || ""}
                         workerProcessId={application.id}
@@ -152,6 +162,10 @@ export const WorkerApplicationDetailPage = () => {
                             window.location.reload();
                         }}
                     >
+                    {/* El listado de tests solo se dibuja si el proceso tiene. */}
+                    {processTests &&
+                        (((processTests as ProcessTestsData).tests?.length ?? 0) > 0 ||
+                            ((processTests as ProcessTestsData).fixedTests?.length ?? 0) > 0) && (
                         <div className="bg-white rounded-lg shadow-lg p-6">
                             <h2 className="text-xl font-bold text-gray-900 mb-2">
                                 Tests Disponibles
@@ -343,9 +357,9 @@ export const WorkerApplicationDetailPage = () => {
                         ))}
                         </div>
                     </div>
+                    )}
                     </VideoRequirementGate>
                 </div>
-            )}
 
             {/* Grid: Process Info/Application Status and Timeline */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

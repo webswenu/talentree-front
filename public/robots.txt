@@ -1,0 +1,29 @@
+# Talentree — talentree.cl
+#
+# P-59. Este archivo no existía, así que /robots.txt devolvía el index.html de
+# la aplicación (por el fallback de una SPA): los rastreadores recibían HTML
+# donde esperaban texto plano, que es lo que el QA reportó como "robots.txt no
+# válido".
+#
+# Solo las páginas públicas son indexables. Los paneles quedan fuera: están
+# detrás de autenticación, así que un rastreador no vería nada útil, y sus URL
+# no tienen por qué aparecer en los buscadores.
+
+User-agent: *
+
+Allow: /$
+Allow: /oportunidades
+Allow: /terms
+Allow: /faq
+
+Disallow: /admin
+Disallow: /empresa
+Disallow: /evaluador
+Disallow: /trabajador
+Disallow: /invitado
+Disallow: /login
+Disallow: /register
+Disallow: /invitations
+Disallow: /unauthorized
+
+Sitemap: https://talentree.cl/sitemap.xml

@@ -1,3 +1,4 @@
+import { ModalPortal } from "./ModalPortal";
 interface FormatSelectionModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -16,7 +17,9 @@ export const FormatSelectionModal = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4">
+
+        <ModalPortal onClose={onClose}>
+        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
             <div className="bg-white rounded-lg max-w-md w-full p-6">
                 <div className="text-center mb-6">
                     <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
@@ -71,5 +74,7 @@ export const FormatSelectionModal = ({
                 </button>
             </div>
         </div>
+
+        </ModalPortal>
     );
 };

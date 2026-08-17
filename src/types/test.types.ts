@@ -11,7 +11,16 @@ export enum TestType {
 export enum QuestionType {
     MULTIPLE_CHOICE = "multiple_choice",
     TRUE_FALSE = "true_false",
-    OPEN_TEXT = "open_text",
+    /**
+     * P-31. El valor era "open_text" y el backend guarda "open_ended".
+     *
+     * Como el `switch` que dibuja la pregunta compara por valor, ninguna rama
+     * coincidía: la pregunta de texto abierto salía en blanco, sin campo donde
+     * escribir, y el candidato quedaba atrapado sin poder avanzar ni enviar.
+     * El nombre de la constante se conserva para no tocar los 6 archivos que
+     * la usan; lo que importa es el valor, que ahora sí coincide.
+     */
+    OPEN_TEXT = "open_ended",
     SCALE = "scale",
     MULTIPLE_RESPONSE = "multiple_response",
     // Tipos específicos para tests fijos
@@ -20,6 +29,22 @@ export enum QuestionType {
     LIKERT_SCALE = "likert_scale",
     TABLE_CHECKBOX = "table_checkbox",
 }
+
+/**
+ * P-32. Los tipos que el backend acepta DE VERDAD al crear un test normal
+ * (ver QuestionType en talentree-backend-v2).
+ *
+ * El selector del formulario recorría `Object.values(QuestionType)` y ofrecía
+ * los 9, incluidos los 4 que son exclusivos de los tests fijos y uno
+ * ("multiple_response") que no existe en ningún enum del backend. Elegir
+ * cualquiera de esos 5 producía un test que el backend rechaza.
+ */
+export const TIPOS_DE_PREGUNTA_SOPORTADOS: QuestionType[] = [
+    QuestionType.MULTIPLE_CHOICE,
+    QuestionType.TRUE_FALSE,
+    QuestionType.OPEN_TEXT,
+    QuestionType.SCALE,
+];
 
 export interface TestQuestion {
     id: string;

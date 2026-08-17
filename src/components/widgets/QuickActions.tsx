@@ -38,9 +38,11 @@ export const QuickActions = ({
 
     return (
         <div className="rounded-2xl p-6">
-            <h3 className="text-xl font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text mb-6">
+            {/* P-58: era un h3 sin ningún h2 por encima, así que la jerarquía
+                de títulos quedaba rota para quien navega por encabezados. */}
+            <h2 className="text-xl font-bold bg-gradient-to-r from-primary-600/70 to-secondary-600/70 bg-clip-text mb-6">
                 {title}
-            </h3>
+            </h2>
 
             <div className={`grid ${gridCols[columns]} gap-4`}>
                 {actions.map((action) => (

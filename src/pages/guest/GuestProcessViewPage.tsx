@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { processService } from "../../services/process.service";
+import { formatDateShort } from "../../utils/formatters";
 
 export const GuestProcessViewPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -45,9 +46,9 @@ export const GuestProcessViewPage = () => {
                         </label>
                         <p className="text-gray-900">
                             {process?.startDate
-                                ? new Date(
+                                ? formatDateShort(
                                       process.startDate
-                                  ).toLocaleDateString("es-CL")
+                                  )
                                 : "-"}
                         </p>
                     </div>
@@ -57,9 +58,7 @@ export const GuestProcessViewPage = () => {
                         </label>
                         <p className="text-gray-900">
                             {process?.endDate
-                                ? new Date(process.endDate).toLocaleDateString(
-                                      "es-CL"
-                                  )
+                                ? formatDateShort(process.endDate)
                                 : "-"}
                         </p>
                     </div>

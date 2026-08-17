@@ -9,6 +9,15 @@ export const Footer = () => {
                         className="h-40 mb-4"
                     />
                     <p className="mb-4">Teléfonos: +56 9 6371 7583</p>
+                    {/*
+                        P-55. PENDIENTE: estas dos URL apuntan a los dominios
+                        genéricos (facebook.com / instagram.com), no a los
+                        perfiles de Talentree, así que llevan al usuario a la
+                        portada de la red social. No se corrigieron porque hacen
+                        falta las direcciones reales, que no están en el código
+                        ni se pueden deducir. Reemplazar por los perfiles de la
+                        empresa, o retirar los iconos si no existen.
+                    */}
                     <div className="flex gap-4 mt-4">
                         <a
                             href="https://facebook.com"
@@ -62,11 +71,11 @@ export const Footer = () => {
                                 Servicios
                             </a>
                         </li>
-                        <li>
-                            <a href="#plans" className="hover:text-teal-500 transition">
-                                Planes
-                            </a>
-                        </li>
+                        {/* P-55: aquí había un enlace a #plans, un ancla sin
+                            sección de destino en la portada: al pulsarla no
+                            pasaba nada. Se retira el enlace muerto. Crear la
+                            sección de Planes es una decisión de producto
+                            (implica publicar precios), no un arreglo de QA. */}
                         <li>
                             <a href="#contact" className="hover:text-teal-500 transition">
                                 Contacto

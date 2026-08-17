@@ -1,4 +1,7 @@
 @import "tailwindcss";
+/* Tailwind v4 ignora tailwind.config.js salvo que se declare aquí.
+   Sin esta línea no existe ninguna clase primary-* ni secondary-*. */
+@config "../tailwind.config.js";
 
 @layer base {
   body {
@@ -285,12 +288,20 @@
   }
 
   /* Animation Classes */
+  /* IMPORTANTE: no usar 'forwards' en estas dos.
+     El último keyframe fija transform: translateY(0) y con fill-mode forwards
+     ese transform queda aplicado de forma permanente. Un transform distinto de
+     'none' convierte al elemento en bloque contenedor de sus descendientes
+     position: fixed, y los modales (fixed inset-0) pasan a medirse contra el
+     dashboard completo en vez de contra el viewport: quedan fuera de pantalla.
+     El estado final de ambas animaciones ya coincide con el estado natural del
+     elemento, así que sin 'forwards' el resultado visual es el mismo. */
   .animate-slide-up {
-    animation: slideUp 1s ease-out forwards;
+    animation: slideUp 1s ease-out;
   }
 
   .animate-fade-in {
-    animation: fadeIn 1s ease-out forwards;
+    animation: fadeIn 1s ease-out;
   }
 
   .animate-float {

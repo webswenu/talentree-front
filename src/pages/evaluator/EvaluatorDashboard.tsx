@@ -1,12 +1,9 @@
-import { useState } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { useNavigate } from "react-router-dom";
 import { QuickStats } from "../../components/widgets/QuickStats";
 import { RecentList } from "../../components/widgets/RecentList";
 import { BarChart } from "../../components/charts/BarChart";
 import { QuickActions } from "../../components/widgets/QuickActions";
-import { CompanyModal } from "../../components/admin/CompanyModal";
-import ProcessModal from "../../components/admin/ProcessModal";
 import { useCompaniesStats } from "../../hooks/useCompanies";
 import { useProcessesStats, useProcesses } from "../../hooks/useProcesses";
 import { useWorkersStats } from "../../hooks/useWorkers";
@@ -15,8 +12,6 @@ import { ProcessStatusLabels } from "../../types/process.types";
 export const EvaluatorDashboard = () => {
     const { user } = useAuthStore();
     const navigate = useNavigate();
-    const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
-    const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
 
     const { data: companiesStats, isLoading: loadingCompanies } =
         useCompaniesStats();
@@ -247,18 +242,13 @@ export const EvaluatorDashboard = () => {
                 )}
             </div>
 
-            {/* Company Modal (read-only for evaluator) */}
-            {isCompanyModalOpen && (
-                <CompanyModal
-                    company={null}
-                    onClose={() => setIsCompanyModalOpen(false)}
-                />
-            )}
-
-            {/* Process Modal (read-only for evaluator) */}
-            {isProcessModalOpen && (
-                <ProcessModal onClose={() => setIsProcessModalOpen(false)} />
-            )}
+            {/*
+                D-12: aquí se dibujaban CompanyModal y ProcessModal bajo dos
+                condiciones que NUNCA se cumplían: no existe ningún control que
+                ponga isCompanyModalOpen ni isProcessModalOpen en true. Se
+                retiran junto con sus estados y sus imports. Si el evaluador
+                debe poder abrirlos, hay que agregar el botón que los active.
+            */}
         </div>
     );
 };

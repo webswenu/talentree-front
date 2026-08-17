@@ -75,6 +75,7 @@ import { GuestWorkerDetailPage } from "../pages/guest/GuestWorkerDetailPage";
 import { GuestProfilePage } from "../pages/guest/GuestProfilePage";
 import GuestReportsPage from "../pages/guest/GuestReportsPage";
 import { GuestSettingsPage } from "../pages/guest/GuestSettingsPage";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 // Componente para redirigir según el rol
 const RoleBasedRedirect = () => {
@@ -100,9 +101,19 @@ const RoleBasedRedirect = () => {
     }
 };
 
+/**
+ * P-57: aplica el título de la pestaña por ruta. Va dentro del BrowserRouter
+ * porque necesita useLocation, y no dibuja nada.
+ */
+const TituloDeLaPestana = () => {
+    useDocumentTitle();
+    return null;
+};
+
 export const AppRoutes = () => {
     return (
         <BrowserRouter>
+            <TituloDeLaPestana />
             <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<LandingLayout />}>

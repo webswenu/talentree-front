@@ -6,6 +6,7 @@ import {
     BulkInviteResult,
     AcceptProcessInvitationDto,
     AcceptInvitationResponse,
+    AcceptInvitationByIdResponse,
     QueryProcessInvitationsDto,
     ProcessInvitationsPaginated,
 } from "../types/process-invitation.types";
@@ -46,6 +47,18 @@ class ProcessInvitationsService {
         const response = await apiService.post<AcceptInvitationResponse>(
             `${this.basePath}/accept`,
             dto
+        );
+        return response.data;
+    }
+
+    /**
+     * Acepta una invitación por ID, para el trabajador autenticado.
+     * El listado de "mis invitaciones" no expone el token, así que este es el
+     * único camino válido para aceptar desde el dashboard del trabajador.
+     */
+    async acceptById(id: string): Promise<AcceptInvitationByIdResponse> {
+        const response = await apiService.post<AcceptInvitationByIdResponse>(
+            `${this.basePath}/accept-by-id/${id}`
         );
         return response.data;
     }
