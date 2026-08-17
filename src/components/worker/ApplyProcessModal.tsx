@@ -19,7 +19,7 @@ export const ApplyProcessModal = ({
     if (!isOpen || !process) return null;
 
     return (
-        <ModalPortal>
+        <ModalPortal onClose={onClose}>
         <div className="fixed inset-0 z-50 overflow-y-auto">
             {/* Overlay */}
             <div
