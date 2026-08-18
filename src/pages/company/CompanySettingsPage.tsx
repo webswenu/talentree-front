@@ -144,6 +144,12 @@ export const CompanySettingsPage = () => {
                 const updatedUser = { ...user };
                 if (user.role === "company" && typeof user.company === "object") {
                     updatedUser.company = updatedCompany;
+                    // La lista del selector guarda su propia copia de cada
+                    // empresa: sin esto, renombrar la empresa o cambiarle el
+                    // logo deja el selector mostrando el nombre anterior.
+                    updatedUser.companies = user.companies?.map((c) =>
+                        c.id === updatedCompany.id ? updatedCompany : c
+                    );
                 } else if (
                     user.role === "guest" &&
                     typeof user.belongsToCompany === "object"
@@ -232,6 +238,12 @@ export const CompanySettingsPage = () => {
                 const updatedUser = { ...user };
                 if (user.role === "company" && typeof user.company === "object") {
                     updatedUser.company = updatedCompany;
+                    // La lista del selector guarda su propia copia de cada
+                    // empresa: sin esto, renombrar la empresa o cambiarle el
+                    // logo deja el selector mostrando el nombre anterior.
+                    updatedUser.companies = user.companies?.map((c) =>
+                        c.id === updatedCompany.id ? updatedCompany : c
+                    );
                 } else if (
                     user.role === "guest" &&
                     typeof user.belongsToCompany === "object"
@@ -276,6 +288,12 @@ export const CompanySettingsPage = () => {
                 const updatedUser = { ...user };
                 if (user.role === "company" && typeof user.company === "object") {
                     updatedUser.company = updatedCompany;
+                    // La lista del selector guarda su propia copia de cada
+                    // empresa: sin esto, renombrar la empresa o cambiarle el
+                    // logo deja el selector mostrando el nombre anterior.
+                    updatedUser.companies = user.companies?.map((c) =>
+                        c.id === updatedCompany.id ? updatedCompany : c
+                    );
                 } else if (
                     user.role === "guest" &&
                     typeof user.belongsToCompany === "object"

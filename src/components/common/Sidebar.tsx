@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { useLogout } from "../../hooks/useAuth";
 import NotificationBell from "./NotificationBell";
+import { CompanySwitcher } from "./CompanySwitcher";
 import {
     getSectionsForRole,
     getLogoForRole,
@@ -107,6 +108,9 @@ export const Sidebar = () => {
                             </div>
                             <NotificationBell />
                         </div>
+
+                        {/* Solo aparece si representa a más de una empresa. */}
+                        <CompanySwitcher />
                     </div>
                 </div>
 

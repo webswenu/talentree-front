@@ -51,7 +51,8 @@ export interface UpdateCompanyDto {
     rut?: string;
     email?: string;
     phone?: string;
-    userId?: string;
+    /** null desvincula al representante actual y deja la empresa sin usuario. */
+    userId?: string | null;
 }
 
 export interface CompanyStats {

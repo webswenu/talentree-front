@@ -12,13 +12,20 @@ export const userKeys = {
 };
 
 /**
- * Lista completa, para los combos de selección de usuario.
+ * Lista para los combos de selección de usuario.
  * Para el listado paginado del panel, ver useUsersPaginated.
+ *
+ * IMPORTANTE: getAllForSelect pide limit=100, que es el máximo que acepta el
+ * backend (PaginationDto, @Max(100)), y el servidor ordena por createdAt DESC.
+ * Sin filtrar por rol, esos 100 son los 100 usuarios más recientes de TODA la
+ * plataforma —candidatos incluidos—, así que en cuanto hay volumen los usuarios
+ * con rol Empresa se caen del combo y la pantalla dice "no hay usuarios
+ * disponibles" cuando sí los hay. Por eso el filtro va en el servidor.
  */
-export const useUsers = () => {
+export const useUsers = (filters?: Record<string, unknown>) => {
     return useQuery({
-        queryKey: userKeys.list({ select: true }),
-        queryFn: () => usersService.getAllForSelect(),
+        queryKey: userKeys.list({ select: true, ...filters }),
+        queryFn: () => usersService.getAllForSelect(filters as never),
     });
 };
 

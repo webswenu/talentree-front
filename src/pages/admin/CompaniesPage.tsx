@@ -339,11 +339,20 @@ export const CompaniesPage = () => {
                                                 >
                                                     {company.name}
                                                 </div>
+                                                {/* La empresa puede no tener
+                                                    representante todavia: se
+                                                    dice, en vez de dejar la
+                                                    celda vacia como si faltara
+                                                    cargar el dato. */}
                                                 <div
                                                     className="text-sm text-gray-500 max-w-[18rem] truncate"
                                                     title={company.user?.email}
                                                 >
-                                                    {company.user?.email}
+                                                    {company.user?.email || (
+                                                        <span className="italic text-gray-400">
+                                                            Sin representante
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

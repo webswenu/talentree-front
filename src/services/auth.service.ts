@@ -3,6 +3,7 @@ import type {
     LoginDto,
     AuthResponse,
     RegisterWorkerDto,
+    User,
 } from "../types/user.types";
 
 class AuthService {
@@ -42,6 +43,21 @@ class AuthService {
 
     async getCurrentUser() {
         const { data } = await apiService.get("/auth/me");
+        return data;
+    }
+
+    /**
+     * Cambia la empresa sobre la que opera un representante con varias.
+     * El backend devuelve el usuario ya actualizado, y se guarda en
+     * localStorage para que un refresco de pagina no vuelva a la anterior.
+     */
+    async setActiveCompany(companyId: string): Promise<User> {
+        const { data } = await apiService.patch<User>(
+            `/auth/empresa-activa/${companyId}`
+        );
+
+        localStorage.setItem("user", JSON.stringify(data));
+
         return data;
     }
 

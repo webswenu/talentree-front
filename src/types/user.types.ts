@@ -32,7 +32,14 @@ export interface User {
     createdAt: Date;
     updatedAt: Date;
     companyId?: string;
+    /**
+     * La empresa ACTIVA del representante, ya resuelta por el backend.
+     * Sigue siendo una sola aunque represente a varias: todo el frontend
+     * (dashboard, procesos, candidatos) trabaja con esta.
+     */
     company?: Company;
+    /** Todas las empresas que representa. Solo se usa para el selector. */
+    companies?: Company[];
     belongsToCompany?: Company;
     worker?: { id: string };
     rut?: string;

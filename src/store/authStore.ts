@@ -10,6 +10,7 @@ interface AuthState {
     login: (credentials: LoginDto) => Promise<void>;
     logout: () => void;
     setUser: (user: User | null) => void;
+    setActiveCompany: (companyId: string) => Promise<void>;
     clearError: () => void;
 }
 
@@ -57,6 +58,20 @@ export const useAuthStore = create<AuthState>((set) => ({
         } else {
             localStorage.removeItem("user");
         }
+    },
+
+    /**
+     * Cambia la empresa sobre la que opera un representante con varias.
+     *
+     * El backend valida la pertenencia y devuelve el usuario ya actualizado,
+     * asi que aqui no se arma el nuevo estado a mano: se usa lo que responde el
+     * servidor. Si se compusiera localmente, un rechazo del backend dejaria la
+     * pantalla mostrando una empresa sobre la que en realidad no se esta
+     * operando.
+     */
+    setActiveCompany: async (companyId: string) => {
+        const user = await authService.setActiveCompany(companyId);
+        set({ user });
     },
 
     clearError: () => {
