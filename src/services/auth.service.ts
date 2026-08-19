@@ -41,8 +41,15 @@ class AuthService {
         localStorage.removeItem("user");
     }
 
-    async getCurrentUser() {
-        const { data } = await apiService.get("/auth/me");
+    /**
+     * Es la única llamada de este servicio que no declaraba el tipo, así que
+     * `data` quedaba inferido como `{}` y `setUser(usuarioFresco)` no
+     * compilaba. El error venía del commit del selector de empresa y llevaba
+     * días en `main` sin que nadie lo notara, porque ese commit nunca se llegó
+     * a construir: hizo caer el primer build de Amplify que lo incluyó.
+     */
+    async getCurrentUser(): Promise<User> {
+        const { data } = await apiService.get<User>("/auth/me");
         return data;
     }
 
