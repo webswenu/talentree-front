@@ -24,22 +24,34 @@ export const CompanySwitcher = () => {
 
     /**
      * La sesión que hay en localStorage se escribió al iniciar sesión y no se
-     * refresca nunca. Para quien ya estaba dentro cuando se habilitó el
-     * multi-empresa, ese objeto no trae `companies`: le asignan una segunda
-     * empresa y el selector no aparece hasta que cierre sesión, sin ninguna
+     * refresca sola. Si a la representante le asignan una empresa mientras
+     * está dentro, esa lista queda vieja y el selector no aparece, sin ninguna
      * pista de por qué.
      *
-     * Se rehidrata una sola vez desde /auth/me (staleTime Infinity) y solo
-     * cuando falta el dato, para no pedirle al servidor algo que ya se tiene.
+     * Antes solo se rehidrataba cuando `companies` faltaba del todo, pensando
+     * en quienes ya estaban dentro cuando se habilitó el multi-empresa. Eso
+     * dejaba fuera el caso más común, y verificado en producción el
+     * 19-08-2026: una representante con UNA empresa guardada tiene el campo
+     * definido, así que la condición era falsa y no se rehidrataba nunca. Le
+     * asignaron la segunda y el selector siguió sin aparecer.
+     *
+     * Ahora se compara contra lo que dice el servidor. La consulta tiene
+     * `staleTime: Infinity`, así que es una sola llamada por carga de página.
      */
-    const necesitaRefresco = !!user && user.companies === undefined;
     const { data: usuarioFresco } = useCurrentUser();
 
+    const listaGuardada = user?.companies;
+    const listaDelServidor = usuarioFresco?.companies;
+    const cambioLaLista =
+        !!usuarioFresco &&
+        JSON.stringify((listaGuardada ?? []).map((c) => c.id).sort()) !==
+            JSON.stringify((listaDelServidor ?? []).map((c) => c.id).sort());
+
     useEffect(() => {
-        if (necesitaRefresco && usuarioFresco) {
+        if (cambioLaLista && usuarioFresco) {
             setUser(usuarioFresco);
         }
-    }, [necesitaRefresco, usuarioFresco, setUser]);
+    }, [cambioLaLista, usuarioFresco, setUser]);
 
     const companies = user?.companies || [];
 
