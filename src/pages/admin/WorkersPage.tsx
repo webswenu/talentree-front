@@ -179,8 +179,16 @@ export default function WorkersPage() {
                         <h1 className="text-2xl font-bold text-gray-800">
                             {pageTitle}
                         </h1>
+                        {/*
+                            Igual que en ProcessesPage: esta pantalla se comparte
+                            con empresa, invitado y evaluador, y el texto decia
+                            "administra TODOS los candidatos registrados" a quien
+                            solo ve los de su empresa y no puede administrarlos.
+                        */}
                         <p className="text-gray-500 text-sm mt-2">
-                            Visualiza y administra todos los candidatos registrados. Accede a su información personal, revisa sus postulaciones a procesos, consulta tests realizados y descarga reportes generados. Utiliza los filtros para buscar por nombre, email, RUT o estado.
+                            {canCreate
+                                ? "Visualiza y administra todos los candidatos registrados. Accede a su información personal, revisa sus postulaciones a procesos, consulta tests realizados y descarga reportes generados. Utiliza los filtros para buscar por nombre, email, RUT o estado."
+                                : "Consulta los candidatos de tus procesos: su información, las postulaciones en curso y los tests que han rendido. Usa los filtros para buscar por nombre, email, RUT o estado."}
                         </p>
                     </div>
                     {canCreate && (

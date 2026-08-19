@@ -200,8 +200,20 @@ export default function ProcessesPage() {
                         <h1 className="text-2xl font-bold text-gray-800">
                             Procesos de Selección
                         </h1>
+                        {/*
+                            El texto describia lo que puede hacer Talentree
+                            ("crea nuevos procesos, asigna tests psicometricos,
+                            invita candidatos... filtra por empresa") y se
+                            mostraba igual a una empresa o a un invitado, que no
+                            pueden hacer nada de eso: todas las escrituras de
+                            procesos son solo del administrador, y el filtro por
+                            empresa ni siquiera se dibuja para ellos. Ahora dice
+                            lo que esta pantalla hace para quien la esta mirando.
+                        */}
                         <p className="text-gray-500 text-sm mt-2">
-                            Gestiona todos los procesos de selección activos y completados. Crea nuevos procesos, asigna tests psicométricos, invita candidatos y monitorea el progreso. Filtra por estado, empresa o usa la búsqueda para encontrar procesos específicos.
+                            {canCreate
+                                ? "Gestiona todos los procesos de selección activos y completados. Crea nuevos procesos, asigna tests psicométricos, invita candidatos y monitorea el progreso. Filtra por estado, empresa o usa la búsqueda para encontrar procesos específicos."
+                                : "Consulta los procesos de selección de tu empresa y sigue su avance. Filtra por estado o usa la búsqueda para encontrar un proceso."}
                         </p>
                     </div>
                     {canCreate && (
