@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 import { useAuthStore } from "../../store/authStore";
 import {
     useChangePassword,
     useUpdateNotificationPreferences,
 } from "../../hooks/useUsers";
+import { getApiErrorMessage } from "../../utils/apiError";
 
 export const EvaluatorProfilePage = () => {
     const { user } = useAuthStore();
@@ -52,11 +54,12 @@ export const EvaluatorProfilePage = () => {
             setSuccessMessage("Preferencias guardadas");
             setTimeout(() => setSuccessMessage(""), 3000);
         } catch (error) {
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : "Error al guardar las preferencias";
+            const errorMessage = getApiErrorMessage(
+                error,
+                "Error al guardar las preferencias"
+            );
             console.error("Error saving notifications:", errorMessage);
+            toast.error(errorMessage);
         }
     };
 
@@ -81,11 +84,12 @@ export const EvaluatorProfilePage = () => {
             });
             setTimeout(() => setSuccessMessage(""), 3000);
         } catch (error) {
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : "Error al cambiar la contraseña";
+            const errorMessage = getApiErrorMessage(
+                error,
+                "Error al cambiar la contraseña"
+            );
             console.error("Error changing password:", errorMessage);
+            toast.error(errorMessage);
         }
     };
 

@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import { toast } from "react-hot-toast";
 
 /**
  * P-62. Este módulo no lo usa nadie todavía (los casos de exportación quedaron
@@ -91,7 +92,8 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
         await navigator.clipboard.writeText(text);
         return true;
     } catch (err) {
-        console.error("Error copying to clipboard:", err);
+        // No se avisa acá: la función devuelve false justamente para que quien la llame decida qué mostrar, y un toast propio duplicaría el aviso.
+        console.warn("No se pudo copiar el texto al portapapeles.", err);
         return false;
     }
 };
@@ -99,6 +101,24 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
 export const downloadImage = async (url: string, filename: string) => {
     try {
         const response = await fetch(url);
+
+        /**
+         * `fetch` NO rechaza ante un 404 o un 403: entrega la respuesta con
+         * `ok` en false. Sin esta comprobación se descargaba el cuerpo del
+         * error como si fuera la imagen y la persona terminaba con un archivo
+         * roto en su carpeta, sin ningún aviso.
+         */
+        if (!response.ok) {
+            toast.error(
+                response.status === 404
+                    ? "El archivo ya no está disponible. Puede que se haya eliminado."
+                    : response.status === 403
+                    ? "No tienes permiso para descargar este archivo."
+                    : "No se pudo descargar el archivo. Intenta nuevamente en unos minutos."
+            );
+            return;
+        }
+
         const blob = await response.blob();
         const blobUrl = URL.createObjectURL(blob);
 
@@ -110,6 +130,15 @@ export const downloadImage = async (url: string, filename: string) => {
         document.body.removeChild(link);
         URL.revokeObjectURL(blobUrl);
     } catch (err) {
+        /**
+         * Acá NO sirve getApiErrorMessage: está hecho para errores de axios, y
+         * lo que llega de `fetch` es un TypeError cuyo `message` es "Failed to
+         * fetch" o "NetworkError when attempting to fetch resource", en inglés
+         * y sin nada accionable. En este punto solo se llega por red caída.
+         */
         console.error("Error downloading image:", err);
+        toast.error(
+            "No se pudo descargar el archivo. Revisa tu conexión e intenta nuevamente."
+        );
     }
 };

@@ -11,6 +11,8 @@ import {
 } from "../../types/test.types";
 import { useCreateTest, useUpdateTest } from "../../hooks/useTests";
 import { ModalPortal } from "../common/ModalPortal";
+import { toast } from "../../utils/toast";
+import { getApiErrorMessage } from "../../utils/apiError";
 
 interface TestModalProps {
     test?: Test;
@@ -83,6 +85,15 @@ export default function TestModal({ test, onClose }: TestModalProps) {
             onClose();
         } catch (error) {
             console.error("Error al guardar test:", error);
+            // El hook de tests no muestra nada al fallar: sin este aviso el
+            // modal se queda quieto y se pierde el motivo del rechazo
+            // (por ejemplo, un tipo de pregunta que el backend no acepta).
+            toast.error(
+                getApiErrorMessage(
+                    error,
+                    "No pudimos guardar el test. Intenta nuevamente."
+                )
+            );
         }
     };
 

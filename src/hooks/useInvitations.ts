@@ -5,6 +5,7 @@ import {
     AcceptInvitationDto,
 } from "../services/invitations.service";
 import { toast } from "../utils/toast";
+import { getApiErrorMessage } from "../utils/apiError";
 
 export const useInvitations = (companyId: string) => {
     return useQuery({
@@ -25,29 +26,9 @@ export const useCreateInvitation = () => {
             toast.success("Invitación enviada exitosamente");
         },
         onError: (error: unknown) => {
-            let errorMessage = "Error al enviar la invitación";
-            
-            if (error && typeof error === "object" && "response" in error) {
-                const axiosError = error as {
-                    response?: {
-                        data?: {
-                            message?: string | string[];
-                        };
-                    };
-                };
-                
-                const message = axiosError.response?.data?.message;
-                
-                if (typeof message === "string") {
-                    errorMessage = message;
-                } else if (Array.isArray(message) && message.length > 0) {
-                    errorMessage = message[0];
-                }
-            } else if (error instanceof Error) {
-                errorMessage = error.message;
-            }
-            
-            toast.error(errorMessage);
+            toast.error(
+                getApiErrorMessage(error, "Error al enviar la invitación")
+            );
         },
     });
 };
@@ -62,29 +43,9 @@ export const useResendInvitation = () => {
             toast.success("Invitación reenviada exitosamente");
         },
         onError: (error: unknown) => {
-            let errorMessage = "Error al reenviar la invitación";
-            
-            if (error && typeof error === "object" && "response" in error) {
-                const axiosError = error as {
-                    response?: {
-                        data?: {
-                            message?: string | string[];
-                        };
-                    };
-                };
-                
-                const message = axiosError.response?.data?.message;
-                
-                if (typeof message === "string") {
-                    errorMessage = message;
-                } else if (Array.isArray(message) && message.length > 0) {
-                    errorMessage = message[0];
-                }
-            } else if (error instanceof Error) {
-                errorMessage = error.message;
-            }
-            
-            toast.error(errorMessage);
+            toast.error(
+                getApiErrorMessage(error, "Error al reenviar la invitación")
+            );
         },
     });
 };
@@ -99,29 +60,9 @@ export const useCancelInvitation = () => {
             toast.success("Invitación cancelada exitosamente");
         },
         onError: (error: unknown) => {
-            let errorMessage = "Error al cancelar la invitación";
-            
-            if (error && typeof error === "object" && "response" in error) {
-                const axiosError = error as {
-                    response?: {
-                        data?: {
-                            message?: string | string[];
-                        };
-                    };
-                };
-                
-                const message = axiosError.response?.data?.message;
-                
-                if (typeof message === "string") {
-                    errorMessage = message;
-                } else if (Array.isArray(message) && message.length > 0) {
-                    errorMessage = message[0];
-                }
-            } else if (error instanceof Error) {
-                errorMessage = error.message;
-            }
-            
-            toast.error(errorMessage);
+            toast.error(
+                getApiErrorMessage(error, "Error al cancelar la invitación")
+            );
         },
     });
 };
@@ -137,29 +78,9 @@ export const useDeactivateUser = () => {
             toast.success("Usuario desactivado exitosamente");
         },
         onError: (error: unknown) => {
-            let errorMessage = "Error al desactivar el usuario";
-            
-            if (error && typeof error === "object" && "response" in error) {
-                const axiosError = error as {
-                    response?: {
-                        data?: {
-                            message?: string | string[];
-                        };
-                    };
-                };
-                
-                const message = axiosError.response?.data?.message;
-                
-                if (typeof message === "string") {
-                    errorMessage = message;
-                } else if (Array.isArray(message) && message.length > 0) {
-                    errorMessage = message[0];
-                }
-            } else if (error instanceof Error) {
-                errorMessage = error.message;
-            }
-            
-            toast.error(errorMessage);
+            toast.error(
+                getApiErrorMessage(error, "Error al desactivar el usuario")
+            );
         },
     });
 };
@@ -175,29 +96,9 @@ export const useReactivateUser = () => {
             toast.success("Usuario reactivado exitosamente");
         },
         onError: (error: unknown) => {
-            let errorMessage = "Error al reactivar el usuario";
-            
-            if (error && typeof error === "object" && "response" in error) {
-                const axiosError = error as {
-                    response?: {
-                        data?: {
-                            message?: string | string[];
-                        };
-                    };
-                };
-                
-                const message = axiosError.response?.data?.message;
-                
-                if (typeof message === "string") {
-                    errorMessage = message;
-                } else if (Array.isArray(message) && message.length > 0) {
-                    errorMessage = message[0];
-                }
-            } else if (error instanceof Error) {
-                errorMessage = error.message;
-            }
-            
-            toast.error(errorMessage);
+            toast.error(
+                getApiErrorMessage(error, "Error al reactivar el usuario")
+            );
         },
     });
 };
@@ -210,29 +111,9 @@ export const useAcceptInvitation = () => {
             toast.success("¡Cuenta creada exitosamente! Puedes iniciar sesión.");
         },
         onError: (error: unknown) => {
-            let errorMessage = "Error al aceptar la invitación";
-            
-            if (error && typeof error === "object" && "response" in error) {
-                const axiosError = error as {
-                    response?: {
-                        data?: {
-                            message?: string | string[];
-                        };
-                    };
-                };
-                
-                const message = axiosError.response?.data?.message;
-                
-                if (typeof message === "string") {
-                    errorMessage = message;
-                } else if (Array.isArray(message) && message.length > 0) {
-                    errorMessage = message[0];
-                }
-            } else if (error instanceof Error) {
-                errorMessage = error.message;
-            }
-            
-            toast.error(errorMessage);
+            toast.error(
+                getApiErrorMessage(error, "Error al aceptar la invitación")
+            );
         },
     });
 };

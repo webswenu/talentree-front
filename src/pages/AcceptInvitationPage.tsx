@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { invitationsService, Invitation } from "../services/invitations.service";
 import { toast } from "../utils/toast";
+import { getApiErrorMessage } from "../utils/apiError";
 import { Company } from "../types/company.types";
 
 interface InvitationWithCompany extends Invitation {
@@ -32,16 +33,9 @@ export const AcceptInvitationPage = () => {
                 );
                 setInvitation(response.data as InvitationWithCompany);
             } catch (err: unknown) {
-                const errorMessage = 
-                    (err && typeof err === 'object' && 'response' in err && 
-                     err.response && typeof err.response === 'object' && 
-                     'data' in err.response && err.response.data && 
-                     typeof err.response.data === 'object' && 
-                     'message' in err.response.data &&
-                     typeof err.response.data.message === 'string')
-                        ? err.response.data.message
-                        : "Error al cargar la invitación";
-                setError(errorMessage);
+                setError(
+                    getApiErrorMessage(err, "Error al cargar la invitación")
+                );
             } finally {
                 setIsLoading(false);
             }
@@ -76,16 +70,7 @@ export const AcceptInvitationPage = () => {
                 navigate("/login");
             }, 2000);
         } catch (err: unknown) {
-            const errorMessage = 
-                (err && typeof err === 'object' && 'response' in err && 
-                 err.response && typeof err.response === 'object' && 
-                 'data' in err.response && err.response.data && 
-                 typeof err.response.data === 'object' && 
-                 'message' in err.response.data &&
-                 typeof err.response.data.message === 'string')
-                    ? err.response.data.message
-                    : "Error al aceptar la invitación";
-            setError(errorMessage);
+            setError(getApiErrorMessage(err, "Error al aceptar la invitación"));
         } finally {
             setIsSubmitting(false);
         }

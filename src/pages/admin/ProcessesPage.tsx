@@ -409,7 +409,7 @@ export default function ProcessesPage() {
                                             onClick={() =>
                                                 (window.location.href = `${getBaseUrl()}/${
                                                     process.id
-                                                }/configuracion`)
+                                                }/configuración`)
                                             }
                                             className="text-orange-600 hover:text-orange-900 mr-4 p-2 hover:bg-orange-50 rounded-lg transition-colors inline-flex items-center justify-center"
                                             title="Configuración"

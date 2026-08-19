@@ -12,6 +12,7 @@ import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { useAuthStore } from "../../store/authStore";
 import { Permission, hasPermission } from "../../utils/permissions";
 import { toast } from "../../utils/toast";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { EditIcon, TrashIcon } from "../../components/common/ActionIcons";
 import { ClipboardList, PowerOff, Power } from "lucide-react";
 import { ListError } from "../../components/common/ListError";
@@ -116,32 +117,10 @@ export const CompaniesPage = () => {
             setIsConfirmDeleteOpen(false);
             setCompanyToDelete(null);
         } catch (err: unknown) {
-            // Extraer mensaje de error del backend
-            let errorMessage = "Error al eliminar la empresa";
-            
-            if (err && typeof err === "object" && "response" in err) {
-                const axiosError = err as { 
-                    response?: { 
-                        data?: { 
-                            message?: string | string[];
-                        } 
-                    } 
-                };
-                
-                const message = axiosError.response?.data?.message;
-                
-                if (typeof message === "string") {
-                    errorMessage = message;
-                } else if (Array.isArray(message) && message.length > 0) {
-                    errorMessage = message[0];
-                } else if (typeof axiosError.response?.data === "string") {
-                    errorMessage = axiosError.response.data;
-                }
-            } else if (err instanceof Error) {
-                errorMessage = err.message;
-            }
-            
-            toast.error(errorMessage, { duration: 5000 });
+            toast.error(
+                getApiErrorMessage(err, "Error al eliminar la empresa"),
+                { duration: 5000 }
+            );
             // No cerramos el modal para que el usuario pueda ver el error
         }
     };
@@ -161,29 +140,12 @@ export const CompaniesPage = () => {
                 `Empresa ${!company.isActive ? "activada" : "desactivada"} correctamente`
             );
         } catch (err: unknown) {
-            let errorMessage = "Error al cambiar el estado de la empresa";
-
-            if (err && typeof err === "object" && "response" in err) {
-                const axiosError = err as {
-                    response?: {
-                        data?: {
-                            message?: string | string[];
-                        };
-                    };
-                };
-
-                const message = axiosError.response?.data?.message;
-
-                if (typeof message === "string") {
-                    errorMessage = message;
-                } else if (Array.isArray(message) && message.length > 0) {
-                    errorMessage = message[0];
-                }
-            } else if (err instanceof Error) {
-                errorMessage = err.message;
-            }
-
-            toast.error(errorMessage);
+            toast.error(
+                getApiErrorMessage(
+                    err,
+                    "Error al cambiar el estado de la empresa"
+                )
+            );
         }
     };
 

@@ -5,6 +5,9 @@ import { notificationsService } from "../services/notifications.service";
 import { Notification } from "../types/notification.types";
 import { useAuthStore } from "../store/authStore";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+const SOCKET_URL = API_URL.replace("/api/v1", "");
+
 export const notificationKeys = {
     all: ["notifications"] as const,
     my: () => [...notificationKeys.all, "my"] as const,
@@ -23,8 +26,23 @@ export const useNotifications = () => {
 
     useEffect(() => {
         if (user && !socket) {
-            socket = io("http://localhost:3002", {
-                query: { userId: user.id },
+            /**
+             * Dos arreglos aquí:
+             *  - La dirección estaba fija en `http://localhost:3002`, así que
+             *    en producción este socket nunca llegaba a conectarse y fallaba
+             *    en silencio. Ahora sale de la misma variable que la API.
+             *  - La identidad viajaba como `query: { userId }` y el servidor le
+             *    creía. Ahora va el token y el servidor la resuelve de ahí.
+             */
+            socket = io(SOCKET_URL, {
+                auth: {
+                    token: localStorage.getItem("accessToken"),
+                },
+            });
+
+            socket.on("authError", () => {
+                socket?.disconnect();
+                socket = null;
             });
 
             socket.on("connect", () => {

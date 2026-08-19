@@ -28,7 +28,11 @@ export const useTestTimers = () => {
         try {
             const stored = localStorage.getItem(STORAGE_KEY);
             return stored ? JSON.parse(stored) : {};
-        } catch {
+        } catch (error) {
+            // Plomería interna: leer el localStorage no nace de una acción de
+            // la persona, así que no corresponde avisarle. Se parte sin
+            // temporizadores y se deja el rastro para poder diagnosticarlo.
+            console.warn("No se pudieron leer los temporizadores guardados:", error);
             return {};
         }
     });
@@ -131,7 +135,11 @@ export const useTestTimers = () => {
             // Remove timer after successful submit
             removeTimer(testResponseId);
         } catch (error) {
-            console.error(`❌ Error auto-submitting test ${testResponseId}:`, error);
+            // No se avisa con un toast: este envío lo dispara el temporizador,
+            // no una acción de la persona, y puede ocurrir en cualquier
+            // pantalla (incluso fuera del test), donde el aviso no tendría
+            // ningún contexto ni nada que hacer al respecto.
+            console.warn(`No se pudo enviar automáticamente el test ${testResponseId} al vencer el tiempo:`, error);
             // Don't remove timer if submit failed - it will retry next interval
         }
     }, [removeTimer]);

@@ -45,6 +45,7 @@ import { ApproveRejectModal } from "../../components/common/ApproveRejectModal";
 import { FormatSelectionModal } from "../../components/common/FormatSelectionModal";
 import { BulkInviteModal } from "../../components/admin/BulkInviteModal";
 import { toast } from "../../utils/toast";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { ModalPortal } from "../../components/common/ModalPortal";
 import { formatDateShort } from "../../utils/formatters";
 
@@ -184,8 +185,10 @@ export const ProcessDetailPage = () => {
 
             // Close modal if open
             setFormatSelectionModal({ isOpen: false, report: null });
-        } catch {
-            // Error handled silently or by mutation error handler
+        } catch (error) {
+            // La mutación de descarga no avisa nada por su cuenta: si falla en
+            // silencio, la persona queda esperando un archivo que nunca llega.
+            toast.error(getApiErrorMessage(error, "No se pudo descargar el informe. Intenta nuevamente."));
         }
     };
 
@@ -202,8 +205,10 @@ export const ProcessDetailPage = () => {
                 data: { status: ReportStatus.APPROVED },
             });
             setApproveRejectModal({ isOpen: false, report: null });
-        } catch {
-            // Error handled silently or by mutation error handler
+        } catch (error) {
+            // useApproveReport no tiene onError: sin este aviso el modal queda
+            // abierto y nadie sabe por qué no se aprobó.
+            toast.error(getApiErrorMessage(error, "No se pudo aprobar el informe. Intenta nuevamente."));
         }
     };
 
@@ -219,16 +224,19 @@ export const ProcessDetailPage = () => {
                 },
             });
             setApproveRejectModal({ isOpen: false, report: null });
-        } catch {
-            // Error handled silently or by mutation error handler
+        } catch (error) {
+            // Mismo caso que la aprobación: la mutación no avisa nada.
+            toast.error(getApiErrorMessage(error, "No se pudo rechazar el informe. Intenta nuevamente."));
         }
     };
 
     const handleDelete = async (reportId: string) => {
         try {
             await deleteMutation.mutateAsync(reportId);
-        } catch {
-            // Error handled silently or by mutation error handler
+        } catch (error) {
+            // useDeleteReport no tiene onError: sin aviso, el informe sigue en
+            // la tabla y parece que el botón no hizo nada.
+            toast.error(getApiErrorMessage(error, "No se pudo eliminar el informe. Intenta nuevamente."));
         }
     };
 
@@ -246,8 +254,8 @@ export const ProcessDetailPage = () => {
                     file,
                 });
                 toast.success('Archivo subido exitosamente. Ya puedes aprobar el reporte si es PDF.');
-            } catch {
-                toast.error('No se pudo subir el archivo. Por favor, intenta nuevamente.');
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, 'No se pudo subir el archivo. Por favor, intenta nuevamente.'));
             }
             setUploadingReportId(null);
             if (fileInputRef.current) {
@@ -318,8 +326,7 @@ export const ProcessDetailPage = () => {
             setWorkerStatusModal({ isOpen: false, workerProcess: null, newStatus: null });
             setStatusNotes("");
         } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : "Error al cambiar el estado del trabajador";
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, "Error al cambiar el estado del trabajador"));
         }
     };
 
@@ -1491,8 +1498,10 @@ export const ProcessDetailPage = () => {
                                                     selectedVideo.videoId,
                                                     `video-${selectedVideo.workerName.replace(/\s+/g, "-")}.webm`
                                                 );
-                                            } catch {
-                                                // Error handled silently - user can retry
+                                            } catch (error) {
+                                                // La descarga la pidió la persona: si falla, el botón
+                                                // vuelve a su estado normal y no se lleva ningún archivo.
+                                                toast.error(getApiErrorMessage(error, "No se pudo descargar el video. Intenta nuevamente."));
                                             } finally {
                                                 setDownloadingVideo(false);
                                             }

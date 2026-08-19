@@ -24,7 +24,10 @@ export const InviteGuestModal = ({ isOpen, onClose }: InviteGuestModalProps) => 
             setFormData({ email: "", firstName: "", lastName: "" });
             onClose();
         } catch (error) {
-            console.error("Error creating invitation:", error);
+            // Sin toast a propósito: useCreateInvitation ya muestra el motivo
+            // del servidor con getApiErrorMessage en su onError. Agregar otro
+            // aviso acá dejaría el mismo error dos veces en pantalla.
+            console.warn("Falló el envío de la invitación de invitado:", error);
         }
     };
 
