@@ -29,6 +29,10 @@ import {
 import { Permission, hasPermission } from "../../utils/permissions";
 import { ModalPortal } from "../../components/common/ModalPortal";
 import { formatDateShort } from "../../utils/formatters";
+import {
+    TestsRendidos,
+    respuestasDeTestDelTrabajador,
+} from "../../components/common/TestsRendidos";
 
 export const WorkerDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -203,7 +207,7 @@ export const WorkerDetailPage = () => {
                         <div className="flex items-center gap-2">
                             <span className="font-medium text-gray-600">Tests Realizados:</span>
                             <span className="font-bold text-blue-600 text-lg">
-                                {worker.testResponses?.length || 0}
+                                {respuestasDeTestDelTrabajador(worker).length}
                             </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -334,6 +338,9 @@ export const WorkerDetailPage = () => {
                     </div>
                 </div>
             )}
+
+            {/* Tests rendidos: cuelgan de cada postulacion */}
+            <TestsRendidos worker={worker} />
 
             {/* Procesos */}
             {filteredWorkerProcesses && filteredWorkerProcesses.length > 0 && (

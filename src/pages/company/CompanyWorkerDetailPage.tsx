@@ -21,6 +21,10 @@ import {
     useDownloadReportFile,
 } from "../../hooks/useReports";
 import { formatDateShort } from "../../utils/formatters";
+import {
+    TestsRendidos,
+    respuestasDeTestDelTrabajador,
+} from "../../components/common/TestsRendidos";
 
 export const CompanyWorkerDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -124,7 +128,7 @@ export const CompanyWorkerDetailPage = () => {
                         Tests Realizados
                     </p>
                     <p className="text-3xl font-bold text-blue-600 mt-2">
-                        {worker.testResponses?.length || 0}
+                        {respuestasDeTestDelTrabajador(worker).length}
                     </p>
                 </div>
                 <div className="bg-white rounded-lg shadow p-6">
@@ -256,6 +260,9 @@ export const CompanyWorkerDetailPage = () => {
                     </div>
                 </div>
             )}
+
+            {/* Tests rendidos: cuelgan de cada postulacion */}
+            <TestsRendidos worker={worker} />
 
             {/* Procesos */}
             {filteredWorkerProcesses && filteredWorkerProcesses.length > 0 && (

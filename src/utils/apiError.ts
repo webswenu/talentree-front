@@ -39,7 +39,35 @@ const extraerMensaje = (
  * @param fallback Texto a mostrar cuando el backend no entrega un motivo
  * @returns Mensaje listo para mostrar al usuario
  */
+/**
+ * Un fallo de red o un tiempo agotado, que en axios NO traen `response`.
+ *
+ * Verificado en produccion el 19-08-2026 simulando la caida de la red: la
+ * pantalla mostraba "No pudimos cargar los candidatos" y debajo, en ingles y
+ * crudo, "Network Error". La rama que ya existia para esto (`!response`) vive
+ * dentro de `if ("response" in err)`, y en un error de red axios nunca crea esa
+ * propiedad: la condicion es falsa y se cae hasta `err.message`.
+ */
+const fallaDeRed = (err: unknown): string | null => {
+    if (!err || typeof err !== "object") return null;
+
+    const e = err as { code?: string; message?: string; response?: unknown };
+
+    if (e.code === "ECONNABORTED" || /timeout/i.test(e.message ?? "")) {
+        return "La operación tardó demasiado y se canceló. Vuelve a intentarlo.";
+    }
+
+    if (e.code === "ERR_NETWORK" || e.message === "Network Error") {
+        return "No se pudo conectar con el servidor. Verifica tu conexión e intenta nuevamente.";
+    }
+
+    return null;
+};
+
 export const getApiErrorMessage = (err: unknown, fallback: string): string => {
+    const red = fallaDeRed(err);
+    if (red) return red;
+
     if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as ApiErrorShape;
 
