@@ -16,11 +16,21 @@ export const useWebSocket = () => {
             return;
         }
 
+        /**
+         * El servidor saca la identidad del TOKEN, no de lo que le mandemos.
+         * Antes se enviaba `query: { userId }` y el canal le creía: bastaba
+         * conocer el UUID de otra persona para leer sus avisos.
+         */
         const socket = io(SOCKET_URL, {
-            query: {
-                userId: user.id,
+            auth: {
+                token: localStorage.getItem("accessToken"),
             },
             transports: ["websocket", "polling"],
+        });
+
+        // Si el token no sirve, el servidor cierra la conexión y avisa por aquí.
+        socket.on("authError", () => {
+            socket.disconnect();
         });
 
         socketRef.current = socket;

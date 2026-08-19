@@ -7,6 +7,7 @@ import { UserRole } from "../../types/user.types";
 import { useNavigate } from "react-router-dom";
 import { workersService } from "../../services/workers.service";
 import { contactService } from "../../services/contact.service";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -59,8 +60,7 @@ export const LandingPage = () => {
             });
             toast.success("¡Postulación exitosa! Puedes ver el estado en tu dashboard");
         } catch (error: any) {
-            const message = error?.response?.data?.message || "Error al postular al proceso";
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, "Error al postular al proceso"));
         } finally {
             setApplyingProcessId(null);
         }
@@ -105,8 +105,7 @@ export const LandingPage = () => {
                 setContactFormSubmitted(false);
             }, 5000);
         } catch (error: any) {
-            const message = error?.response?.data?.message || "Error al enviar el mensaje. Por favor intenta nuevamente.";
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, "Error al enviar el mensaje. Por favor intenta nuevamente."));
         } finally {
             setIsSubmittingContact(false);
         }

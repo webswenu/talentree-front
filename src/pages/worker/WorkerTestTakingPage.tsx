@@ -255,25 +255,28 @@ export const WorkerTestTakingPage = () => {
         if (!currentAnswer) return false;
 
         if (currentQ.type === QuestionType.FORCED_CHOICE) {
-            // For forced choice, need all 4 words to have a selection (mas or menos)
-            // Answer structure: { word1: 'mas' | 'menos', word2: 'mas' | 'menos', ... }
-            const optionsObj = currentQ.options as { words?: Record<string, string> } | Record<string, string> | undefined;
-            const wordsObj = (optionsObj && typeof optionsObj === 'object' && 'words' in optionsObj)
-                ? optionsObj.words
-                : (optionsObj as Record<string, string> | undefined);
-            const words = wordsObj ? Object.values(wordsObj) as string[] : [];
-
-            if (!currentAnswer || typeof currentAnswer !== 'object' || Array.isArray(currentAnswer)) {
+            /**
+             * Elección forzada (DISC): el bloque está respondido cuando hay UNA
+             * palabra marcada como MÁS y otra distinta como MENOS.
+             *
+             * Antes se exigía una marca en las cuatro palabras y se guardaba
+             * `{ palabra: 'mas' | 'menos' }`. Esa forma no la entiende el
+             * servicio que puntúa —espera `{ mas, menos }`—, así que descartaba
+             * el bloque entero y el test terminaba con las cuatro dimensiones
+             * en cero. Además contradecía al propio test, que pide elegir una
+             * palabra de cada tipo, no marcar las cuatro.
+             */
+            if (typeof currentAnswer !== "object" || Array.isArray(currentAnswer)) {
                 return false;
             }
 
-            const answerObj = currentAnswer as Record<string, string>;
+            const seleccion = currentAnswer as { mas?: string; menos?: string };
 
-            // Check that all 4 words are present as keys in the answer object with a value
-            return words.every(word => {
-                const selection = answerObj[word];
-                return selection === 'mas' || selection === 'menos';
-            });
+            return (
+                typeof seleccion.mas === "string" &&
+                typeof seleccion.menos === "string" &&
+                seleccion.mas !== seleccion.menos
+            );
         } else if (currentQ.type === QuestionType.MULTIPLE_RESPONSE) {
             // For multiple response, need at least one selection
             return Array.isArray(currentAnswer) && currentAnswer.length > 0;
@@ -514,9 +517,14 @@ export const WorkerTestTakingPage = () => {
                 );
 
             case QuestionType.FORCED_CHOICE: {
-                // Test DISC - Elección forzada: cada palabra tiene MÁS o MENOS (mutually exclusive per word)
-                // Answer structure: { word1: 'mas' | 'menos', word2: 'mas' | 'menos', ... }
-                const forcedAnswer = (currentAnswer as Record<string, string>) || {};
+                /**
+                 * Test DISC - Elección forzada. Del bloque de 4 palabras se
+                 * elige UNA como MÁS y UNA como MENOS, que es lo que pide el
+                 * propio test y lo único que el servidor sabe puntuar.
+                 *
+                 * Forma de la respuesta: { mas: 'Decidido', menos: 'Paciente' }
+                 */
+                const forcedAnswer = (currentAnswer as { mas?: string; menos?: string }) || {};
 
                 // Extract words from options.words object for DISC test
                 const optionsObj = currentQ.options as { words?: Record<string, string> } | Record<string, string> | undefined;
@@ -525,24 +533,43 @@ export const WorkerTestTakingPage = () => {
                     : (optionsObj as Record<string, string> | undefined);
                 const words = wordsObj ? Object.values(wordsObj) as string[] : [];
 
+                // Marcar una palabra libera a la anterior, y una misma palabra
+                // no puede ser a la vez la que más y la que menos describe.
+                const marcar = (palabra: string, marca: "mas" | "menos") => {
+                    const contraria = marca === "mas" ? "menos" : "mas";
+                    const siguiente: { mas?: string; menos?: string } = {
+                        ...forcedAnswer,
+                        [marca]: palabra,
+                    };
+                    if (siguiente[contraria] === palabra) {
+                        delete siguiente[contraria];
+                    }
+                    handleAnswerChange(siguiente);
+                };
+
                 return (
                     <div className="space-y-6">
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4">
                             <p className="text-xs sm:text-sm font-medium text-blue-900">
-                                Instrucciones: Para cada una de las siguientes palabras, selecciona:
+                                Instrucciones: de estas 4 palabras, elige:
                             </p>
                             <ul className="text-xs sm:text-sm text-blue-800 mt-2 space-y-1">
-                                <li>• <strong>MÁS</strong> si te describe más</li>
-                                <li>• <strong>MENOS</strong> si te describe menos</li>
+                                <li>• la que <strong>MÁS</strong> te describe</li>
+                                <li>• la que <strong>MENOS</strong> te describe</li>
                             </ul>
                             <p className="text-[10px] sm:text-xs text-blue-700 mt-3 italic">
-                                Debes marcar una opción (MÁS o MENOS) para cada una de las 4 palabras
+                                Solo una de cada tipo. Las otras dos palabras quedan sin marcar.
                             </p>
                         </div>
 
                         <div className="grid grid-cols-1 gap-3">
                             {words.map((word, idx) => {
-                                const currentSelection = forcedAnswer[word]; // 'mas' | 'menos' | undefined
+                                const currentSelection =
+                                    forcedAnswer.mas === word
+                                        ? "mas"
+                                        : forcedAnswer.menos === word
+                                        ? "menos"
+                                        : undefined;
 
                                 return (
                                     <div
@@ -558,15 +585,10 @@ export const WorkerTestTakingPage = () => {
                                             <label className="flex items-center cursor-pointer">
                                                 <input
                                                     type="radio"
-                                                    name={`word-${currentQ.id}-${idx}`}
-                                                    value="mas"
+                                                    name={`mas-${currentQ.id}`}
+                                                    value={word}
                                                     checked={currentSelection === 'mas'}
-                                                    onChange={() =>
-                                                        handleAnswerChange({
-                                                            ...forcedAnswer,
-                                                            [word]: 'mas',
-                                                        })
-                                                    }
+                                                    onChange={() => marcar(word, "mas")}
                                                     className="mr-2 w-4 h-4 text-green-600"
                                                 />
                                                 <span className="text-xs sm:text-sm font-medium text-green-700">
@@ -576,15 +598,10 @@ export const WorkerTestTakingPage = () => {
                                             <label className="flex items-center cursor-pointer">
                                                 <input
                                                     type="radio"
-                                                    name={`word-${currentQ.id}-${idx}`}
-                                                    value="menos"
+                                                    name={`menos-${currentQ.id}`}
+                                                    value={word}
                                                     checked={currentSelection === 'menos'}
-                                                    onChange={() =>
-                                                        handleAnswerChange({
-                                                            ...forcedAnswer,
-                                                            [word]: 'menos',
-                                                        })
-                                                    }
+                                                    onChange={() => marcar(word, "menos")}
                                                     className="mr-2 w-4 h-4 text-red-600"
                                                 />
                                                 <span className="text-xs sm:text-sm font-medium text-red-700">

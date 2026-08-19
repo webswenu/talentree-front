@@ -8,6 +8,7 @@ import { ProcessStatus } from "../../types/process.types";
 import { ApplyProcessModal } from "../../components/worker/ApplyProcessModal";
 import { Modal } from "../../components/common/Modal";
 import { toast } from "../../utils/toast";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { formatDateShort } from "../../utils/formatters";
 
 export const WorkerProcessesPage = () => {
@@ -54,7 +55,9 @@ export const WorkerProcessesPage = () => {
             setSelectedProcessId(null);
             setIsSuccessModalOpen(true);
         } catch (err) {
-            toast.error("Error al postular. Por favor intenta nuevamente.");
+            toast.error(
+                getApiErrorMessage(err, "Error al postular. Por favor intenta nuevamente.")
+            );
         }
     };
 

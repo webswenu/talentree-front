@@ -45,8 +45,9 @@ export const AcceptInvitationPage = () => {
             // Éxito! Redirigir al dashboard
             navigate("/dashboard");
         } catch (error) {
-            // Error manejado por el hook
-            console.error(error);
+            // El onError de useAcceptProcessInvitation ya le muestra el motivo
+            // a la persona: un segundo aviso acá sería el mismo error dos veces.
+            console.warn("Falló la aceptación de la invitación:", error);
         }
     };
 

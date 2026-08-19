@@ -1,4 +1,6 @@
+import { toast } from "react-hot-toast";
 import { useReports, useDownloadReportFile } from "../../hooks/useReports";
+import { getApiErrorMessage } from "../../utils/apiError";
 import {
     Report,
     ReportTypeLabels,
@@ -26,6 +28,12 @@ export default function CompanyReportsPage() {
             }, 1000);
         } catch (error) {
             console.error("View error:", error);
+            toast.error(
+                getApiErrorMessage(
+                    error,
+                    "No se pudo abrir el reporte. Intenta nuevamente."
+                )
+            );
         }
     };
 
@@ -44,6 +52,12 @@ export default function CompanyReportsPage() {
             document.body.removeChild(a);
         } catch (error) {
             console.error("Download error:", error);
+            toast.error(
+                getApiErrorMessage(
+                    error,
+                    "No se pudo descargar el reporte. Intenta nuevamente."
+                )
+            );
         }
     };
 

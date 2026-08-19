@@ -20,9 +20,9 @@ const TYPE_LABELS: Record<NotificationType, string> = {
     [NotificationType.SUCCESS]: "Exito",
     [NotificationType.WARNING]: "Advertencia",
     [NotificationType.ERROR]: "Error",
-    [NotificationType.PROCESS_UPDATE]: "Actualizacion de Proceso",
+    [NotificationType.PROCESS_UPDATE]: "Actualización de Proceso",
     [NotificationType.TEST_ASSIGNED]: "Test Asignado",
-    [NotificationType.EVALUATION_COMPLETED]: "Evaluacion Completada",
+    [NotificationType.EVALUATION_COMPLETED]: "Evaluación Completada",
     [NotificationType.REPORT_READY]: "Reporte Listo",
 };
 

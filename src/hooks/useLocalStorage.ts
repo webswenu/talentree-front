@@ -6,7 +6,11 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
             const item = window.localStorage.getItem(key);
             return item ? JSON.parse(item) : initialValue;
         } catch (error) {
-            console.error(`Error loading ${key} from localStorage:`, error);
+            // No se le avisa a la persona: esto corre al montar el hook, no nace de una acción suya y ya hay un valor inicial de respaldo.
+            console.warn(
+                `No se pudo leer "${key}" desde localStorage; se usa el valor inicial.`,
+                error
+            );
             return initialValue;
         }
     });
@@ -18,7 +22,8 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
             setStoredValue(valueToStore);
             window.localStorage.setItem(key, JSON.stringify(valueToStore));
         } catch (error) {
-            console.error(`Error saving ${key} to localStorage:`, error);
+            // No se le avisa a la persona: es plomería interna (cuota o modo privado del navegador) y el valor ya quedó aplicado en memoria.
+            console.warn(`No se pudo guardar "${key}" en localStorage.`, error);
         }
     };
 
@@ -27,7 +32,8 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
             window.localStorage.removeItem(key);
             setStoredValue(initialValue);
         } catch (error) {
-            console.error(`Error removing ${key} from localStorage:`, error);
+            // No se le avisa a la persona: es plomería interna del navegador y no hay nada que ella pueda hacer al respecto.
+            console.warn(`No se pudo borrar "${key}" de localStorage.`, error);
         }
     };
 

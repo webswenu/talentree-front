@@ -8,6 +8,7 @@ import {
     QueryProcessInvitationsDto,
 } from "../types/process-invitation.types";
 import { toast } from "react-hot-toast";
+import { getApiErrorMessage } from "../utils/apiError";
 
 export const processInvitationKeys = {
     all: ["process-invitations"] as const,
@@ -76,10 +77,7 @@ export const useCreateProcessInvitation = () => {
             toast.success("Invitación enviada exitosamente");
         },
         onError: (error: any) => {
-            const message =
-                error?.response?.data?.message ||
-                "Error al enviar la invitación";
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, "Error al enviar la invitación"));
         },
     });
 };
@@ -111,10 +109,7 @@ export const useBulkCreateProcessInvitations = () => {
             }
         },
         onError: (error: any) => {
-            const message =
-                error?.response?.data?.message ||
-                "Error al enviar las invitaciones";
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, "Error al enviar las invitaciones"));
         },
     });
 };
@@ -141,10 +136,7 @@ export const useAcceptProcessInvitation = () => {
             }
         },
         onError: (error: any) => {
-            const message =
-                error?.response?.data?.message ||
-                "Error al aceptar la invitación";
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, "Error al aceptar la invitación"));
         },
     });
 };
@@ -169,10 +161,7 @@ export const useAcceptProcessInvitationById = () => {
             toast.success(data.message || "Invitación aceptada exitosamente");
         },
         onError: (error: any) => {
-            const message =
-                error?.response?.data?.message ||
-                "Error al aceptar la invitación";
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, "Error al aceptar la invitación"));
         },
     });
 };
@@ -191,10 +180,7 @@ export const useCancelProcessInvitation = () => {
             toast.success("Invitación cancelada exitosamente");
         },
         onError: (error: any) => {
-            const message =
-                error?.response?.data?.message ||
-                "Error al cancelar la invitación";
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, "Error al cancelar la invitación"));
         },
     });
 };
@@ -213,10 +199,7 @@ export const useResendProcessInvitation = () => {
             toast.success("Invitación reenviada exitosamente");
         },
         onError: (error: any) => {
-            const message =
-                error?.response?.data?.message ||
-                "Error al reenviar la invitación";
-            toast.error(message);
+            toast.error(getApiErrorMessage(error, "Error al reenviar la invitación"));
         },
     });
 };

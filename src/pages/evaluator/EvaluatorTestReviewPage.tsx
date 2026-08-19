@@ -12,6 +12,8 @@ import {
     TestTypeColors,
 } from "../../types/test.types";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { toast } from "../../utils/toast";
+import { getApiErrorMessage } from "../../utils/apiError";
 
 export const EvaluatorTestReviewPage = () => {
     const { testResponseId } = useParams<{ testResponseId: string }>();
@@ -82,6 +84,15 @@ export const EvaluatorTestReviewPage = () => {
             navigate("/evaluador");
         } catch (err) {
             console.error("Error saving review:", err);
+            // Al fallar no se navega al dashboard y el modal se cierra igual:
+            // el evaluador quedaba en la misma pantalla sin saber si su
+            // evaluación se guardó.
+            toast.error(
+                getApiErrorMessage(
+                    err,
+                    "No pudimos guardar la evaluación. Revisa los puntajes e intenta nuevamente."
+                )
+            );
         } finally {
             setIsSaving(false);
             setIsConfirmSaveOpen(false);

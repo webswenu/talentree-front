@@ -9,6 +9,8 @@ import { useCreateReport, useUpdateReport } from "../../hooks/useReports";
 import { useProcesses } from "../../hooks/useProcesses";
 import { useWorkers } from "../../hooks/useWorkers";
 import { ModalPortal } from "../common/ModalPortal";
+import { toast } from "../../utils/toast";
+import { getApiErrorMessage } from "../../utils/apiError";
 
 interface ReportModalProps {
     report?: Report;
@@ -102,6 +104,14 @@ export default function ReportModal({ report, onClose }: ReportModalProps) {
             onClose();
         } catch (error) {
             console.error("Error al guardar reporte:", error);
+            // El hook de reportes no avisa nada: el modal quedaba abierto y la
+            // persona no sabía si el reporte se había guardado.
+            toast.error(
+                getApiErrorMessage(
+                    error,
+                    "No pudimos guardar el reporte. Intenta nuevamente."
+                )
+            );
         }
     };
 

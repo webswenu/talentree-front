@@ -8,6 +8,7 @@ import {
 import { useCreateProcess, useUpdateProcess } from "../../hooks/useProcesses";
 import { useCompanies } from "../../hooks/useCompanies";
 import { toast } from "../../utils/toast";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { ModalPortal } from "../common/ModalPortal";
 
 interface ProcessModalProps {
@@ -118,29 +119,7 @@ export default function ProcessModal({ process, onClose }: ProcessModalProps) {
             }
             onClose();
         } catch (error: unknown) {
-            let errorMessage = "Error al guardar proceso";
-
-            if (error && typeof error === "object" && "response" in error) {
-                const axiosError = error as {
-                    response?: {
-                        data?: {
-                            message?: string | string[];
-                        };
-                    };
-                };
-
-                const message = axiosError.response?.data?.message;
-
-                if (typeof message === "string") {
-                    errorMessage = message;
-                } else if (Array.isArray(message) && message.length > 0) {
-                    errorMessage = message[0];
-                }
-            } else if (error instanceof Error) {
-                errorMessage = error.message;
-            }
-
-            toast.error(errorMessage);
+            toast.error(getApiErrorMessage(error, "Error al guardar proceso"));
         }
     };
 

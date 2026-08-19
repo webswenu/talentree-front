@@ -80,7 +80,12 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                             toast.success("Usuario y empresa creados correctamente");
                         } catch (error) {
                             console.error(error);
-                            toast.error("Error al crear usuario y empresa");
+                            toast.error(
+                                getApiErrorMessage(
+                                    error,
+                                    "Error al crear usuario y empresa"
+                                )
+                            );
                         }
                     } else if (values.role === UserRole.GUEST) {
                         // TODO: Enviar invitación por email para GUEST
@@ -96,9 +101,8 @@ export const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                             };
                             await createMutation.mutateAsync(createData);
                             toast.success("Usuario creado correctamente");
-                        } catch (error: any) {
-                            const errorMessage = error?.response?.data?.message || "Error al crear usuario";
-                            toast.error(errorMessage);
+                        } catch (error: unknown) {
+                            toast.error(getApiErrorMessage(error, "Error al crear usuario"));
                             throw error; // Re-throw to prevent onClose
                         }
                     }

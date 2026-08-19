@@ -11,6 +11,7 @@ import { useForm } from "../../hooks/useForm";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useFilter } from "../../hooks/useFilter";
 import { toast } from "../../utils/toast";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { UserRole, User } from "../../types/user.types";
 import { useAuthStore } from "../../store/authStore";
 import { Permission, hasPermission } from "../../utils/permissions";
@@ -114,9 +115,8 @@ export const UsersPage = () => {
             setShowModal(false);
             resetForm();
         },
-        onError: (error: any) => {
-            const errorMessage = error?.response?.data?.message || error.message || "Error al crear usuario";
-            toast.error(errorMessage);
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Error al crear usuario"));
         },
     });
 
@@ -135,9 +135,8 @@ export const UsersPage = () => {
             setEditingUser(null);
             resetForm();
         },
-        onError: (error: any) => {
-            const errorMessage = error?.response?.data?.message || error.message || "Error al actualizar usuario";
-            toast.error(errorMessage);
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Error al actualizar usuario"));
         },
     });
 
@@ -148,8 +147,8 @@ export const UsersPage = () => {
             toast.success("Usuario eliminado exitosamente");
             setDeletingUser(null);
         },
-        onError: (error: Error) => {
-            toast.error(error.message || "Error al eliminar usuario");
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, "Error al eliminar usuario"));
         },
     });
 
@@ -210,7 +209,12 @@ export const UsersPage = () => {
                         resetForm();
                     } catch (error) {
                         console.error(error);
-                        toast.error("Error al crear usuario y empresa");
+                        toast.error(
+                            getApiErrorMessage(
+                                error,
+                                "Error al crear usuario y empresa"
+                            )
+                        );
                     }
                 } else if (data.role === UserRole.GUEST) {
                     // Crear invitación para GUEST

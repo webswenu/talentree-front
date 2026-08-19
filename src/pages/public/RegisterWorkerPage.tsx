@@ -5,6 +5,7 @@ import { RegisterWorkerDto } from "../../types/user.types";
 import { processInvitationsService } from "../../services/process-invitations.service";
 import { useUploadCV } from "../../hooks/useWorkers";
 import { toast } from "../../utils/toast";
+import { getApiErrorMessage } from "../../utils/apiError";
 
 const STEPS = [
     { id: 1, title: "Cuenta", description: "Datos de acceso" },
@@ -58,7 +59,13 @@ export const RegisterWorkerPage = () => {
                     }
                 })
                 .catch((error) => {
-                    console.error("Error loading invitation:", error);
+                    // Esto solo pre-llena el formulario al abrir la página: no
+                    // nace de una acción de la persona y ella puede escribir
+                    // sus datos igual, así que no corresponde interrumpirla.
+                    console.warn(
+                        "No se pudieron precargar los datos de la invitación:",
+                        error
+                    );
                 });
         }
     }, [fromInvitation]);
@@ -156,7 +163,21 @@ export const RegisterWorkerPage = () => {
                     toast.success("CV subido exitosamente");
                 } catch (cvError) {
                     console.error("Error uploading CV:", cvError);
-                    toast.error("Tu cuenta fue creada pero hubo un error al subir el CV. Puedes subirlo desde tu perfil.");
+                    /**
+                     * Aquí el motivo del servidor se COMPONE, no reemplaza al
+                     * texto: lo más importante que hay que decirle a la persona
+                     * es que su cuenta sí quedó creada y que el CV se puede
+                     * subir después. Si se mostrara solo el motivo ("el archivo
+                     * supera los 5 MB"), justo después de apretar "Finalizar
+                     * Registro" vería un error rojo y no sabría si quedó
+                     * registrada o si tiene que empezar de nuevo.
+                     */
+                    toast.error(
+                        `Tu cuenta fue creada, pero no pudimos subir el CV: ${getApiErrorMessage(
+                            cvError,
+                            "hubo un problema al subirlo"
+                        )} Puedes subirlo más tarde desde tu perfil.`
+                    );
                 }
             }
 
@@ -166,11 +187,12 @@ export const RegisterWorkerPage = () => {
             }
             // Si no hay invitación, el hook useRegisterWorker ya redirige
         } catch (error) {
-            const message =
-                error instanceof Error
-                    ? error.message
-                    : "Error al registrar. Intenta nuevamente.";
-            setServerError(Array.isArray(message) ? message[0] : message);
+            setServerError(
+                getApiErrorMessage(
+                    error,
+                    "Error al registrar. Intenta nuevamente."
+                )
+            );
         }
     };
 

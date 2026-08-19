@@ -3,6 +3,7 @@ import { useFixedTests } from "../../hooks/useTests";
 import { useAddFixedTest, useRemoveFixedTest } from "../../hooks/useProcesses";
 import { FixedTest } from "../../types/test.types";
 import { toast } from "../../utils/toast";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { ModalPortal } from "./ModalPortal";
 
 interface AssignTestsModalProps {
@@ -46,29 +47,9 @@ export const AssignTestsModal = ({
                 setSelectedTests(new Set([...selectedTests, testId]));
             }
         } catch (error: unknown) {
-            let errorMessage = "Error al asignar/desasignar el test";
-            
-            if (error && typeof error === "object" && "response" in error) {
-                const axiosError = error as {
-                    response?: {
-                        data?: {
-                            message?: string | string[];
-                        };
-                    };
-                };
-                
-                const message = axiosError.response?.data?.message;
-                
-                if (typeof message === "string") {
-                    errorMessage = message;
-                } else if (Array.isArray(message) && message.length > 0) {
-                    errorMessage = message[0];
-                }
-            } else if (error instanceof Error) {
-                errorMessage = error.message;
-            }
-            
-            toast.error(errorMessage);
+            toast.error(
+                getApiErrorMessage(error, "Error al asignar/desasignar el test")
+            );
         }
     };
 

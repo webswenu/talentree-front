@@ -4,6 +4,7 @@ import { useCreateWorker, useUpdateWorker } from "../../hooks/useWorkers";
 import { useResetPassword } from "../../hooks/useUsers";
 import { workersService } from "../../services/workers.service";
 import { toast } from "../../utils/toast";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { ModalPortal } from "../common/ModalPortal";
 
 interface WorkerModalProps {
@@ -123,7 +124,12 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                         toast.success("Contraseña actualizada exitosamente");
                     } catch (error) {
                         console.error("Error al cambiar contraseña:", error);
-                        toast.error("Error al cambiar la contraseña");
+                        toast.error(
+                            getApiErrorMessage(
+                                error,
+                                "Error al cambiar la contraseña"
+                            )
+                        );
                     }
                 }
             } else {
@@ -148,7 +154,10 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                 } catch (error) {
                     console.error("Error al subir CV:", error);
                     toast.error(
-                        "Error al subir el CV. El trabajador fue creado pero sin CV."
+                        getApiErrorMessage(
+                            error,
+                            "Error al subir el CV. El trabajador fue creado pero sin CV."
+                        )
                     );
                 }
                 setIsUploadingCV(false);
@@ -157,29 +166,10 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
             toast.success(worker ? "Trabajador actualizado correctamente" : "Trabajador creado correctamente");
             onClose();
         } catch (error: unknown) {
-            let errorMessage = "Error al guardar el trabajador";
-
-            if (error && typeof error === "object" && "response" in error) {
-                const axiosError = error as {
-                    response?: {
-                        data?: {
-                            message?: string | string[];
-                        };
-                    };
-                };
-
-                const message = axiosError.response?.data?.message;
-
-                if (typeof message === "string") {
-                    errorMessage = message;
-                } else if (Array.isArray(message) && message.length > 0) {
-                    errorMessage = message[0];
-                }
-            } else if (error instanceof Error) {
-                errorMessage = error.message;
-            }
-
-            toast.error(errorMessage);
+            // Antes esta extracción a mano se quedaba solo con el primer texto
+            // del arreglo de validaciones: si el RUT y el teléfono venían malos,
+            // el segundo motivo se perdía. getApiErrorMessage los muestra todos.
+            toast.error(getApiErrorMessage(error, "Error al guardar el trabajador"));
         }
     };
 

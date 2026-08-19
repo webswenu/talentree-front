@@ -17,6 +17,8 @@ import { UserRole } from "../../types/user.types";
 import { EyeIcon, EditIcon, TrashIcon } from "../../components/common/ActionIcons";
 import { ListError } from "../../components/common/ListError";
 import { useDebounce } from "../../hooks/useDebounce";
+import { toast } from "../../utils/toast";
+import { getApiErrorMessage } from "../../utils/apiError";
 
 export default function WorkersPage() {
     const { user } = useAuthStore();
@@ -82,6 +84,16 @@ export default function WorkersPage() {
             setWorkerToDelete(null);
         } catch (err) {
             console.error(err);
+            // El modal de confirmación queda abierto y el trabajador sigue en
+            // la lista: sin este aviso parecía que el botón no hacía nada.
+            // El backend suele explicar el motivo (por ejemplo, que el
+            // candidato está asociado a un proceso).
+            toast.error(
+                getApiErrorMessage(
+                    err,
+                    "No pudimos eliminar al trabajador. Intenta nuevamente."
+                )
+            );
         }
     };
 
