@@ -15,6 +15,30 @@ import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { toast } from "../../utils/toast";
 import { getApiErrorMessage } from "../../utils/apiError";
 
+/**
+ * Una pregunta lista para dibujar, venga de un test personalizado o de uno fijo.
+ *
+ * Esta pantalla estaba escrita suponiendo que siempre habría un test
+ * personalizado: leía `testResponse.test.questions` y, para cruzar cada
+ * respuesta con su pregunta, hacía `answer.question.id`. En los tests fijos
+ * (DISC, 16PF, IL, CFR, TAC, IC) la pregunta no cuelga de `question` sino de
+ * `fixedTestQuestion`, así que `question` viene en null y esa línea lanzaba
+ * "Cannot read properties of null (reading 'id')": la pantalla completa se caía
+ * al error boundary. Y en producción los tests fijos son el 100% de las
+ * respuestas que existen, así que no había ninguna que se pudiera abrir.
+ */
+interface PreguntaEnPantalla {
+    id: string;
+    numero: number;
+    enunciado: string;
+    tipo?: QuestionType;
+    puntos: number;
+    opciones?: string[];
+    respuestasCorrectas?: string[];
+    /** Solo los tests personalizados admiten calificación manual. */
+    admiteNotaManual: boolean;
+}
+
 export const EvaluatorTestReviewPage = () => {
     const { testResponseId } = useParams<{ testResponseId: string }>();
     const navigate = useNavigate();
@@ -79,7 +103,12 @@ export const EvaluatorTestReviewPage = () => {
                 evaluatorNotes: generalNotes,
             });
 
-            await recalculateMutation.mutateAsync(testResponseId);
+            // Los tests fijos se puntúan solos y su puntaje no sale de las
+            // notas del evaluador: recalcular ahí no aporta nada y, si la
+            // respuesta quedó sin puntajes, los pisa de nuevo.
+            if (answersToEvaluate.length > 0) {
+                await recalculateMutation.mutateAsync(testResponseId);
+            }
 
             navigate("/evaluador");
         } catch (err) {
@@ -125,8 +154,44 @@ export const EvaluatorTestReviewPage = () => {
         );
     }
 
+    const esTestFijo = Boolean(testResponse.fixedTest);
+    const nombreDelTest =
+        testResponse.test?.name ??
+        testResponse.fixedTest?.name ??
+        "Test sin nombre";
+
+    // Una sola lista, venga de donde venga la pregunta.
+    const preguntas: PreguntaEnPantalla[] = esTestFijo
+        ? (testResponse.fixedTest?.questions ?? []).map((q) => ({
+              id: q.id,
+              numero: q.questionNumber,
+              enunciado: q.questionText,
+              tipo: q.questionType as QuestionType,
+              puntos: q.points,
+              opciones: extraerOpciones(q.options),
+              admiteNotaManual: false,
+          }))
+        : (testResponse.test?.questions ?? []).map((q, idx) => ({
+              id: q.id,
+              numero: q.order ?? idx + 1,
+              enunciado: q.question,
+              tipo: q.type,
+              puntos: q.points,
+              opciones: q.options,
+              respuestasCorrectas: q.correctAnswers,
+              admiteNotaManual: q.type === QuestionType.OPEN_TEXT,
+          }));
+
+    // La respuesta se cruza por el id de la pregunta que efectivamente traiga.
     const answersMap = new Map(
-        testResponse.answers?.map((a) => [a.question.id, a]) || []
+        (testResponse.answers ?? [])
+            .map((a) => {
+                const idPregunta = a.question?.id ?? a.fixedTestQuestion?.id;
+                return idPregunta ? ([idPregunta, a] as const) : null;
+            })
+            .filter((par): par is readonly [string, (typeof testResponse.answers)[number]] =>
+                par !== null
+            )
     );
 
     return (
@@ -154,19 +219,33 @@ export const EvaluatorTestReviewPage = () => {
                             </p>
                             <p className="text-gray-700">
                                 <span className="font-medium">Test:</span>{" "}
-                                {testResponse.test?.name}
-                                <span
-                                    className={`ml-2 px-2 py-1 text-xs font-semibold rounded ${
-                                        TestTypeColors[testResponse.test?.type]
-                                    }`}
-                                >
-                                    {TestTypeLabels[testResponse.test?.type]}
-                                </span>
+                                {nombreDelTest}
+                                {testResponse.test?.type && (
+                                    <span
+                                        className={`ml-2 px-2 py-1 text-xs font-semibold rounded ${
+                                            TestTypeColors[
+                                                testResponse.test.type
+                                            ]
+                                        }`}
+                                    >
+                                        {TestTypeLabels[testResponse.test.type]}
+                                    </span>
+                                )}
+                                {esTestFijo && (
+                                    <span className="ml-2 px-2 py-1 text-xs font-semibold rounded bg-purple-100 text-purple-800">
+                                        Test psicométrico ·{" "}
+                                        {testResponse.fixedTest?.code}
+                                    </span>
+                                )}
                             </p>
-                            <p className="text-gray-700">
-                                <span className="font-medium">Proceso:</span>{" "}
-                                {testResponse.workerProcess?.process?.name}
-                            </p>
+                            {testResponse.workerProcess?.process?.name && (
+                                <p className="text-gray-700">
+                                    <span className="font-medium">
+                                        Proceso:
+                                    </span>{" "}
+                                    {testResponse.workerProcess.process.name}
+                                </p>
+                            )}
                         </div>
                     </div>
                     <button
@@ -178,75 +257,90 @@ export const EvaluatorTestReviewPage = () => {
                     </button>
                 </div>
 
-                {/* Score Summary */}
-                <div className="bg-white rounded-lg shadow p-6">
-                    <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                        Resumen de Puntaje
-                    </h2>
-                    <div className="grid grid-cols-3 gap-4">
-                        <div>
-                            <p className="text-sm text-gray-600">
-                                Puntaje Actual
-                            </p>
-                            <p className="text-2xl font-bold text-gray-800">
-                                {testResponse.score || 0}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600">
-                                Puntaje Máximo
-                            </p>
-                            <p className="text-2xl font-bold text-gray-800">
-                                {testResponse.maxScore || 0}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600">Porcentaje</p>
-                            <p className="text-2xl font-bold text-blue-600">
-                                {testResponse.maxScore
-                                    ? Math.round(
-                                          ((testResponse.score || 0) /
-                                              testResponse.maxScore) *
-                                              100
-                                      )
-                                    : 0}
-                                %
-                            </p>
+                {/* Resultado */}
+                {esTestFijo ? (
+                    <ResultadoPsicometrico
+                        rawScores={testResponse.rawScores}
+                        scaledScores={testResponse.scaledScores}
+                        interpretation={testResponse.interpretation}
+                    />
+                ) : (
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                            Resumen de Puntaje
+                        </h2>
+                        <div className="grid grid-cols-3 gap-4">
+                            <div>
+                                <p className="text-sm text-gray-600">
+                                    Puntaje Actual
+                                </p>
+                                <p className="text-2xl font-bold text-gray-800">
+                                    {testResponse.score || 0}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600">
+                                    Puntaje Máximo
+                                </p>
+                                <p className="text-2xl font-bold text-gray-800">
+                                    {testResponse.maxScore || 0}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600">
+                                    Porcentaje
+                                </p>
+                                <p className="text-2xl font-bold text-blue-600">
+                                    {testResponse.maxScore
+                                        ? Math.round(
+                                              ((testResponse.score || 0) /
+                                                  testResponse.maxScore) *
+                                                  100
+                                          )
+                                        : 0}
+                                    %
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
-                {/* All Questions */}
+                {/* Preguntas */}
                 <div className="space-y-4">
                     <h2 className="text-xl font-bold text-gray-800">
                         Respuestas del Candidato
                     </h2>
 
-                    {testResponse.test?.questions?.map((question, idx) => {
-                        const answer = answersMap.get(question.id);
-                        const isOpenQuestion =
-                            question.type === QuestionType.OPEN_TEXT;
+                    {preguntas.length === 0 && (
+                        <div className="bg-white rounded-lg shadow p-6 text-gray-600">
+                            No hay preguntas registradas para este test.
+                        </div>
+                    )}
+
+                    {preguntas.map((pregunta, idx) => {
+                        const answer = answersMap.get(pregunta.id);
 
                         return (
                             <div
-                                key={question.id}
+                                key={pregunta.id}
                                 className="bg-white rounded-lg shadow p-6 space-y-4"
                             >
-                                {/* Question */}
+                                {/* Pregunta */}
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                         <h3 className="text-base font-semibold text-gray-800">
-                                            {idx + 1}. {question.question}
+                                            {pregunta.numero || idx + 1}.{" "}
+                                            {pregunta.enunciado}
                                         </h3>
                                         <p className="text-sm text-gray-500 mt-1">
-                                            {question.points} puntos •{" "}
-                                            {question.type ===
-                                            QuestionType.OPEN_TEXT
+                                            {pregunta.puntos} puntos •{" "}
+                                            {pregunta.admiteNotaManual
                                                 ? "Pregunta Abierta"
                                                 : "Autocalificada"}
                                         </p>
                                     </div>
-                                    {!isOpenQuestion &&
+                                    {!pregunta.admiteNotaManual &&
+                                        !esTestFijo &&
                                         answer?.isCorrect !== undefined && (
                                             <span
                                                 className={`px-3 py-1 text-sm font-semibold rounded-full ${
@@ -262,46 +356,52 @@ export const EvaluatorTestReviewPage = () => {
                                         )}
                                 </div>
 
-                                {/* Answer */}
+                                {/* Opciones que se le ofrecieron */}
+                                {pregunta.opciones &&
+                                    pregunta.opciones.length > 0 && (
+                                        <p className="text-sm text-gray-500">
+                                            Opciones:{" "}
+                                            {pregunta.opciones.join(" · ")}
+                                        </p>
+                                    )}
+
+                                {/* Respuesta */}
                                 <div className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50">
                                     <p className="text-sm font-medium text-gray-700 mb-1">
                                         Respuesta del candidato:
                                     </p>
-                                    {renderAnswer(
-                                        question.type,
-                                        answer?.answer
-                                    )}
+                                    {renderAnswer(answer?.answer)}
                                 </div>
 
-                                {/* Correct Answer (if not open) */}
-                                {!isOpenQuestion &&
-                                    question.correctAnswers &&
-                                    question.correctAnswers.length > 0 && (
+                                {/* Respuesta correcta, solo donde existe */}
+                                {!pregunta.admiteNotaManual &&
+                                    pregunta.respuestasCorrectas &&
+                                    pregunta.respuestasCorrectas.length > 0 && (
                                         <div className="border-l-4 border-green-500 pl-4 py-2 bg-green-50">
                                             <p className="text-sm font-medium text-gray-700 mb-1">
                                                 Respuesta correcta:
                                             </p>
                                             <p className="text-gray-800">
-                                                {question.correctAnswers.join(
+                                                {pregunta.respuestasCorrectas.join(
                                                     ", "
                                                 )}
                                             </p>
                                         </div>
                                     )}
 
-                                {/* Score (auto or manual) */}
+                                {/* Puntaje */}
                                 <div className="pt-4 border-t">
-                                    {isOpenQuestion ? (
+                                    {pregunta.admiteNotaManual ? (
                                         <div className="space-y-4">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                                     Calificación Manual (0 -{" "}
-                                                    {question.points} puntos)
+                                                    {pregunta.puntos} puntos)
                                                 </label>
                                                 <input
                                                     type="number"
                                                     min="0"
-                                                    max={question.points}
+                                                    max={pregunta.puntos}
                                                     value={
                                                         answerScores[
                                                             answer?.id || ""
@@ -340,6 +440,13 @@ export const EvaluatorTestReviewPage = () => {
                                                 />
                                             </div>
                                         </div>
+                                    ) : esTestFijo ? (
+                                        <p className="text-sm text-gray-500">
+                                            Este test se puntúa de forma
+                                            automática según su baremo; la
+                                            respuesta no se califica una por
+                                            una.
+                                        </p>
                                     ) : (
                                         <div className="flex items-center gap-4">
                                             <span className="text-sm font-medium text-gray-700">
@@ -347,7 +454,7 @@ export const EvaluatorTestReviewPage = () => {
                                             </span>
                                             <span className="text-lg font-bold text-gray-800">
                                                 {answer?.score || 0} /{" "}
-                                                {question.points}
+                                                {pregunta.puntos}
                                             </span>
                                         </div>
                                     )}
@@ -357,7 +464,7 @@ export const EvaluatorTestReviewPage = () => {
                     })}
                 </div>
 
-                {/* General Notes */}
+                {/* Notas generales */}
                 <div className="bg-white rounded-lg shadow p-6">
                     <h2 className="text-lg font-semibold text-gray-800 mb-4">
                         Notas Generales del Evaluador
@@ -377,7 +484,7 @@ export const EvaluatorTestReviewPage = () => {
                 onClose={() => setIsConfirmSaveOpen(false)}
                 onConfirm={handleSaveReview}
                 title="Guardar Evaluación"
-                message={`¿Estás seguro de guardar esta evaluación? Se recalculará el puntaje total y se notificará al candidato.`}
+                message="¿Estás seguro de guardar esta evaluación? Se notificará al candidato."
                 confirmText="Guardar"
                 cancelText="Cancelar"
                 isLoading={isSaving}
@@ -386,40 +493,140 @@ export const EvaluatorTestReviewPage = () => {
     );
 };
 
+/** Panel de resultado de los tests psicométricos, que no usan score/maxScore. */
+function ResultadoPsicometrico({
+    rawScores,
+    scaledScores,
+    interpretation,
+}: {
+    rawScores?: Record<string, number> | null;
+    scaledScores?: Record<string, number> | null;
+    interpretation?: Record<string, unknown> | string | null;
+}) {
+    const factores = Object.entries(rawScores ?? {});
+    const resumen =
+        typeof interpretation === "string"
+            ? interpretation
+            : ((interpretation?.descripcion ??
+                  interpretation?.resumenGlobal ??
+                  interpretation?.nivel) as string | undefined);
+
+    return (
+        <div className="bg-white rounded-lg shadow p-6 space-y-4">
+            <h2 className="text-lg font-semibold text-gray-800">
+                Resultado del Test
+            </h2>
+
+            {factores.length > 0 ? (
+                <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                        <thead>
+                            <tr className="text-left text-gray-600">
+                                <th className="py-2 pr-6 font-medium">
+                                    Dimensión
+                                </th>
+                                <th className="py-2 pr-6 font-medium">
+                                    Puntaje bruto
+                                </th>
+                                <th className="py-2 font-medium">
+                                    Puntaje escalado
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {factores.map(([factor, valor]) => (
+                                <tr key={factor} className="border-t">
+                                    <td className="py-2 pr-6 font-medium text-gray-800">
+                                        {factor}
+                                    </td>
+                                    <td className="py-2 pr-6 text-gray-800 tabular-nums">
+                                        {valor}
+                                    </td>
+                                    <td className="py-2 text-gray-800 tabular-nums">
+                                        {scaledScores?.[factor] ?? "—"}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                <p className="text-gray-600">
+                    Este test todavía no tiene puntajes calculados.
+                </p>
+            )}
+
+            {resumen && (
+                <div className="border-l-4 border-purple-500 pl-4 py-2 bg-purple-50">
+                    <p className="text-sm font-medium text-gray-700 mb-1">
+                        Interpretación
+                    </p>
+                    <p className="text-gray-800 whitespace-pre-wrap">
+                        {resumen}
+                    </p>
+                </div>
+            )}
+        </div>
+    );
+}
+
+/** Saca los textos de opción de un `options` de test fijo, que es un objeto. */
+function extraerOpciones(options: unknown): string[] | undefined {
+    if (!options || typeof options !== "object") return undefined;
+    const obj = options as Record<string, unknown>;
+
+    // Forma del DISC: { words: { D: "Enérgico", ... }, format: "mas_menos" }
+    if (obj.words && typeof obj.words === "object") {
+        return Object.values(obj.words as Record<string, unknown>).map(String);
+    }
+
+    // Forma del 16PF / IL: { A: "Si", B: "...", C: "No", scoring: {...} }
+    const textos = Object.entries(obj)
+        .filter(
+            ([clave, valor]) =>
+                clave !== "scoring" &&
+                clave !== "format" &&
+                (typeof valor === "string" || typeof valor === "number")
+        )
+        .map(([, valor]) => String(valor));
+
+    return textos.length > 0 ? textos : undefined;
+}
+
+/**
+ * Dibuja la respuesta sea cual sea su forma.
+ *
+ * Antes elegía el formato por el tipo de pregunta y caía en `JSON.stringify`
+ * para todo lo que no fuera de un test personalizado. Los tests fijos guardan
+ * objetos: el DISC manda `{ "Enérgico": "mas", "Reservado": "menos" }` y el IC
+ * manda `{ column1: ..., column2: ... }`.
+ */
 function renderAnswer(
-    type: QuestionType,
-    answer: string | string[] | number | null | undefined
+    answer: unknown
 ): React.ReactElement {
-    if (answer === null || answer === undefined) {
+    if (answer === null || answer === undefined || answer === "") {
         return <p className="text-gray-400 italic">No respondida</p>;
     }
 
-    switch (type) {
-        case QuestionType.MULTIPLE_CHOICE:
-        case QuestionType.TRUE_FALSE:
-            return <p className="text-gray-800">{answer}</p>;
-
-        case QuestionType.MULTIPLE_RESPONSE:
-            return (
-                <p className="text-gray-800">
-                    {Array.isArray(answer) ? answer.join(", ") : answer}
-                </p>
-            );
-
-        case QuestionType.SCALE:
-            return (
-                <div className="flex items-center gap-2">
-                    <p className="text-gray-800 font-medium">{answer}</p>
-                    <span className="text-gray-500">/ 5</span>
-                </div>
-            );
-
-        case QuestionType.OPEN_TEXT:
-            return (
-                <p className="text-gray-800 whitespace-pre-wrap">{answer}</p>
-            );
-
-        default:
-            return <p className="text-gray-800">{JSON.stringify(answer)}</p>;
+    if (Array.isArray(answer)) {
+        return <p className="text-gray-800">{answer.map(String).join(", ")}</p>;
     }
+
+    if (typeof answer === "object") {
+        const pares = Object.entries(answer as Record<string, unknown>);
+        return (
+            <ul className="text-gray-800 space-y-0.5">
+                {pares.map(([clave, valor]) => (
+                    <li key={clave}>
+                        <span className="font-medium">{clave}:</span>{" "}
+                        {String(valor)}
+                    </li>
+                ))}
+            </ul>
+        );
+    }
+
+    return (
+        <p className="text-gray-800 whitespace-pre-wrap">{String(answer)}</p>
+    );
 }
