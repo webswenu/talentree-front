@@ -131,13 +131,24 @@ export const useApproveReport = () => {
             data: { status: string; rejectionReason?: string };
         }) => reportsService.approveReport(id, data),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: reportKeys.lists() });
+            /**
+             * Se invalida la RAÍZ de las consultas de informes, no una por una.
+             *
+             * Antes se invalidaban `["reports","list"]`, el detalle y
+             * `["reports","worker"]`, pero NO `["reports","process"]`, que es
+             * justo la que usa la pestaña Informes de un proceso
+             * (`useReportsByProcess`). Como una clave no es prefijo de la otra,
+             * se refrescaba una lista distinta de la que la persona estaba
+             * mirando: el servidor respondía que el informe quedó aprobado y la
+             * tabla seguía diciendo «Revisión Admin». Verificado en producción
+             * el 19-08-2026.
+             *
+             * `reportKeys.all` es `["reports"]` y cubre todas las variantes,
+             * incluidas las que se agreguen después.
+             */
+            queryClient.invalidateQueries({ queryKey: reportKeys.all });
             queryClient.invalidateQueries({
                 queryKey: reportKeys.detail(variables.id),
-            });
-            // Invalidate all worker-specific report queries
-            queryClient.invalidateQueries({
-                queryKey: ["reports", "worker"]
             });
         },
     });

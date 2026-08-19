@@ -205,6 +205,12 @@ export const ProcessDetailPage = () => {
                 data: { status: ReportStatus.APPROVED },
             });
             setApproveRejectModal({ isOpen: false, report: null });
+            // Aprobar no confirmaba nada: el modal se cerraba y la tabla ni
+            // siquiera cambiaba de estado, así que la operación parecía fallida
+            // y se podía aprobar dos veces.
+            toast.success(
+                "Informe aprobado. La empresa ya puede verlo y recibió el aviso."
+            );
         } catch (error) {
             // useApproveReport no tiene onError: sin este aviso el modal queda
             // abierto y nadie sabe por qué no se aprobó.
@@ -224,6 +230,9 @@ export const ProcessDetailPage = () => {
                 },
             });
             setApproveRejectModal({ isOpen: false, report: null });
+            toast.success(
+                "Informe rechazado. No es visible para la empresa y queda registrado el motivo."
+            );
         } catch (error) {
             // Mismo caso que la aprobación: la mutación no avisa nada.
             toast.error(getApiErrorMessage(error, "No se pudo rechazar el informe. Intenta nuevamente."));
