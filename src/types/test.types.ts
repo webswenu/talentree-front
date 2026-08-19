@@ -75,6 +75,27 @@ export interface Test {
     testStatus?: 'available' | 'in_progress' | 'completed' | 'incomplete';
 }
 
+/**
+ * Una pregunta de un test fijo (DISC, 16PF, IL, CFR, TAC, IC).
+ *
+ * Ojo: NO es lo mismo que `TestQuestion`. Los tests fijos guardan sus
+ * preguntas en otra tabla, y las respuestas del candidato cuelgan de
+ * `fixedTestQuestion`, no de `question`. Confundirlas fue justamente lo que
+ * dejaba la pantalla de revision del evaluador en blanco.
+ */
+export interface FixedTestQuestion {
+    id: string;
+    fixedTestId: string;
+    questionNumber: number;
+    questionText: string;
+    questionType: string;
+    options?: Record<string, unknown> | null;
+    correctAnswer?: Record<string, unknown> | null;
+    factor?: string | null;
+    points: number;
+    metadata?: Record<string, unknown> | null;
+}
+
 export interface FixedTest {
     id: string;
     code: string;
@@ -87,6 +108,7 @@ export interface FixedTest {
     createdAt: Date;
     updatedAt: Date;
     testStatus?: 'available' | 'in_progress' | 'completed' | 'incomplete';
+    questions?: FixedTestQuestion[];
 }
 
 export interface CreateQuestionDto {
