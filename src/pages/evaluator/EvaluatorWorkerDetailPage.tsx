@@ -25,6 +25,10 @@ import {
 } from "../../hooks/useReports";
 import { ModalPortal } from "../../components/common/ModalPortal";
 import { formatDateShort } from "../../utils/formatters";
+import {
+    TestsRendidos,
+    respuestasDeTestDelTrabajador,
+} from "../../components/common/TestsRendidos";
 
 export const EvaluatorWorkerDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -167,7 +171,7 @@ export const EvaluatorWorkerDetailPage = () => {
                         Tests Realizados
                     </p>
                     <p className="text-3xl font-bold text-blue-600 mt-2">
-                        {worker.testResponses?.length || 0}
+                        {respuestasDeTestDelTrabajador(worker).length}
                     </p>
                 </div>
                 <div className="bg-white rounded-lg shadow p-6">
@@ -299,6 +303,9 @@ export const EvaluatorWorkerDetailPage = () => {
                     </div>
                 </div>
             )}
+
+            {/* Tests rendidos: cuelgan de cada postulacion */}
+            <TestsRendidos worker={worker} />
 
             {/* Procesos */}
             {worker.workerProcesses && worker.workerProcesses.length > 0 && (
