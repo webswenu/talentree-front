@@ -29,7 +29,7 @@ export const ConfirmModal = ({
     return (
 
         <ModalPortal onClose={onClose}>
-        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/25 flex items-center justify-center z-50 p-4 overflow-y-auto">
             <div className="bg-white rounded-lg max-w-md w-full p-6">
                 {/* Header */}
                 <div className="mb-4">

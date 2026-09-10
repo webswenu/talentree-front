@@ -1,6 +1,9 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { companyService } from "../../services/company.service";
+import { useProcessesByCompany } from "../../hooks/useProcesses";
+import { usersService } from "../../services/users.service";
+import { ProcessStatus } from "../../types/process.types";
 
 export const CompanyDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -19,6 +22,27 @@ export const CompanyDetailPage = () => {
         queryFn: () => companyService.getById(id!),
         enabled: !!id,
     });
+
+    /*
+     * Las tres tarjetas de abajo estaban escritas a mano con un 0 en el JSX:
+     * no consultaban nada. Una empresa con cinco procesos y dos usuarios
+     * mostraba igual "0 / 0 / 0". Ahora se cuentan de verdad.
+     */
+    const { data: procesosDeLaEmpresa } = useProcessesByCompany(id!);
+    const { data: usuariosDeLaEmpresa } = useQuery({
+        queryKey: ["users", "by-company", id],
+        queryFn: () => usersService.getByCompany(id!),
+        enabled: !!id,
+    });
+
+    // findByCompany devuelve {data, meta}: el total sale de meta, no del largo
+    // de la página.
+    const listaDeProcesos = procesosDeLaEmpresa?.data ?? [];
+    const totalProcesos = procesosDeLaEmpresa?.meta?.total ?? listaDeProcesos.length;
+    const procesosActivos = listaDeProcesos.filter(
+        (p) => p.status === ProcessStatus.ACTIVE
+    ).length;
+    const totalUsuarios = usuariosDeLaEmpresa?.length ?? 0;
 
     if (isLoading) {
         return (
@@ -165,19 +189,25 @@ export const CompanyDetailPage = () => {
                     <h3 className="text-sm font-medium text-gray-500">
                         Procesos Activos
                     </h3>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">0</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">
+                        {procesosActivos}
+                    </p>
                 </div>
                 <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="text-sm font-medium text-gray-500">
                         Total Procesos
                     </h3>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">0</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">
+                        {totalProcesos}
+                    </p>
                 </div>
                 <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="text-sm font-medium text-gray-500">
                         Usuarios
                     </h3>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">0</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">
+                        {totalUsuarios}
+                    </p>
                 </div>
             </div>
         </div>

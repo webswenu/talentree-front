@@ -65,7 +65,7 @@ export const AssignTestsModal = ({
             <div className="flex min-h-screen items-center justify-center p-4">
                 {/* Backdrop */}
                 <div
-                    className="fixed inset-0 bg-black/25 bg-opacity-50 transition-opacity"
+                    className="fixed inset-0 bg-black/25 transition-opacity"
                     onClick={handleClose}
                 />
 

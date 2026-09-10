@@ -1,5 +1,6 @@
 import { SelectionProcess } from "../../types/process.types";
 import { ModalPortal } from "../common/ModalPortal";
+import { aFechaLocal } from "../../utils/formatters";
 
 interface ApplyProcessModalProps {
     isOpen: boolean;
@@ -120,7 +121,9 @@ export const ApplyProcessModal = ({
                                         Cierre de Postulaciones
                                     </p>
                                     <p className="font-medium text-gray-900">
-                                        {new Date(
+                                        {/* P-47: fecha sin hora, se arma local
+                                            para no mostrar el día anterior. */}
+                                        {aFechaLocal(
                                             process.endDate
                                         ).toLocaleDateString("es-CL", {
                                             day: "numeric",
