@@ -523,7 +523,7 @@ export const VideoRecorder = ({
                 {/* Audio Level Indicator (Preview Mode) */}
                 {state === "idle" && hasPermission && (
                     <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4">
-                        <div className="flex items-center space-x-2 sm:space-x-3 bg-black bg-opacity-75 text-white px-2 sm:px-4 py-2 sm:py-3 rounded-lg">
+                        <div className="flex items-center space-x-2 sm:space-x-3 bg-black/75 text-white px-2 sm:px-4 py-2 sm:py-3 rounded-lg">
                             <svg className="w-4 h-4 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
                             </svg>
@@ -559,7 +559,7 @@ export const VideoRecorder = ({
 
                 {/* Countdown Overlay */}
                 {state === "countdown" && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                         <div className="text-white text-6xl sm:text-9xl font-bold animate-pulse">
                             {countdown}
                         </div>
@@ -576,7 +576,7 @@ export const VideoRecorder = ({
                         </div>
 
                         {/* Audio Level Indicator */}
-                        <div className="flex items-center space-x-1.5 sm:space-x-2 bg-black bg-opacity-75 text-white px-2 sm:px-4 py-1 sm:py-2 rounded-full">
+                        <div className="flex items-center space-x-1.5 sm:space-x-2 bg-black/75 text-white px-2 sm:px-4 py-1 sm:py-2 rounded-full">
                             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
                             </svg>
@@ -609,7 +609,7 @@ export const VideoRecorder = ({
 
                 {/* Timer */}
                 {state === "recording" && (
-                    <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-black bg-opacity-75 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg">
+                    <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-black/75 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg">
                         <div className="text-lg sm:text-2xl font-mono font-bold">
                             {formatTime(elapsedTime)}
                         </div>

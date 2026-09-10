@@ -12,6 +12,7 @@ import { VideoRequirementGate } from "../../components/worker/VideoRequirementGa
 import { Test, FixedTest } from "../../types/test.types";
 import { TestResponse } from "../../types/test-response.types";
 import { toast } from "../../utils/toast";
+import { aFechaLocal } from "../../utils/formatters";
 import { Clock, FileText, Target } from "lucide-react";
 
 interface ProcessTestsData {
@@ -85,9 +86,12 @@ export const WorkerApplicationDetailPage = () => {
         }
     };
 
+    // P-47: `appliedAt` viene como fecha sin hora, así que hay que construirla
+    // como local. Con `new Date(...)` se leía como medianoche UTC y en Chile
+    // se mostraba el día anterior: una postulación del 20 salía como 19.
     const formatDate = (dateString: string | Date | null | undefined) => {
         if (!dateString) return "No especificada";
-        return new Date(dateString).toLocaleDateString("es-CL", {
+        return aFechaLocal(dateString).toLocaleDateString("es-CL", {
             day: "2-digit",
             month: "long",
             year: "numeric",

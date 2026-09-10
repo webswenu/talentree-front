@@ -1466,7 +1466,7 @@ export const ProcessDetailPage = () => {
             {selectedVideo && (
                 <ModalPortal onClose={() => setSelectedVideo(null)}>
                     <div
-                        className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+                        className="fixed inset-0 bg-black/25 flex items-center justify-center z-50 p-4 overflow-y-auto"
                         onClick={() => setSelectedVideo(null)}
                     >
                     <div
@@ -1571,7 +1571,7 @@ export const ProcessDetailPage = () => {
 
             {/* Invitation Modal */}
             {invitationModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
                     <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">
                             Invitar Candidato
@@ -1653,7 +1653,7 @@ export const ProcessDetailPage = () => {
 
             {/* Modal de Cambio de Estado de Trabajador */}
             {workerStatusModal.isOpen && workerStatusModal.workerProcess && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
                     <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">
                             {workerStatusModal.newStatus === WorkerStatus.APPROVED

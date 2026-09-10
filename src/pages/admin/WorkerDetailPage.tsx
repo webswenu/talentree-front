@@ -658,7 +658,7 @@ export const WorkerDetailPage = () => {
             {selectedVideo && (
                 <ModalPortal onClose={() => setSelectedVideo(null)}>
                     <div
-                        className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+                        className="fixed inset-0 bg-black/25 flex items-center justify-center z-50 p-4 overflow-y-auto"
                         onClick={() => setSelectedVideo(null)}
                     >
                     <div
@@ -748,7 +748,7 @@ export const WorkerDetailPage = () => {
             {/* Modal de Rechazo de Reporte */}
             {rejectModal.isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+                    className="fixed inset-0 bg-black/25 flex items-center justify-center z-50 p-4 overflow-y-auto"
                     onClick={() => {
                         setRejectModal({ isOpen: false, reportId: null });
                         setRejectionReason("");
