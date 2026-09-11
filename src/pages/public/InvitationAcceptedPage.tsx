@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { processInvitationsService } from "../../services/process-invitations.service";
 import { workersService } from "../../services/workers.service";
 import { useAuthStore } from "../../store/authStore";
+import { getApiErrorMessage } from "../../utils/apiError";
 
 export const InvitationAcceptedPage = () => {
     const [searchParams] = useSearchParams();
@@ -77,10 +78,16 @@ export const InvitationAcceptedPage = () => {
             } catch (error) {
                 console.error("Error accepting invitation:", error);
                 setStatus("error");
+                /**
+                 * R-08. Aqui se mostraba `error.message`, que en axios es
+                 * literalmente 'Request failed with status code 400'. El
+                 * servidor si responde el motivo —«Esta invitación fue enviada
+                 * a un email diferente»— y la persona no lo veia nunca. El
+                 * arreglo ya existia en el repositorio y no se habia propagado
+                 * a la pantalla que cierra el camino mas caro de perder.
+                 */
                 setErrorMsg(
-                    error instanceof Error
-                        ? error.message
-                        : "Error al aceptar la invitación"
+                    getApiErrorMessage(error, "Error al aceptar la invitación")
                 );
                 // Resetear el flag en caso de error para permitir reintentos
                 hasAccepted.current = false;

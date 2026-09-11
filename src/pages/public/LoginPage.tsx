@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { useLogin } from "../../hooks/useAuth";
 import { useAuthStore } from "../../store/authStore";
 
@@ -93,9 +94,10 @@ export const LoginPage = () => {
 
                 {loginMutation.isError && (
                     <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                        {loginMutation.error instanceof Error
-                            ? loginMutation.error.message
-                            : "Error al iniciar sesión"}
+                        {getApiErrorMessage(
+                            loginMutation.error,
+                            "Error al iniciar sesión"
+                        )}
                     </div>
                 )}
 
