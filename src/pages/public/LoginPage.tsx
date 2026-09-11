@@ -22,12 +22,40 @@ export const LoginPage = () => {
         }
     }, [user, searchParams, navigate]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
+        /**
+         * El autocompletado del navegador y los gestores de contraseñas rellenan
+         * el DOM sin disparar el `onChange` de React, así que el estado
+         * (`email`/`password`) puede seguir vacío aunque los campos se vean
+         * llenos. Antes eso dejaba el botón deshabilitado y el login "no
+         * reaccionaba" hasta escribir un carácter a mano. Se leen los valores
+         * reales del formulario y se usan esos (cayendo al estado si hiciera
+         * falta), de modo que autofill y gestores de contraseñas funcionan.
+         */
+        const form = e.currentTarget;
+        const emailVal = (
+            (form.elements.namedItem("email") as HTMLInputElement)?.value ??
+            email
+        ).trim();
+        const passwordVal =
+            (form.elements.namedItem("password") as HTMLInputElement)?.value ??
+            password;
+
+        if (!emailVal || !passwordVal) return;
+
+        // Se sincroniza el estado para que el resto del componente (mensajes,
+        // etc.) quede consistente con lo que se envió.
+        setEmail(emailVal);
+        setPassword(passwordVal);
 
         try {
             // Primero hacer login
-            await loginMutation.mutateAsync({ email, password });
+            await loginMutation.mutateAsync({
+                email: emailVal,
+                password: passwordVal,
+            });
 
             // Si hay invitación, redirigir a la página de aceptación
             const fromInvitation = searchParams.get("fromInvitation");
@@ -108,6 +136,7 @@ export const LoginPage = () => {
                         </label>
                         <input
                             type="email"
+                            name="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="input"
@@ -123,6 +152,7 @@ export const LoginPage = () => {
                         </label>
                         <input
                             type="password"
+                            name="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="input"
@@ -134,7 +164,7 @@ export const LoginPage = () => {
 
                     <button
                         type="submit"
-                        disabled={loginMutation.isPending || !email.trim() || !password.trim()}
+                        disabled={loginMutation.isPending}
                         className="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-semibold transition-all duration-300 hover:from-orange-600 hover:to-orange-700 hover:shadow-lg hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
                     >
                         {loginMutation.isPending ? (
