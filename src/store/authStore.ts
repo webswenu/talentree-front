@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { User, LoginDto } from "../types/user.types";
 import authService from "../services/auth.service";
+import { getApiErrorMessage } from "../utils/apiError";
 
 interface AuthState {
     user: User | null;
@@ -32,10 +33,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             });
         } catch (error) {
             set({
-                error:
-                    error instanceof Error
-                        ? error.message
-                        : "Error al iniciar sesión",
+                error: getApiErrorMessage(error, "Error al iniciar sesión"),
                 isLoading: false,
             });
             throw error;

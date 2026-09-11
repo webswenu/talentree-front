@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { workersService } from "../../services/workers.service";
 import { Modal } from "../common/Modal";
 import { ModalPortal } from "../common/ModalPortal";
+import { getApiErrorMessage } from "../../utils/apiError";
 
 interface InviteWorkersModalProps {
     processId: string;
@@ -53,9 +54,7 @@ export const InviteWorkersModal = ({
         onError: (error: Error) => {
             console.error("Error al invitar trabajadores:", error);
             setErrorMessage(
-                error instanceof Error
-                    ? error.message
-                    : "Error al invitar trabajadores"
+                getApiErrorMessage(error, "Error al invitar trabajadores")
             );
             setShowConfirmModal(false);
             setShowErrorModal(true);

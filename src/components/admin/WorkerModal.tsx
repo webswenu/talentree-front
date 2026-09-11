@@ -5,6 +5,14 @@ import { useResetPassword } from "../../hooks/useUsers";
 import { workersService } from "../../services/workers.service";
 import { toast } from "../../utils/toast";
 import { getApiErrorMessage } from "../../utils/apiError";
+import { getRutError } from "../../utils/rut";
+import {
+    mensajeDePassword,
+    mensajeDeTelefono,
+    normalizarTelefono,
+    AYUDA_PASSWORD,
+    AYUDA_TELEFONO,
+} from "../../utils/validators";
 import { ModalPortal } from "../common/ModalPortal";
 
 interface WorkerModalProps {
@@ -72,8 +80,14 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
         // Validar contraseñas
         if (!worker) {
             // Crear: la contraseña es obligatoria
-            if (!password || password.length < 8) {
-                toast.error("La contraseña debe tener al menos 8 caracteres");
+            /**
+             * R-03. Antes: solo largo minimo 8, sin exigir letra ni numero,
+             * asi que '12345678' pasaba el formulario y lo rechazaba la API.
+             * Era la cuarta regla distinta para el mismo campo en el proyecto.
+             */
+            const motivo = mensajeDePassword(password || "");
+            if (motivo) {
+                toast.error(motivo);
                 return;
             }
             if (password !== confirmPassword) {
@@ -82,8 +96,9 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
             }
         } else if (showPasswordSection) {
             // Editar con cambio de contraseña
-            if (!password || password.length < 8) {
-                toast.error("La contraseña debe tener al menos 8 caracteres");
+            const motivo = mensajeDePassword(password || "");
+            if (motivo) {
+                toast.error(motivo);
                 return;
             }
             if (password !== confirmPassword) {
@@ -92,10 +107,31 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
             }
         }
 
+        /**
+         * R-05. El alta desde el panel no validaba el RUT en absoluto: se
+         * enviaba y el servidor lo rechazaba. `getRutError` ya estaba escrita.
+         */
+        const errorRut = getRutError(formData.rut);
+        if (errorRut) {
+            toast.error(errorRut);
+            return;
+        }
+
+        // R-10. Misma regla de telefono que el registro publico.
+        if (formData.phone) {
+            const motivoTelefono = mensajeDeTelefono(formData.phone);
+            if (motivoTelefono) {
+                toast.error(motivoTelefono);
+                return;
+            }
+        }
+
         try {
             const submitData = {
                 ...formData,
-                phone: formData.phone || undefined,
+                phone: formData.phone
+                    ? normalizarTelefono(formData.phone)
+                    : undefined,
                 birthDate: formData.birthDate || undefined,
                 address: formData.address || undefined,
                 city: formData.city || undefined,
@@ -293,8 +329,12 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                                     value={formData.rut}
                                     onChange={handleChange}
                                     required
+                                    placeholder="12.345.678-5"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                  id="rut"/>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Con guion y dígito verificador.
+                                </p>
                             </div>
 
                             <div>
@@ -322,8 +362,12 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                                     name="phone"
                                     value={formData.phone}
                                     onChange={handleChange}
+                                    placeholder="+56 9 1234 5678"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                  id="phone"/>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    {AYUDA_TELEFONO}
+                                </p>
                             </div>
 
                             <div>
@@ -432,7 +476,7 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                                                 required
                                                 minLength={8}
                                                 className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                placeholder="Mín. 8 caracteres"
+                                                placeholder={AYUDA_PASSWORD}
                                             />
                                             <button
                                                 type="button"
@@ -635,7 +679,7 @@ export default function WorkerModal({ worker, onClose }: WorkerModalProps) {
                                                         }
                                                         minLength={8}
                                                         className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                                        placeholder="Mín. 8 caracteres"
+                                                        placeholder={AYUDA_PASSWORD}
                                                     />
                                                     <button
                                                         type="button"

@@ -10,6 +10,7 @@ import { FileUpload } from "../../components/common/FileUpload";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { workersService } from "../../services/workers.service";
 import usersService from "../../services/users.service";
+import { getApiErrorMessage } from "../../utils/apiError";
 
 export const WorkerProfilePage = () => {
     const { user, setUser } = useAuthStore();
@@ -230,8 +231,7 @@ export const WorkerProfilePage = () => {
             setCvFile(null);
             setTimeout(() => setSuccessMessage(""), 3000);
         } catch (error) {
-            const errorMsg =
-                error instanceof Error ? error.message : "Error al subir el CV";
+            const errorMsg = getApiErrorMessage(error, "Error al subir el CV");
             setErrorMessage(errorMsg);
             setTimeout(() => setErrorMessage(""), 5000);
         }
@@ -256,10 +256,10 @@ export const WorkerProfilePage = () => {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } catch (error) {
-            const errorMsg =
-                error instanceof Error
-                    ? error.message
-                    : "Error al descargar el CV";
+            const errorMsg = getApiErrorMessage(
+                error,
+                "Error al descargar el CV"
+            );
             setErrorMessage(errorMsg);
             setTimeout(() => setErrorMessage(""), 5000);
         }
@@ -291,10 +291,10 @@ export const WorkerProfilePage = () => {
             setSuccessMessage("CV eliminado correctamente");
             setTimeout(() => setSuccessMessage(""), 3000);
         } catch (error) {
-            const errorMsg =
-                error instanceof Error
-                    ? error.message
-                    : "Error al eliminar el CV";
+            const errorMsg = getApiErrorMessage(
+                error,
+                "Error al eliminar el CV"
+            );
             setShowDeleteCVModal(false);
             setErrorMessage(errorMsg);
             setTimeout(() => setErrorMessage(""), 5000);

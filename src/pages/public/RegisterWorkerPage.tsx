@@ -6,6 +6,15 @@ import { processInvitationsService } from "../../services/process-invitations.se
 import { useUploadCV } from "../../hooks/useWorkers";
 import { toast } from "../../utils/toast";
 import { getApiErrorMessage } from "../../utils/apiError";
+import { getRutError } from "../../utils/rut";
+import { limpiarOpcionales } from "../../utils/registro";
+import {
+    mensajeDePassword,
+    mensajeDeTelefono,
+    normalizarTelefono,
+    AYUDA_PASSWORD,
+    AYUDA_TELEFONO,
+} from "../../utils/validators";
 
 const STEPS = [
     { id: 1, title: "Cuenta", description: "Datos de acceso" },
@@ -79,11 +88,19 @@ export const RegisterWorkerPage = () => {
             newErrors.email = "Email inválido";
         }
 
+        /**
+         * R-03. Antes: length >= 6, mientras el servidor exigia 8 con letra,
+         * mayuscula y numero. El candidato pasaba el paso 1, completaba los
+         * otros dos y recien al enviar se enteraba. `mensajeDePassword` es el
+         * espejo de `esPasswordFuerte` del backend y devuelve el motivo
+         * concreto, no un texto generico: si no sabe QUE le falta, prueba al
+         * azar.
+         */
         if (!formData.password) {
             newErrors.password = "La contraseña es requerida";
-        } else if (formData.password.length < 6) {
-            newErrors.password =
-                "La contraseña debe tener al menos 6 caracteres";
+        } else {
+            const motivo = mensajeDePassword(formData.password);
+            if (motivo) newErrors.password = motivo;
         }
 
         if (!confirmPassword) {
@@ -102,17 +119,22 @@ export const RegisterWorkerPage = () => {
         if (!formData.firstName) newErrors.firstName = "El nombre es requerido";
         if (!formData.lastName) newErrors.lastName = "El apellido es requerido";
 
-        if (!formData.rut) {
-            newErrors.rut = "El RUT es requerido";
-        } else if (!/^[0-9]{7,8}-[0-9Kk]{1}$/.test(formData.rut)) {
-            newErrors.rut = "Formato de RUT inválido (ej: 12345678-9)";
-        }
+        /**
+         * R-05. Antes se aceptaba cualquier digito verificador, asi que
+         * 12345678-0 pasaba el paso 2 y moria en el servidor. `getRutError` ya
+         * existia en el proyecto y la usaba solo el alta de empresas.
+         */
+        const errorRut = getRutError(formData.rut);
+        if (errorRut) newErrors.rut = errorRut;
 
-        if (
-            formData.phone &&
-            !/^\+?[0-9]{8,15}$/.test(formData.phone.replace(/\s/g, ""))
-        ) {
-            newErrors.phone = "Formato de teléfono inválido";
+        /**
+         * R-04. Antes se validaba el telefono SIN espacios y se enviaba CON
+         * espacios, asi que '+56 9 1234 5678' pasaba aqui y devolvia 400.
+         * Ahora se valida y se envia la misma forma normalizada.
+         */
+        if (formData.phone) {
+            const motivo = mensajeDeTelefono(formData.phone);
+            if (motivo) newErrors.phone = motivo;
         }
 
         setErrors(newErrors);
@@ -151,7 +173,20 @@ export const RegisterWorkerPage = () => {
         setServerError("");
         try {
             // Primero registrar
-            const result = await registerMutation.mutateAsync(formData);
+            /**
+             * R-01 y R-02. El formulario inicializa todo en cadena vacia y
+             * antes enviaba el objeto entero: `@IsOptional()` no salta la
+             * cadena vacia, asi que «Teléfono (opcional)» y la fecha de
+             * nacimiento en blanco impedian registrarse.
+             */
+            const datos = limpiarOpcionales({
+                ...formData,
+                phone: formData.phone
+                    ? normalizarTelefono(formData.phone)
+                    : "",
+            }) as RegisterWorkerDto;
+
+            const result = await registerMutation.mutateAsync(datos);
 
             // Si hay CV, subirlo usando el hook (para invalidar queries)
             if (cvFile && result?.user?.worker?.id) {
@@ -187,12 +222,28 @@ export const RegisterWorkerPage = () => {
             }
             // Si no hay invitación, el hook useRegisterWorker ya redirige
         } catch (error) {
-            setServerError(
-                getApiErrorMessage(
-                    error,
-                    "Error al registrar. Intenta nuevamente."
-                )
+            const mensaje = getApiErrorMessage(
+                error,
+                "Error al registrar. Intenta nuevamente."
             );
+            setServerError(mensaje);
+
+            /**
+             * R-07. El error se pintaba arriba de la tarjeta, sobre el paso 3,
+             * hablando de un campo del paso 1, y nada devolvia a la persona a
+             * ese paso. Ahora las reglas del navegador son las mismas que las
+             * del servidor, asi que volver a pasarlas identifica el paso
+             * culpable y deja el error junto al campo.
+             */
+            if (!validateStep1()) {
+                setCurrentStep(1);
+            } else if (!validateStep2()) {
+                setCurrentStep(2);
+            } else if (/correo|email/i.test(mensaje)) {
+                setCurrentStep(1);
+            } else if (/rut/i.test(mensaje)) {
+                setCurrentStep(2);
+            }
         }
     };
 
@@ -204,7 +255,13 @@ export const RegisterWorkerPage = () => {
     };
 
     const handleRutChange = (value: string) => {
-        const cleaned = value.replace(/[^0-9kK-]/g, "").toUpperCase();
+        /**
+         * R-06. Antes se borraban los puntos mientras se escribia y el texto
+         * de ayuda decia «sin puntos», que es justo como NO se escribe un RUT
+         * en Chile. Tanto `getRutError` como el backend los aceptan y
+         * normalizan, asi que se dejan pasar.
+         */
+        const cleaned = value.replace(/[^0-9kK.-]/g, "").toUpperCase();
         handleChange("rut", cleaned);
     };
 
@@ -288,16 +345,39 @@ export const RegisterWorkerPage = () => {
                                     onChange={(e) =>
                                         handleChange("email", e.target.value)
                                     }
+                                    readOnly={!!fromInvitation}
                                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                                         errors.email
                                             ? "border-red-500"
                                             : "border-gray-300"
+                                    } ${
+                                        fromInvitation
+                                            ? "bg-gray-50 text-gray-600 cursor-not-allowed"
+                                            : ""
                                     }`}
                                     placeholder="tu@email.com"
                                 />
                                 {errors.email && (
                                     <p className="mt-1 text-sm text-red-600">
                                         {errors.email}
+                                    </p>
+                                )}
+                                {/*
+                                 * R-09. El correo venia precargado de la
+                                 * invitacion pero se podia cambiar, sin aviso.
+                                 * Quien prefería su correo personal creaba la
+                                 * cuenta, subia el CV y recien al final se
+                                 * enteraba de que la invitacion no era suya:
+                                 * quedaba dentro de la plataforma y fuera del
+                                 * proceso al que lo invitaron.
+                                 */}
+                                {fromInvitation && (
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        La invitación se envió a este correo,
+                                        así que el registro tiene que hacerse
+                                        con él. Si prefieres usar otro, pide que
+                                        te reenvíen la invitación a esa
+                                        dirección.
                                     </p>
                                 )}
                             </div>
@@ -321,13 +401,16 @@ export const RegisterWorkerPage = () => {
                                             ? "border-red-500"
                                             : "border-gray-300"
                                     }`}
-                                    placeholder="Mínimo 6 caracteres"
+                                    placeholder={AYUDA_PASSWORD}
                                 />
                                 {errors.password && (
                                     <p className="mt-1 text-sm text-red-600">
                                         {errors.password}
                                     </p>
                                 )}
+                                <p className="mt-1 text-xs text-gray-500">
+                                    {AYUDA_PASSWORD}
+                                </p>
                             </div>
 
                             <div>
@@ -454,7 +537,7 @@ export const RegisterWorkerPage = () => {
                                             ? "border-red-500"
                                             : "border-gray-300"
                                     }`}
-                                    placeholder="12345678-9"
+                                    placeholder="12.345.678-5"
                                 />
                                 {errors.rut && (
                                     <p className="mt-1 text-sm text-red-600">
@@ -462,7 +545,8 @@ export const RegisterWorkerPage = () => {
                                     </p>
                                 )}
                                 <p className="mt-1 text-xs text-gray-500">
-                                    Formato: 12345678-9 (sin puntos)
+                                    Con guion y dígito verificador. Los puntos
+                                    son opcionales.
                                 </p>
                             </div>
 
@@ -485,13 +569,16 @@ export const RegisterWorkerPage = () => {
                                             ? "border-red-500"
                                             : "border-gray-300"
                                     }`}
-                                    placeholder="+56912345678"
+                                    placeholder="+56 9 1234 5678"
                                 />
                                 {errors.phone && (
                                     <p className="mt-1 text-sm text-red-600">
                                         {errors.phone}
                                     </p>
                                 )}
+                                <p className="mt-1 text-xs text-gray-500">
+                                    {AYUDA_TELEFONO}
+                                </p>
                             </div>
 
                             <div>
