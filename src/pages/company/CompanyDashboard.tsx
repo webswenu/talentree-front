@@ -100,6 +100,10 @@ export const CompanyDashboard = () => {
                 return "✅";
             case "evaluacion_aprobada":
                 return "🎉";
+            case "invitacion_enviada":
+                return "✉️";
+            case "invitacion_aceptada":
+                return "🤝";
             default:
                 return "📋";
         }
@@ -117,6 +121,10 @@ export const CompanyDashboard = () => {
                 return `Test completado: ${actividad.nombre} → ${actividad.proceso}`;
             case "evaluacion_aprobada":
                 return `Evaluación aprobada: ${actividad.nombre} → ${actividad.proceso}`;
+            case "invitacion_enviada":
+                return `Invitación enviada: ${actividad.nombre} → ${actividad.proceso}`;
+            case "invitacion_aceptada":
+                return `Invitación aceptada: ${actividad.nombre} → ${actividad.proceso}`;
             default:
                 return actividad.nombre;
         }
