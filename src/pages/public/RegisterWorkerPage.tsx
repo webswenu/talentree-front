@@ -401,7 +401,7 @@ export const RegisterWorkerPage = () => {
                                             ? "border-red-500"
                                             : "border-gray-300"
                                     }`}
-                                    placeholder={AYUDA_PASSWORD}
+                                    placeholder="Tu contraseña"
                                 />
                                 {errors.password && (
                                     <p className="mt-1 text-sm text-red-600">
