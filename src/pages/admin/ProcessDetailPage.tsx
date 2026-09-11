@@ -474,11 +474,20 @@ export const ProcessDetailPage = () => {
             {activeTab === "candidates" && (
                 <div className="space-y-6">
                     {/* Invitations Section */}
-                    {canEdit && (
+                    {/*
+                      * La empresa TAMBIÉN ve esta sección, en modo lectura: antes
+                      * estaba bajo `canEdit` (solo admin), así que la empresa no
+                      * veía las invitaciones que el admin enviaba a sus procesos ni
+                      * cuándo pasaban a "aceptada". El backend ya acota el listado a
+                      * los procesos de la empresa de la sesión, así que solo faltaba
+                      * mostrarlo. Las acciones (invitar, reenviar, cancelar) siguen
+                      * siendo solo del admin.
+                      */}
+                    {(canEdit || isCompany) && (
                         <div className="bg-white rounded-lg shadow p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-lg font-semibold text-gray-900">
-                                    Invitar Candidatos
+                                    {canEdit ? "Invitar Candidatos" : "Invitaciones enviadas"}
                                 </h2>
                                 <div className="flex gap-2">
                                     <button
@@ -487,20 +496,29 @@ export const ProcessDetailPage = () => {
                                     >
                                         {showInvitationsTable ? "Ocultar" : "Ver"} Invitaciones ({invitationsData?.data?.length || 0})
                                     </button>
-                                    <button
-                                        onClick={() => setBulkInviteModal(true)}
-                                        className="px-4 py-2 text-sm border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-                                    >
-                                        📊 Carga Masiva Excel
-                                    </button>
-                                    <button
-                                        onClick={() => setInvitationModal(true)}
-                                        className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                    >
-                                        + Invitar Candidato
-                                    </button>
+                                    {canEdit && (
+                                        <>
+                                            <button
+                                                onClick={() => setBulkInviteModal(true)}
+                                                className="px-4 py-2 text-sm border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                                            >
+                                                📊 Carga Masiva Excel
+                                            </button>
+                                            <button
+                                                onClick={() => setInvitationModal(true)}
+                                                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                            >
+                                                + Invitar Candidato
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
+                            {!canEdit && (
+                                <p className="text-sm text-gray-500 mb-2">
+                                    Invitaciones enviadas a candidatos para este proceso y su estado. Se actualiza cuando el candidato acepta.
+                                </p>
+                            )}
 
                             {showInvitationsTable && invitationsData?.data && invitationsData.data.length > 0 && (
                                 <div className="mt-4 overflow-x-auto">
@@ -565,7 +583,7 @@ export const ProcessDetailPage = () => {
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                         <div className="flex justify-end gap-2">
-                                                            {invitation.status === ProcessInvitationStatus.PENDING && (
+                                                            {canEdit && invitation.status === ProcessInvitationStatus.PENDING && (
                                                                 <>
                                                                     <button
                                                                         onClick={() => handleResendInvitation(invitation.id)}
@@ -582,6 +600,9 @@ export const ProcessDetailPage = () => {
                                                                         Cancelar
                                                                     </button>
                                                                 </>
+                                                            )}
+                                                            {!canEdit && invitation.status === ProcessInvitationStatus.ACCEPTED && (
+                                                                <span className="text-green-700 text-xs font-medium">Aceptada</span>
                                                             )}
                                                         </div>
                                                     </td>
