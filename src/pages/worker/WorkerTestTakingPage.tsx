@@ -101,6 +101,20 @@ export const WorkerTestTakingPage = () => {
     const totalQuestions = questions.length;
     const currentQ = questions[currentQuestion];
 
+    /**
+     * Instrucciones para el candidato que traen algunos tests fijos (CEAL,
+     * BIS-11) en `configuration.instruccionesCandidato`. Los demás tests no la
+     * tienen y se ven igual que antes.
+     */
+    const instruccionesCandidato = useMemo(() => {
+        if (!isFixedTest) return [];
+        const valor = (testResponse as ExtendedTestResponse)?.fixedTest
+            ?.configuration?.instruccionesCandidato;
+        return Array.isArray(valor)
+            ? valor.filter((texto): texto is string => typeof texto === "string")
+            : [];
+    }, [testResponse, isFixedTest]);
+
     // Save progress to localStorage when currentQuestion changes
     useEffect(() => {
         if (testResponseId) {
@@ -914,6 +928,25 @@ export const WorkerTestTakingPage = () => {
             {/* Question */}
             <div className="max-w-4xl mx-auto px-6 py-8">
                 <div className="bg-white rounded-lg shadow p-8 space-y-6">
+                    {instruccionesCandidato.length > 0 && (
+                        // Abiertas en la primera pregunta; en las demás quedan
+                        // a mano sin ocupar la pantalla. La `key` hace que se
+                        // cierren al pasar de la primera a la segunda.
+                        <details
+                            key={currentQuestion === 0 ? "abiertas" : "cerradas"}
+                            open={currentQuestion === 0}
+                            className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4"
+                        >
+                            <summary className="text-sm font-medium text-blue-900 cursor-pointer">
+                                Instrucciones
+                            </summary>
+                            <ul className="mt-2 space-y-1 text-sm text-blue-800">
+                                {instruccionesCandidato.map((texto, idx) => (
+                                    <li key={idx}>{texto}</li>
+                                ))}
+                            </ul>
+                        </details>
+                    )}
                     <div>
                         <div className="flex items-start justify-between mb-4">
                             <h2 className="text-lg font-medium text-gray-800">

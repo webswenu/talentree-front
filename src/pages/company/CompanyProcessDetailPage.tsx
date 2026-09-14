@@ -490,7 +490,11 @@ export const CompanyProcessDetailPage = () => {
                                                             {test.description}
                                                         </p>
                                                         <p className="text-xs text-gray-500 mt-2">
-                                                            {test.code} • {test.duration} minutos
+                                                            {/* CEAL y BIS-11 no tienen tiempo (duration null). */}
+                                                            {test.code} •{" "}
+                                                            {test.duration
+                                                                ? `${test.duration} minutos`
+                                                                : "Sin tiempo límite"}
                                                         </p>
                                                     </div>
                                                 </div>
