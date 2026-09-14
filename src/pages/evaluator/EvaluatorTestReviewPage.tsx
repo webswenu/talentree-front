@@ -260,6 +260,7 @@ export const EvaluatorTestReviewPage = () => {
                 {/* Resultado */}
                 {esTestFijo ? (
                     <ResultadoPsicometrico
+                        codigo={testResponse.fixedTest?.code}
                         rawScores={testResponse.rawScores}
                         scaledScores={testResponse.scaledScores}
                         interpretation={testResponse.interpretation}
@@ -493,16 +494,94 @@ export const EvaluatorTestReviewPage = () => {
     );
 };
 
+interface EstiloCEAL {
+    numero: number;
+    nombre: string;
+    predominio: number;
+    efectividad: number | null;
+    nivelEfectividad: string | null;
+    percepcion: {
+        tipo: "EFICAZ" | "INEFICAZ";
+        nombre: string;
+        descripcion: string;
+    } | null;
+}
+
+interface InterpretacionCEAL {
+    efectividadGeneral: { puntaje: number; nivel: string };
+    estilos: EstiloCEAL[];
+    respuestas: {
+        situacion: number;
+        alternativa: string;
+        estilo: number;
+        efectividad: number;
+    }[];
+    referenciaTeorica: string;
+}
+
+interface DimensionBIS11 {
+    clave: string;
+    nombre: string;
+    puntaje: number;
+    maximo: number;
+    nivel: string;
+    interpretacion: string;
+}
+
+interface InterpretacionBIS11 {
+    dimensiones: DimensionBIS11[];
+    total: DimensionBIS11;
+    notaMetodologica: string;
+}
+
+/** +10, -3, 0, +7,20 — igual que el informe. */
+const conSigno = (valor: number) => {
+    const texto = Number.isInteger(valor)
+        ? String(valor)
+        : valor.toFixed(2).replace(".", ",");
+    return valor > 0 ? `+${texto}` : texto;
+};
+
 /** Panel de resultado de los tests psicométricos, que no usan score/maxScore. */
 function ResultadoPsicometrico({
+    codigo,
     rawScores,
     scaledScores,
     interpretation,
 }: {
+    codigo?: string;
     rawScores?: Record<string, number> | null;
     scaledScores?: Record<string, number> | null;
     interpretation?: Record<string, unknown> | string | null;
 }) {
+    // CEAL y BIS-11 traen su resultado estructurado. Si no se pudo calcular
+    // (sin estilos o sin dimensiones), cae al panel genérico, que muestra la
+    // descripción de por qué.
+    if (interpretation && typeof interpretation === "object") {
+        if (
+            codigo === "TEST_CEAL" &&
+            Array.isArray(interpretation.estilos) &&
+            interpretation.estilos.length > 0
+        ) {
+            return (
+                <ResultadoCEAL
+                    interpretation={interpretation as unknown as InterpretacionCEAL}
+                />
+            );
+        }
+        if (
+            codigo === "TEST_BIS11" &&
+            Array.isArray(interpretation.dimensiones) &&
+            interpretation.dimensiones.length > 0
+        ) {
+            return (
+                <ResultadoBIS11
+                    interpretation={interpretation as unknown as InterpretacionBIS11}
+                />
+            );
+        }
+    }
+
     const factores = Object.entries(rawScores ?? {});
     const resumen =
         typeof interpretation === "string"
@@ -565,6 +644,191 @@ function ResultadoPsicometrico({
                         {resumen}
                     </p>
                 </div>
+            )}
+        </div>
+    );
+}
+
+/** CEAL: estilos, predominio, efectividad y cómo son percibidos. */
+function ResultadoCEAL({ interpretation }: { interpretation: InterpretacionCEAL }) {
+    const { estilos, respuestas, efectividadGeneral } = interpretation;
+
+    return (
+        <div className="bg-white rounded-lg shadow p-6 space-y-6">
+            <h2 className="text-lg font-semibold text-gray-800">
+                Resultado del Test
+            </h2>
+
+            <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                    <thead>
+                        <tr className="text-left text-gray-600">
+                            <th className="py-2 pr-6 font-medium">Estilo</th>
+                            <th className="py-2 pr-6 font-medium">Predominio</th>
+                            <th className="py-2 font-medium">Efectividad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {estilos.map((e) => (
+                            <tr key={e.numero} className="border-t">
+                                <td className="py-2 pr-6 font-medium text-gray-800">
+                                    {e.numero}. {e.nombre}
+                                </td>
+                                <td className="py-2 pr-6 text-gray-800 tabular-nums">
+                                    {e.predominio}
+                                </td>
+                                <td className="py-2 text-gray-800 tabular-nums">
+                                    {e.efectividad === null
+                                        ? "Sin respuestas"
+                                        : `${conSigno(e.efectividad)} (${e.nivelEfectividad})`}
+                                </td>
+                            </tr>
+                        ))}
+                        <tr className="border-t font-semibold text-gray-900">
+                            <td className="py-2 pr-6">Efectividad general</td>
+                            <td className="py-2 pr-6" />
+                            <td className="py-2 tabular-nums">
+                                {conSigno(efectividadGeneral.puntaje)} (
+                                {efectividadGeneral.nivel})
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p className="text-xs text-gray-500">
+                {interpretation.referenciaTeorica}
+            </p>
+
+            {respuestas.length > 0 && (
+                <div className="overflow-x-auto">
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                        Estilos situacionales y efectividad situacional
+                    </p>
+                    <table className="text-sm text-center">
+                        <tbody>
+                            {[
+                                { etiqueta: "Situación", valor: (r: (typeof respuestas)[number]) => r.situacion },
+                                { etiqueta: "Alternativa", valor: (r: (typeof respuestas)[number]) => r.alternativa },
+                                { etiqueta: "Estilo", valor: (r: (typeof respuestas)[number]) => r.estilo },
+                                { etiqueta: "Efectividad", valor: (r: (typeof respuestas)[number]) => conSigno(r.efectividad) },
+                            ].map((fila) => (
+                                <tr key={fila.etiqueta} className="border-t">
+                                    <th className="py-1 pr-4 text-left font-medium text-gray-600">
+                                        {fila.etiqueta}
+                                    </th>
+                                    {respuestas.map((r) => (
+                                        <td
+                                            key={r.situacion}
+                                            className="py-1 px-2 tabular-nums text-gray-800"
+                                        >
+                                            {fila.valor(r)}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            <div className="space-y-3">
+                <p className="text-sm font-medium text-gray-700">
+                    Cómo podrían ser percibidos
+                </p>
+                {estilos.map((e) => (
+                    <div key={e.numero} className="border-l-4 border-purple-500 pl-4 py-1">
+                        <p className="text-gray-800">
+                            <span className="font-medium">
+                                {e.numero}. {e.nombre}
+                                {e.percepcion ? ` — ${e.percepcion.nombre}` : ""}
+                            </span>{" "}
+                            <span className="text-gray-500 text-sm">
+                                {e.predominio === 0
+                                    ? "no se eligió en ninguna situación."
+                                    : !e.percepcion
+                                    ? "efectividad 0, en el punto medio: no se caracteriza como eficaz ni como ineficaz."
+                                    : e.percepcion.tipo === "EFICAZ"
+                                    ? "(eficaz, responde a la situación)"
+                                    : "(ineficaz, no responde a la situación)"}
+                            </span>
+                        </p>
+                        {e.percepcion && (
+                            <p className="text-sm text-gray-700">
+                                {e.percepcion.descripcion}
+                            </p>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+/** BIS-11: la hoja «Informe» del Excel. */
+function ResultadoBIS11({ interpretation }: { interpretation: InterpretacionBIS11 }) {
+    const { dimensiones, total } = interpretation;
+
+    return (
+        <div className="bg-white rounded-lg shadow p-6 space-y-6">
+            <h2 className="text-lg font-semibold text-gray-800">
+                Resultado del Test
+            </h2>
+
+            <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                    <thead>
+                        <tr className="text-left text-gray-600">
+                            <th className="py-2 pr-6 font-medium">Dimensión</th>
+                            <th className="py-2 pr-6 font-medium">Puntaje</th>
+                            <th className="py-2 pr-6 font-medium">Máximo</th>
+                            <th className="py-2 font-medium">Nivel</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {[...dimensiones, total].map((d) => (
+                            <tr
+                                key={d.clave}
+                                className={`border-t ${d.clave === "TOTAL" ? "font-semibold text-gray-900" : "text-gray-800"}`}
+                            >
+                                <td className="py-2 pr-6 font-medium">{d.nombre}</td>
+                                <td className="py-2 pr-6 tabular-nums">{d.puntaje}</td>
+                                <td className="py-2 pr-6 tabular-nums">{d.maximo}</td>
+                                <td className="py-2">{d.nivel}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            <div className="space-y-4">
+                <p className="text-sm font-medium text-gray-700">
+                    Análisis por dimensión
+                </p>
+                {dimensiones.map((d) => (
+                    <div key={d.clave} className="border-l-4 border-purple-500 pl-4 py-1">
+                        <p className="font-medium text-gray-800">
+                            {d.nombre} — {d.puntaje}/{d.maximo} puntos ({d.nivel})
+                        </p>
+                        <p className="text-sm text-gray-700">{d.interpretacion}</p>
+                    </div>
+                ))}
+            </div>
+
+            <div className="border-l-4 border-purple-500 pl-4 py-2 bg-purple-50">
+                <p className="text-sm font-medium text-gray-700 mb-1">
+                    Conclusión general
+                </p>
+                <p className="font-medium text-gray-800">
+                    Puntaje total: {total.puntaje}/{total.maximo} puntos — Nivel:{" "}
+                    {total.nivel}
+                </p>
+                <p className="text-gray-800">{total.interpretacion}</p>
+            </div>
+
+            {interpretation.notaMetodologica && (
+                <p className="text-xs text-gray-500">
+                    {interpretation.notaMetodologica}
+                </p>
             )}
         </div>
     );
