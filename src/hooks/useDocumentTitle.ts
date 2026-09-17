@@ -85,6 +85,6 @@ export function useDocumentTitle(titulo?: string): void {
 
         document.title = clave
             ? `${TITULOS[clave]} - ${MARCA}`
-            : `${MARCA} - Reclutamiento de RRHH`;
+            : `${MARCA} - Plataforma de Selección`;
     }, [pathname, titulo]);
 }
