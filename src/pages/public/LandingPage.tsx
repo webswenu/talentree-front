@@ -14,64 +14,45 @@ import { toast } from "react-hot-toast";
 const WHATSAPP_URL = "https://wa.me/56963717583";
 
 /**
- * Servicios tal como los describe Talentree en su presentación comercial
- * (texto enviado por la clienta). Se listan sin adornos: es lo que hacen.
+ * Cuatro grandes áreas de servicio, como las pidió la clienta (17-09-2026):
+ * "4 grandes áreas, en vez de una lista muy extensa". El detalle de cada área
+ * reagrupa los servicios de su presentación comercial.
  */
 const SERVICIOS = [
     {
-        titulo: "Reclutamiento y selección",
-        detalle: "Selección de personal por competencias, desde la publicación del cargo hasta la terna.",
+        titulo: "Selección & Evaluación",
+        detalle: "Reclutamiento y selección, evaluaciones psicolaborales y por competencias, perfiles y descriptores de cargo.",
     },
     {
-        titulo: "Evaluaciones psicolaborales",
-        detalle: "Para cargos operativos, profesionales, supervisores y ejecutivos.",
+        titulo: "Liderazgo & Talento",
+        detalle: "Evaluación de potencial y desempeño, desarrollo de liderazgo y gestión del talento.",
     },
     {
-        titulo: "Assessment Center y potencial",
-        detalle: "Evaluación de potencial y de competencias en ejercicios grupales e individuales.",
+        titulo: "Desarrollo Organizacional",
+        detalle: "Intervenciones organizacionales, gestión por competencias y planes de desarrollo para personas y equipos.",
     },
     {
-        titulo: "Evaluación y desarrollo de liderazgo",
-        detalle: "Diagnóstico de líderes y planes de trabajo para desarrollar sus competencias.",
-    },
-    {
-        titulo: "Desempeño y gestión por competencias",
-        detalle: "Diseño y aplicación de evaluaciones de desempeño alineadas al modelo de la empresa.",
-    },
-    {
-        titulo: "Perfiles y descriptores de cargo",
-        detalle: "Definición de funciones, requisitos y competencias por cargo.",
-    },
-    {
-        titulo: "Planes de desarrollo",
-        detalle: "Planes de desarrollo individual y de equipos, con seguimiento.",
-    },
-    {
-        titulo: "Talleres, charlas e intervenciones",
-        detalle: "Intervenciones organizacionales diseñadas para cada equipo y contexto.",
-    },
-    {
-        titulo: "Programas de formación",
-        detalle: "Liderazgo, comunicación, trabajo colaborativo, seguridad psicológica, toma de decisiones y gestión del cambio.",
+        titulo: "Talleres & Capacitación",
+        detalle: "Talleres, charlas y programas de formación en liderazgo, comunicación, trabajo colaborativo y gestión del cambio.",
     },
 ];
 
 const FOTOS = [
     {
         src: "/taller-liderazgo.jpg",
-        alt: "Karina Rojas relatando un taller de liderazgo",
+        alt: "Relatora de Talentree en un taller de liderazgo",
         caption: "Taller de liderazgo",
         portrait: true,
     },
     {
-        src: "/karina-charla.jpg",
-        alt: "Karina Rojas exponiendo frente a un grupo de trabajadores",
+        src: "/charla-equipos.jpg",
+        alt: "Charla de Talentree frente a un grupo de trabajadores",
         caption: "Charla con equipos de trabajo",
         portrait: false,
     },
     {
         src: "/charla-cultura-preventiva.jpg",
-        alt: "Karina Rojas en una charla sobre cultura preventiva",
+        alt: "Charla de Talentree sobre cultura preventiva",
         caption: "Charla sobre cultura preventiva",
         portrait: true,
     },
@@ -197,12 +178,15 @@ export const LandingPage = () => {
             <section id="home" className="pt-60 md:pt-72 pb-20 md:pb-28 bg-white overflow-hidden">
                 <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-12 lg:gap-16">
                     <div className="md:w-1/2 animate-slide-up">
-                        <p className="text-sm font-semibold uppercase tracking-wider text-orange-500 mb-3">
-                            Consultora en Gestión de Personas
+                        <p className="text-2xl font-bold tracking-[0.2em] text-gray-800 mb-1">
+                            TALENTREE
+                        </p>
+                        <p className="text-sm font-semibold uppercase tracking-wider text-orange-500 mb-5">
+                            Gestión de Personas &amp; Desarrollo Organizacional
                         </p>
                         <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
-                            <span className="text-teal-500">Evaluación, selección </span>
-                            <span className="text-gray-700">y desarrollo de personas para tu organización</span>
+                            <span className="text-teal-500">Impulsamos el talento </span>
+                            <span className="text-gray-700">que hace crecer a las organizaciones.</span>
                         </h1>
                         <p className="text-gray-500 mb-8 leading-relaxed">
                             Talentree es una consultora especializada en Recursos Humanos y Desarrollo Organizacional.
@@ -232,8 +216,8 @@ export const LandingPage = () => {
                         <div className="absolute bottom-0 right-0 w-32 h-32 bg-teal-400 rounded-full blur-3xl opacity-50 animate-float delay-3s"></div>
                         <div className="relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-500">
                             <img
-                                src="/karina-charla.jpg"
-                                alt="Karina Rojas, directora de Talentree, exponiendo frente a un grupo de trabajadores"
+                                src="/charla-equipos.jpg"
+                                alt="Charla de Talentree frente a un grupo de trabajadores"
                                 className="w-full h-auto rounded-2xl hover:scale-105 transition-transform duration-700"
                             />
                         </div>
@@ -255,8 +239,7 @@ export const LandingPage = () => {
                         className={`text-lg leading-relaxed mb-10 text-teal-50 animate-on-scroll ${what.isVisible ? 'visible' : ''}`}
                         style={{ transitionDelay: '100ms' }}
                     >
-                        Una consultora de Recursos Humanos y Desarrollo Organizacional dirigida por
-                        Karina Rojas, psicóloga organizacional. Evaluamos candidatos y trabajadores,
+                        Una consultora de Recursos Humanos y Desarrollo Organizacional. Evaluamos candidatos y trabajadores,
                         diseñamos perfiles de cargo y desarrollamos líderes y equipos. Las evaluaciones
                         se rinden en esta plataforma y la empresa revisa los resultados en el mismo lugar.
                     </p>
@@ -299,7 +282,7 @@ export const LandingPage = () => {
                 id="about"
                 className="py-24 bg-gray-50 overflow-hidden"
             >
-                <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-12">
+                <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-start gap-12">
                     {/* Imagen */}
                     <div className={`md:w-5/12 relative animate-on-scroll ${about.isVisible ? 'visible' : ''}`}>
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-orange-400 rounded-full blur-3xl opacity-40 animate-float"></div>
@@ -307,7 +290,7 @@ export const LandingPage = () => {
                         <div className="relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-500">
                             <img
                                 src="/charla-cultura-preventiva.jpg"
-                                alt="Karina Rojas en una charla sobre cultura preventiva"
+                                alt="Charla de Talentree sobre cultura preventiva"
                                 className="w-full h-[28rem] md:h-[34rem] object-cover object-top rounded-2xl hover:scale-105 transition-transform duration-700"
                             />
                         </div>
@@ -323,20 +306,28 @@ export const LandingPage = () => {
                             <span className="text-gray-800">Somos</span>
                         </h2>
                         <p className="text-gray-600 mb-5 leading-relaxed">
-                            Talentree está dirigida por <strong>Karina Rojas</strong>, psicóloga organizacional
-                            con experiencia en procesos de evaluación, selección y desarrollo para la industria
-                            minera y empresas de servicios.
+                            En Talentree somos una consultora especializada en Gestión de Personas y Desarrollo Organizacional. Acompañamos a las organizaciones en la identificación, evaluación y desarrollo de su talento, generando soluciones que conectan las capacidades de las personas con los desafíos y objetivos del negocio.
                         </p>
                         <p className="text-gray-600 mb-5 leading-relaxed">
-                            Desarrollamos soluciones adaptadas a las necesidades de cada organización y trabajamos
-                            como socio de las áreas de Recursos Humanos y Gestión de Personas, con procesos
-                            flexibles, rigurosos y ajustados a las particularidades de cada operación.
+                            Contamos con experiencia en reclutamiento y selección, evaluaciones psicolaborales y por competencias, evaluación de potencial y desempeño, desarrollo de liderazgo, gestión del talento, talleres e intervenciones organizacionales, trabajando con metodologías adaptadas a la realidad y necesidades de cada organización.
                         </p>
-                        <p className="text-gray-600 mb-8 leading-relaxed">
-                            Contamos con experiencia en evaluación de competencias y potencial de trabajadores
-                            vinculados a operaciones mineras, incluyendo evaluaciones para identificar candidatos
-                            a procesos de especialización y certificación.
+                        <p className="text-gray-600 mb-5 leading-relaxed">
+                            Nuestra experiencia incluye proyectos desarrollados en contextos organizacionales de alta exigencia y vinculados a la industria minera, donde la seguridad, el liderazgo, la toma de decisiones, la confiabilidad y el desempeño de las personas son factores críticos para la operación.
                         </p>
+                        <p className="text-gray-600 mb-5 leading-relaxed">
+                            En Talentree entendemos que las personas son quienes hacen posible la estrategia. Por eso, nuestro trabajo no termina en evaluar o seleccionar talento: buscamos comprender cada organización, identificar las capacidades que necesita y contribuir activamente a desarrollarlas.
+                        </p>
+                        <p className="text-gray-600 mb-5 leading-relaxed">
+                            Trabajamos como un socio estratégico de nuestros clientes, combinando rigurosidad metodológica, experiencia organizacional y una mirada cercana y personalizada para generar soluciones con impacto real en las personas, los equipos y la organización.
+                        </p>
+                        <div className="border-l-4 border-orange-400 pl-5 mt-8 mb-8">
+                            <h3 className="text-sm font-semibold uppercase tracking-wider text-orange-500 mb-2">
+                                Nuestro propósito
+                            </h3>
+                            <p className="text-xl md:text-2xl font-bold text-gray-800 leading-snug">
+                                Potenciar personas. Fortalecer equipos. Transformar organizaciones.
+                            </p>
+                        </div>
 
                         <div className="flex flex-wrap gap-4">
                             <a
@@ -377,7 +368,7 @@ export const LandingPage = () => {
                         </p>
                     </div>
 
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {SERVICIOS.map((servicio, index) => (
                             <div
                                 key={servicio.titulo}
