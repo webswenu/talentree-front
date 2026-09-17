@@ -54,7 +54,7 @@ export const Footer = () => {
                     </div>
                 </div>
                 <div>
-                    <h4 className="font-semibold mb-4">Nombre Empresa</h4>
+                    <h4 className="font-semibold mb-4">Talentree</h4>
                     <ul className="space-y-2">
                         <li>
                             <a href="#home" className="hover:text-teal-500 transition">
@@ -62,8 +62,13 @@ export const Footer = () => {
                             </a>
                         </li>
                         <li>
+                            <a href="#what" className="hover:text-teal-500 transition">
+                                Qué es Talentree
+                            </a>
+                        </li>
+                        <li>
                             <a href="#about" className="hover:text-teal-500 transition">
-                                Quienes Somos
+                                Quiénes Somos
                             </a>
                         </li>
                         <li>
@@ -105,7 +110,7 @@ export const Footer = () => {
                 </div>
             </div>
             <div className="text-center text-sm mt-10 border-t pt-4">
-                Copyright © 2024 Talentree
+                Copyright © {new Date().getFullYear()} Talentree
             </div>
         </footer>
     );

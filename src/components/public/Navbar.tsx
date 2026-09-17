@@ -37,8 +37,11 @@ export const Navbar = () => {
                     <a href="/#home" onClick={(e) => handleNavClick(e, "#home")} className="hover:text-teal-500 transition">
                         Home
                     </a>
+                    <a href="/#what" onClick={(e) => handleNavClick(e, "#what")} className="hover:text-teal-500 transition">
+                        Qué es Talentree
+                    </a>
                     <a href="/#about" onClick={(e) => handleNavClick(e, "#about")} className="hover:text-teal-500 transition">
-                        Quienes Somos
+                        Quiénes Somos
                     </a>
                     <a href="/#services" onClick={(e) => handleNavClick(e, "#services")} className="hover:text-teal-500 transition">
                         Servicios
@@ -84,7 +87,7 @@ export const Navbar = () => {
             {/* Mobile Menu */}
             <div
                 className={`md:hidden bg-white border-t shadow-lg transition-all duration-300 ease-in-out overflow-hidden ${
-                    isMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                    isMenuOpen ? "max-h-[28rem] opacity-100" : "max-h-0 opacity-0"
                 }`}
             >
                 <div className="flex flex-col gap-4 px-6 py-4">
@@ -96,11 +99,18 @@ export const Navbar = () => {
                         Home
                     </a>
                     <a
+                        href="/#what"
+                        onClick={(e) => handleNavClick(e, "#what")}
+                        className="hover:text-teal-500 transition"
+                    >
+                        Qué es Talentree
+                    </a>
+                    <a
                         href="/#about"
                         onClick={(e) => handleNavClick(e, "#about")}
                         className="hover:text-teal-500 transition"
                     >
-                        Quienes Somos
+                        Quiénes Somos
                     </a>
                     <a
                         href="/#services"
