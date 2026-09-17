@@ -191,8 +191,11 @@ export const LandingPage = () => {
             <Navbar />
 
             {/* ====== HERO ====== */}
-            <section id="home" className="pt-52 md:pt-48 pb-12 md:pb-20 bg-white overflow-hidden">
-                <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-12">
+            {/* El navbar es fijo y mide ~184 px (logo de 160 px). El padding
+                superior tiene que superarlo con holgura o el hero queda pegado
+                al menú. */}
+            <section id="home" className="pt-60 md:pt-72 pb-20 md:pb-28 bg-white overflow-hidden">
+                <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-12 lg:gap-16">
                     <div className="md:w-1/2 animate-slide-up">
                         <p className="text-sm font-semibold uppercase tracking-wider text-orange-500 mb-3">
                             Consultora en Gestión de Personas
@@ -558,19 +561,19 @@ export const LandingPage = () => {
                 </h2>
                 <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8 px-6">
                     <div
-                        className={`bg-white p-8 rounded-2xl shadow-md hover:shadow-xl transition-all duration-500 animate-on-scroll hover:-translate-y-2 ${testimonials.isVisible ? 'visible' : ''}`}
+                        className={`bg-white p-8 rounded-2xl shadow-md hover:shadow-xl transition-all duration-500 animate-on-scroll hover:-translate-y-2 flex flex-col text-left ${testimonials.isVisible ? 'visible' : ''}`}
                         style={{ transitionDelay: '100ms' }}
                     >
-                        <p className="text-gray-500 mb-6 italic text-justify">
+                        <p className="text-gray-600 mb-8 italic leading-relaxed">
                             "Quiero destacar la calidad del servicio recibido por parte de Talentree. Su equipo mostró un nivel de profesionalismo y claridad muy acorde a nuestras exigencias, comprendiendo con precisión los perfiles y competencias que buscábamos.
 
                             El proceso fue ordenado, transparente y eficiente, lo que nos permitió avanzar con seguridad en cada etapa. El resultado final fue plenamente satisfactorio, logrando incorporar profesionales que se alinean de manera consistente con la cultura y los objetivos de nuestra organización."
                         </p>
-                        <div className="flex items-center justify-center gap-4">
+                        <div className="mt-auto pt-6 border-t border-gray-100 flex items-center gap-4">
                             <img
                                 src="/anwo.png"
                                 alt="Anwo Logo"
-                                className="w-40 h-40 object-contain hover:scale-110 transition-transform duration-300"
+                                className="w-28 h-16 object-contain flex-shrink-0"
                             />
                             <div className="text-left">
                                 <h4 className="font-semibold text-gray-800">
@@ -584,17 +587,17 @@ export const LandingPage = () => {
                     </div>
 
                     <div
-                        className={`bg-white p-8 rounded-2xl shadow-md hover:shadow-xl transition-all duration-500 animate-on-scroll hover:-translate-y-2 ${testimonials.isVisible ? 'visible' : ''}`}
+                        className={`bg-white p-8 rounded-2xl shadow-md hover:shadow-xl transition-all duration-500 animate-on-scroll hover:-translate-y-2 flex flex-col text-left ${testimonials.isVisible ? 'visible' : ''}`}
                         style={{ transitionDelay: '300ms' }}
                     >
-                        <p className="text-gray-500 mb-6 italic text-justify">
+                        <p className="text-gray-600 mb-8 italic leading-relaxed">
                             "Tuve la oportunidad de trabajar con Karina y destaco su profundo entendimiento de las necesidades del cliente. Es una profesional que impulsa procesos de selección ágiles y eficientes, asegurando la incorporación de postulantes idóneos, alineados al perfil requerido y con las competencias necesarias para potenciar a la organización."
                         </p>
-                        <div className="flex items-center justify-center gap-4">
+                        <div className="mt-auto pt-6 border-t border-gray-100 flex items-center gap-4">
                             <img
                                 src="/lureye.png"
                                 alt="Lureye Logo"
-                                className="w-40 h-40 object-contain hover:scale-110 transition-transform duration-300"
+                                className="w-28 h-16 object-contain flex-shrink-0"
                             />
                             <div className="text-left">
                                 <h4 className="font-semibold text-gray-800">
@@ -615,8 +618,11 @@ export const LandingPage = () => {
                     src="/cierre-taller.jpg"
                     alt=""
                     aria-hidden="true"
-                    className="absolute inset-0 w-full h-full object-cover opacity-30"
+                    className="absolute inset-0 w-full h-full object-cover opacity-40"
                 />
+                {/* Oscurece el lado del texto para que se lea sobre las caras
+                    de la foto sin apagar la foto entera. */}
+                <div className="absolute inset-0 bg-gradient-to-r from-gray-900/85 via-gray-900/60 to-gray-900/20" aria-hidden="true"></div>
                 <div className="relative max-w-6xl mx-auto px-6 animate-fade-in">
                     <h2 className="text-4xl font-bold mb-4">¿Necesitas apoyo en selección o desarrollo?</h2>
                     <p className="text-lg max-w-xl leading-relaxed">
