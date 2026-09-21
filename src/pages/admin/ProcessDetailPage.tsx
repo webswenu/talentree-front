@@ -94,6 +94,11 @@ export const ProcessDetailPage = () => {
     }>({ isOpen: false, workerProcess: null, newStatus: null });
     const [statusNotes, setStatusNotes] = useState("");
 
+    // Candidato que acaba de quedar con informe aprobado: se le ofrece decidir
+    // de inmediato (aprobar / rechazar / después) en vez de dejar los dos
+    // flujos sueltos.
+    const [decisionTrasInforme, setDecisionTrasInforme] = useState<WorkerProcess | null>(null);
+
     // Invitations hooks
     const { data: invitationsData } = useProcessInvitations({ processId: id, page: 1, limit: 100 });
     const createInvitationMutation = useCreateProcessInvitation();
@@ -127,6 +132,17 @@ export const ProcessDetailPage = () => {
 
     // Solo admin puede editar/asignar/eliminar
     const canEdit = isAdmin && !isEvaluator && !isCompany;
+
+    // Sobre un candidato solo se decide con su informe de evaluación aprobado.
+    // El backend impone la misma regla; aquí solo se explica en pantalla.
+    const tieneInformeAprobado = (wp: WorkerProcess) =>
+        (reportsData || []).some(
+            (r) =>
+                r.worker?.id === wp.worker?.id &&
+                r.process?.id === id &&
+                r.status === ReportStatus.APPROVED
+        );
+    const MOTIVO_SIN_INFORME = "Primero aprueba el informe de evaluación";
 
     // Helper functions
     const isPDF = (fileName: string | null | undefined) => {
@@ -204,6 +220,7 @@ export const ProcessDetailPage = () => {
                 id: approveRejectModal.report.id,
                 data: { status: ReportStatus.APPROVED },
             });
+            const informe = approveRejectModal.report;
             setApproveRejectModal({ isOpen: false, report: null });
             // Aprobar no confirmaba nada: el modal se cerraba y la tabla ni
             // siquiera cambiaba de estado, así que la operación parecía fallida
@@ -211,6 +228,15 @@ export const ProcessDetailPage = () => {
             toast.success(
                 "Informe aprobado. La empresa ya puede verlo y recibió el aviso."
             );
+            // Paso siguiente encadenado: con el informe aprobado ya se puede
+            // decidir sobre el candidato. Se ofrece aquí mismo, que es lo que
+            // la admin esperaba que pasara al "aprobar".
+            const candidato = workersData?.find(
+                (wp) => wp.worker?.id === informe.worker?.id
+            );
+            if (canEdit && candidato && candidato.status === WorkerStatus.COMPLETED) {
+                setDecisionTrasInforme(candidato);
+            }
         } catch (error) {
             // useApproveReport no tiene onError: sin este aviso el modal queda
             // abierto y nadie sabe por qué no se aprobó.
@@ -231,7 +257,7 @@ export const ProcessDetailPage = () => {
             });
             setApproveRejectModal({ isOpen: false, report: null });
             toast.success(
-                "Informe rechazado. No es visible para la empresa y queda registrado el motivo."
+                "Informe devuelto al evaluador con el motivo. El postulante no fue notificado ni cambió de estado."
             );
         } catch (error) {
             // Mismo caso que la aprobación: la mutación no avisa nada.
@@ -738,30 +764,51 @@ export const ProcessDetailPage = () => {
                                                     >
                                                         Ver Detalle
                                                     </button>
-                                                    {/* Botones de aprobar/rechazar para candidatos completados */}
-                                                    {canEdit && workerProcess.status === WorkerStatus.COMPLETED && (
+                                                    {/* Botones de aprobar/rechazar para candidatos completados.
+                                                        Se habilitan solo con el informe aprobado: así el orden
+                                                        (tests → informe → decisión → aviso) lo impone la pantalla. */}
+                                                    {canEdit && workerProcess.status === WorkerStatus.COMPLETED && (() => {
+                                                        const puedeDecidir = tieneInformeAprobado(workerProcess);
+                                                        return (
                                                         <>
                                                             <button
                                                                 onClick={() => handleWorkerStatusChange(workerProcess, WorkerStatus.APPROVED)}
-                                                                disabled={updateWorkerStatusMutation.isPending || capacity?.isFull}
+                                                                disabled={!puedeDecidir || updateWorkerStatusMutation.isPending || capacity?.isFull}
                                                                 className={`ml-2 px-2 py-1 text-xs font-medium rounded ${
-                                                                    capacity?.isFull
+                                                                    !puedeDecidir || capacity?.isFull
                                                                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                                                         : 'bg-green-100 text-green-700 hover:bg-green-200'
                                                                 }`}
-                                                                title={capacity?.isFull ? 'No hay cupos disponibles' : 'Aprobar candidato'}
+                                                                title={
+                                                                    !puedeDecidir
+                                                                        ? MOTIVO_SIN_INFORME
+                                                                        : capacity?.isFull
+                                                                            ? 'No hay cupos disponibles'
+                                                                            : 'Aprobar candidato'
+                                                                }
                                                             >
                                                                 ✓ Aprobar
                                                             </button>
                                                             <button
                                                                 onClick={() => handleWorkerStatusChange(workerProcess, WorkerStatus.REJECTED)}
-                                                                disabled={updateWorkerStatusMutation.isPending}
-                                                                className="ml-1 px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                                                                disabled={!puedeDecidir || updateWorkerStatusMutation.isPending}
+                                                                className={`ml-1 px-2 py-1 text-xs font-medium rounded ${
+                                                                    !puedeDecidir
+                                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                                        : 'bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50'
+                                                                }`}
+                                                                title={!puedeDecidir ? MOTIVO_SIN_INFORME : 'Rechazar candidato'}
                                                             >
                                                                 ✗ Rechazar
                                                             </button>
+                                                            {!puedeDecidir && (
+                                                                <div className="mt-1 text-[11px] text-amber-700 whitespace-normal max-w-[14rem] ml-auto">
+                                                                    {MOTIVO_SIN_INFORME} (pestaña Informes)
+                                                                </div>
+                                                            )}
                                                         </>
-                                                    )}
+                                                        );
+                                                    })()}
                                                 </td>
                                             </tr>
                                         )})}
@@ -1134,7 +1181,7 @@ export const ProcessDetailPage = () => {
                                                 Acciones
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Aprobar Informe de Selección (PDF)
+                                                Revisión del informe (PDF)
                                             </th>
                                         </tr>
                                     </thead>
@@ -1182,6 +1229,19 @@ export const ProcessDetailPage = () => {
                                                     >
                                                         {ReportStatusLabels[report.status as ReportStatus]}
                                                     </span>
+                                                    {/* El motivo de la devolución no se veía en ninguna
+                                                        pantalla: nadie sabía qué corregir. */}
+                                                    {report.status === ReportStatus.REJECTED && (
+                                                        <p
+                                                            className="mt-1 text-xs text-red-700 max-w-[16rem] whitespace-normal"
+                                                            title={report.rejectionReason || undefined}
+                                                        >
+                                                            {report.rejectionReason
+                                                                ? `Motivo: ${report.rejectionReason}`
+                                                                : "Devuelto sin motivo indicado"}
+                                                            {" · Sube una versión corregida"}
+                                                        </p>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {report.process?.name || "-"}
@@ -1271,7 +1331,7 @@ export const ProcessDetailPage = () => {
                                                                 onClick={() => handleApproveRejectClick(report)}
                                                                 disabled={approveMutation.isPending}
                                                                 className="p-1 text-purple-600 hover:text-purple-900 hover:bg-purple-50 rounded disabled:opacity-50"
-                                                                title="Aprobar/Rechazar"
+                                                                title="Revisar informe (aprobar o devolver)"
                                                             >
                                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1723,9 +1783,12 @@ export const ProcessDetailPage = () => {
                         )}
 
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Notas (opcional):
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Notas internas (opcional):
                             </label>
+                            <p className="text-xs text-gray-500 mb-2">
+                                Solo las ve Talentree. No se envían al candidato.
+                            </p>
                             <textarea
                                 rows={3}
                                 value={statusNotes}
@@ -1765,6 +1828,59 @@ export const ProcessDetailPage = () => {
                         </div>
                     </div>
                 </div>
+            )}
+            {/* Paso siguiente tras aprobar un informe: decidir sobre el candidato */}
+            {decisionTrasInforme && (
+                <ModalPortal onClose={() => setDecisionTrasInforme(null)}>
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+                        <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                            <div className="flex items-center gap-3 mb-3">
+                                <span className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold">✓</span>
+                                <h3 className="text-lg font-semibold text-gray-900">Informe aprobado</h3>
+                            </div>
+                            <p className="text-gray-600 mb-1">
+                                ¿Qué decisión tomas con{" "}
+                                <span className="font-semibold">
+                                    {decisionTrasInforme.worker.firstName} {decisionTrasInforme.worker.lastName}
+                                </span>
+                                ?
+                            </p>
+                            <p className="text-xs text-gray-500 mb-5">
+                                Al aprobar o rechazar, el candidato recibe un correo con el resultado y lo ve en su postulación.
+                            </p>
+                            <div className="flex flex-col gap-2">
+                                <button
+                                    onClick={() => {
+                                        const wp = decisionTrasInforme;
+                                        setDecisionTrasInforme(null);
+                                        handleWorkerStatusChange(wp, WorkerStatus.APPROVED);
+                                    }}
+                                    disabled={capacity?.isFull}
+                                    title={capacity?.isFull ? "No hay cupos disponibles" : undefined}
+                                    className="w-full px-4 py-2 rounded-lg font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    ✓ Aprobar candidato
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const wp = decisionTrasInforme;
+                                        setDecisionTrasInforme(null);
+                                        handleWorkerStatusChange(wp, WorkerStatus.REJECTED);
+                                    }}
+                                    className="w-full px-4 py-2 rounded-lg font-medium bg-red-600 text-white hover:bg-red-700"
+                                >
+                                    ✗ Rechazar candidato
+                                </button>
+                                <button
+                                    onClick={() => setDecisionTrasInforme(null)}
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                >
+                                    Decidir después
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </ModalPortal>
             )}
         </div>
     );

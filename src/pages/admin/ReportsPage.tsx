@@ -220,8 +220,8 @@ export default function ReportsPage() {
             setAlertModal({
                 isOpen: true,
                 type: 'success',
-                title: 'Reporte rechazado',
-                message: 'El reporte ha sido rechazado exitosamente.'
+                title: 'Informe devuelto',
+                message: 'El informe volvió al evaluador con el motivo. El postulante no fue notificado ni cambió de estado.'
             });
         } catch {
             setAlertModal({
@@ -257,15 +257,30 @@ export default function ReportsPage() {
         );
     };
 
-    const getStatusBadge = (status: ReportStatus) => {
-        const color = ReportStatusColors[status];
-        const label = ReportStatusLabels[status];
+    const getStatusBadge = (report: Report) => {
+        const color = ReportStatusColors[report.status];
+        const label = ReportStatusLabels[report.status];
         return (
-            <span
-                className={`px-2 py-1 text-xs font-semibold rounded-full ${color}`}
-            >
-                {label}
-            </span>
+            <div>
+                <span
+                    className={`px-2 py-1 text-xs font-semibold rounded-full ${color}`}
+                >
+                    {label}
+                </span>
+                {/* El motivo de la devolución se guardaba pero no se veía en
+                    ninguna parte: el evaluador no sabía qué corregir. */}
+                {report.status === ReportStatus.REJECTED && (
+                    <p
+                        className="mt-1 text-xs text-red-700 max-w-[16rem] whitespace-normal"
+                        title={report.rejectionReason || undefined}
+                    >
+                        {report.rejectionReason
+                            ? `Motivo: ${report.rejectionReason}`
+                            : "Devuelto sin motivo indicado"}
+                        {canEdit && " · Sube una versión corregida"}
+                    </p>
+                )}
+            </div>
         );
     };
 
@@ -421,7 +436,7 @@ export default function ReportsPage() {
                             <option value={ReportStatus.REVISION_EVALUADOR}>Revisión Evaluador</option>
                             <option value={ReportStatus.REVISION_ADMIN}>Revisión Admin</option>
                             <option value={ReportStatus.APPROVED}>Aprobados</option>
-                            <option value={ReportStatus.REJECTED}>Rechazados</option>
+                            <option value={ReportStatus.REJECTED}>Devueltos</option>
                         </select>
                     </div>
                 </div>
@@ -470,7 +485,7 @@ export default function ReportsPage() {
                                 Acciones
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Aprobar Informe de Selección (PDF)
+                                Revisión del informe (PDF)
                             </th>
                         </tr>
                     </thead>
@@ -515,7 +530,7 @@ export default function ReportsPage() {
                                     {getTypeBadge(report.type)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    {getStatusBadge(report.status)}
+                                    {getStatusBadge(report)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {report.process?.name || "-"}
