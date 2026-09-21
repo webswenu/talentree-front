@@ -9,6 +9,16 @@ interface ApproveRejectModalProps {
     reportTitle: string;
 }
 
+/**
+ * Revisión de un informe de evaluación (el PDF que sube el evaluador).
+ *
+ * Este modal decide sobre el INFORME, no sobre el postulante. Antes decía
+ * "Aprobar / Rechazar" a secas y tenía un campo de motivo, así que la admin
+ * escribía aquí el mensaje que quería mandarle al candidato y creía que lo
+ * había rechazado. Ahora el rechazo se llama "Devolver", cada pantalla dice
+ * en una línea a quién afecta y a quién no, y el motivo se presenta como lo
+ * que es: una instrucción para el evaluador.
+ */
 export const ApproveRejectModal = ({
     isOpen,
     onClose,
@@ -57,10 +67,15 @@ export const ApproveRejectModal = ({
                         {/* Selection view */}
                         <div className="text-center mb-6">
                             <h2 className="text-xl font-bold text-gray-900 mb-2">
-                                Revisar Reporte
+                                Revisar informe de evaluación
                             </h2>
                             <p className="text-gray-600">
                                 {reportTitle}
+                            </p>
+                            <p className="text-sm text-gray-500 mt-3">
+                                Esta decisión es sobre el <strong>informe</strong>, no sobre el
+                                postulante. Al postulante se le aprueba o rechaza después,
+                                con el informe ya aprobado.
                             </p>
                         </div>
 
@@ -69,13 +84,13 @@ export const ApproveRejectModal = ({
                                 onClick={() => setAction("approve")}
                                 className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
                             >
-                                ✓ Aprobar
+                                ✓ Aprobar informe
                             </button>
                             <button
                                 onClick={() => setAction("reject")}
-                                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                                className="flex-1 px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors"
                             >
-                                ✗ Rechazar
+                                ↩ Devolver informe
                             </button>
                         </div>
                     </>
@@ -89,10 +104,11 @@ export const ApproveRejectModal = ({
                                 </svg>
                             </div>
                             <h2 className="text-xl font-bold text-gray-900 mb-2">
-                                Aprobar Reporte
+                                Aprobar informe
                             </h2>
                             <p className="text-gray-600">
-                                ¿Estás seguro de aprobar este reporte? La empresa podrá verlo.
+                                La empresa podrá descargarlo. A continuación podrás aprobar o
+                                rechazar al postulante.
                             </p>
                         </div>
 
@@ -115,22 +131,26 @@ export const ApproveRejectModal = ({
                     <>
                         {/* Reject with reason */}
                         <div className="text-center mb-6">
-                            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                                <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-amber-100 mb-4">
+                                <svg className="h-6 w-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                                 </svg>
                             </div>
                             <h2 className="text-xl font-bold text-gray-900 mb-2">
-                                Rechazar Reporte
+                                Devolver informe al evaluador
                             </h2>
-                            <p className="text-gray-600 mb-4">
-                                Ingrese el motivo del rechazo (opcional):
+                            <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4 text-left">
+                                Esto <strong>no rechaza al postulante ni le envía ningún aviso</strong>.
+                                Solo el evaluador verá el motivo, para subir una versión corregida.
+                            </p>
+                            <p className="text-gray-600 mb-2 text-left text-sm">
+                                Qué debe corregir el evaluador (opcional):
                             </p>
                             <textarea
                                 value={rejectionReason}
                                 onChange={(e) => setRejectionReason(e.target.value)}
-                                placeholder="Motivo del rechazo..."
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                                placeholder="Ej: falta la conclusión de riesgo, revisar el puntaje del DISC..."
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                                 rows={4}
                             />
                         </div>
@@ -144,9 +164,9 @@ export const ApproveRejectModal = ({
                             </button>
                             <button
                                 onClick={handleConfirm}
-                                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                                className="flex-1 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors"
                             >
-                                Confirmar
+                                Devolver informe
                             </button>
                         </div>
                     </>

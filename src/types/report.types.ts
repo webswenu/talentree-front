@@ -81,7 +81,9 @@ export const ReportStatusLabels: Record<ReportStatus, string> = {
     [ReportStatus.REVISION_EVALUADOR]: "Revisión Evaluador",
     [ReportStatus.REVISION_ADMIN]: "Revisión Admin",
     [ReportStatus.APPROVED]: "Aprobado",
-    [ReportStatus.REJECTED]: "Rechazado",
+    // "Rechazado" se confundía con el rechazo del postulante. Un informe
+    // devuelto vuelve al evaluador para corregirlo; el candidato no cambia.
+    [ReportStatus.REJECTED]: "Devuelto",
 };
 
 export const ReportStatusColors: Record<ReportStatus, string> = {

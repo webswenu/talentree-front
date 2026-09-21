@@ -480,7 +480,7 @@ export const WorkerDetailPage = () => {
                                         Acciones
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aprobar Informe de Selección (PDF)
+                                        Revisión del informe (PDF)
                                     </th>
                                 </tr>
                             </thead>
@@ -519,6 +519,19 @@ export const WorkerDetailPage = () => {
                                             >
                                                 {ReportStatusLabels[report.status as ReportStatus]}
                                             </span>
+                                            {/* El motivo de la devolución no se veía en ninguna
+                                                pantalla: el evaluador no sabía qué corregir. */}
+                                            {report.status === ReportStatus.REJECTED && (
+                                                <p
+                                                    className="mt-1 text-xs text-red-700 max-w-[16rem] whitespace-normal"
+                                                    title={report.rejectionReason || undefined}
+                                                >
+                                                    {report.rejectionReason
+                                                        ? `Motivo: ${report.rejectionReason}`
+                                                        : "Devuelto sin motivo indicado"}
+                                                    {canEdit && " · Sube una versión corregida con el botón Subir PDF"}
+                                                </p>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span
@@ -623,9 +636,10 @@ export const WorkerDetailPage = () => {
                                                                 setRejectionReason("");
                                                             }}
                                                             disabled={approveMutation.isPending}
-                                                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                                                            className="text-amber-700 hover:text-amber-900 disabled:opacity-50"
+                                                            title="Devolver al evaluador para corregir. No afecta al postulante."
                                                         >
-                                                            Rechazar
+                                                            Devolver
                                                         </button>
                                                     </>
                                                 )}
@@ -761,7 +775,7 @@ export const WorkerDetailPage = () => {
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-xl font-semibold text-gray-900">
-                                    Rechazar Reporte
+                                    Devolver informe al evaluador
                                 </h3>
                                 <button
                                     onClick={() => {
@@ -775,15 +789,19 @@ export const WorkerDetailPage = () => {
                             </div>
 
                             <div className="mb-6">
+                                <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+                                    Esto <strong>no rechaza al postulante ni le envía ningún aviso</strong>.
+                                    Solo el evaluador verá el motivo, para subir una versión corregida.
+                                </p>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Motivo del rechazo (opcional):
+                                    Qué debe corregir el evaluador (opcional):
                                 </label>
                                 <textarea
                                     value={rejectionReason}
                                     onChange={(e) => setRejectionReason(e.target.value)}
                                     rows={4}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                    placeholder="Explica el motivo del rechazo del reporte..."
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                    placeholder="Ej: falta la conclusión de riesgo, revisar el puntaje del DISC..."
                                 />
                             </div>
 
@@ -811,19 +829,19 @@ export const WorkerDetailPage = () => {
                                             });
                                             setRejectModal({ isOpen: false, reportId: null });
                                             setRejectionReason("");
-                                            toast.success("Reporte rechazado exitosamente");
+                                            toast.success("Informe devuelto al evaluador. El postulante no fue notificado ni cambió de estado.");
                                         } catch {
-                                            toast.error("Error al rechazar el reporte");
+                                            toast.error("No se pudo devolver el informe. Intenta nuevamente.");
                                         }
                                     }}
                                     disabled={approveMutation.isPending}
                                     className={`flex-1 px-4 py-2 rounded-lg text-white font-medium transition-colors ${
                                         approveMutation.isPending
-                                            ? 'bg-red-400 cursor-not-allowed'
-                                            : 'bg-red-600 hover:bg-red-700'
+                                            ? 'bg-amber-400 cursor-not-allowed'
+                                            : 'bg-amber-600 hover:bg-amber-700'
                                     }`}
                                 >
-                                    {approveMutation.isPending ? 'Rechazando...' : 'Rechazar Reporte'}
+                                    {approveMutation.isPending ? 'Devolviendo...' : 'Devolver informe'}
                                 </button>
                             </div>
                         </div>
@@ -843,14 +861,14 @@ export const WorkerDetailPage = () => {
                             data: { status: ReportStatus.APPROVED },
                         });
                         setApproveModal({ isOpen: false, reportId: null });
-                        toast.success("Reporte aprobado exitosamente");
+                        toast.success("Informe aprobado. La empresa ya puede verlo. Ahora puedes aprobar o rechazar al postulante desde el proceso.");
                     } catch {
-                        toast.error("Error al aprobar reporte");
+                        toast.error("No se pudo aprobar el informe. Intenta nuevamente.");
                     }
                 }}
-                title="Aprobar Reporte"
-                message="¿Estás seguro de aprobar este reporte? La empresa podrá verlo."
-                confirmText="Aprobar"
+                title="Aprobar informe"
+                message="La empresa podrá descargarlo. Esto no decide sobre el postulante: eso se hace después, en la pestaña Candidatos del proceso."
+                confirmText="Aprobar informe"
                 cancelText="Cancelar"
                 isLoading={approveMutation.isPending}
             />
