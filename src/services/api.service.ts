@@ -3,6 +3,7 @@ import type { AxiosInstance, AxiosRequestConfig } from "axios";
 import type { ApiResponse } from "../types/api.types";
 import { avisarError } from "../utils/toastBridge";
 import { getApiErrorMessage } from "../utils/apiError";
+import { registrarHoraServidor } from "../utils/relojServidor";
 
 /**
  * P-78. Avisa de una denegación de permiso, en vez de dejar la pantalla vacía
@@ -35,6 +36,7 @@ class ApiService {
                 if (token) {
                     config.headers.Authorization = `Bearer ${token}`;
                 }
+                (config as { enviadoEn?: number }).enviadoEn = Date.now();
                 return config;
             },
             (error) => Promise.reject(error)
@@ -47,6 +49,11 @@ class ApiService {
                     typeof response.data === "object" &&
                     "success" in response.data
                 ) {
+                    registrarHoraServidor(
+                        response.data.timestamp,
+                        (response.config as { enviadoEn?: number }).enviadoEn,
+                        Date.now()
+                    );
                     return {
                         ...response,
                         data: response.data.data,
