@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTestResponse, useSubmitTest } from "../../hooks/useTestResponses";
 import { useTestTimers } from "../../hooks/useTestTimers";
+import { ahoraServidor } from "../../utils/relojServidor";
 import { QuestionType, FixedTest } from "../../types/test.types";
 import { SubmitAnswerDto, TestResponse } from "../../types/test-response.types";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
@@ -49,9 +50,31 @@ export const WorkerTestTakingPage = () => {
     const [answers, setAnswers] = useState<
         Record<string, string | string[] | number | Record<string, unknown> | null>
     >(() => {
-        // Restore answers from localStorage if exists
-        const saved = localStorage.getItem(`test_progress_answers_${testResponseId}`);
-        return saved ? JSON.parse(saved) : {};
+        // Restore answers from localStorage if exists.
+        //
+        // El guardado (más abajo) escribe un ARREGLO `[{questionId, answer}]`,
+        // que es lo que el autoenvío de useTestTimers manda tal cual al API.
+        // Aquí se leía como si fuera el mapa `{[questionId]: answer}`, así que
+        // al recargar la página todas las respuestas quedaban en blanco
+        // aunque la pantalla volvía a la pregunta donde iba la persona.
+        try {
+            const saved = localStorage.getItem(`test_progress_answers_${testResponseId}`);
+            if (!saved) return {};
+            const parsed: unknown = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+                return Object.fromEntries(
+                    parsed
+                        .filter(
+                            (a): a is SubmitAnswerDto =>
+                                !!a && typeof a === "object" && typeof (a as SubmitAnswerDto).questionId === "string"
+                        )
+                        .map((a) => [a.questionId, a.answer])
+                );
+            }
+            return parsed && typeof parsed === "object" ? (parsed as Record<string, never>) : {};
+        } catch {
+            return {};
+        }
     });
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -201,7 +224,7 @@ export const WorkerTestTakingPage = () => {
          * falta y que ya están en el ámbito, sin depender de estado memoizado.
          */
         const updateTimeLeft = () => {
-            const restanteMs = duration * 60 * 1000 - (Date.now() - startedAt);
+            const restanteMs = duration * 60 * 1000 - (ahoraServidor() - startedAt);
             setTimeLeft(Math.max(0, Math.floor(restanteMs / 1000)));
         };
 

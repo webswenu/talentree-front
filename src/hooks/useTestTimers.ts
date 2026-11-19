@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSubmitTest } from "./useTestResponses";
+import { ahoraServidor, hayHoraServidor } from "../utils/relojServidor";
 
 interface ActiveTimer {
     testResponseId: string;
@@ -109,7 +110,7 @@ export const useTestTimers = () => {
         if (!timer) return null;
 
         const durationMs = timer.duration * 60 * 1000;
-        const elapsed = Date.now() - timer.startedAt;
+        const elapsed = ahoraServidor() - timer.startedAt;
         const remaining = Math.max(0, durationMs - elapsed);
 
         return Math.floor(remaining / 1000);
@@ -154,7 +155,12 @@ export const useTestTimers = () => {
     }, [timers]);
 
     const checkTimers = useCallback(() => {
-        const now = Date.now();
+        // `startedAt` es hora del servidor. Sin una respuesta del API todavía
+        // no se sabe cuánto se desvía el reloj de este equipo, y con un PC
+        // adelantado el test se daría por vencido apenas abierto (y se
+        // enviaría vacío). Se espera a la primera muestra.
+        if (!hayHoraServidor()) return;
+        const now = ahoraServidor();
         const currentTimers = timersRef.current;
 
         Object.values(currentTimers).forEach(timer => {
