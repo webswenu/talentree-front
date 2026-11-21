@@ -35,6 +35,19 @@ class TestResponsesService {
         return response.data;
     }
 
+    /** Solo admin: reabre un test incompleto y, si se pide, avisa por correo. */
+    async reactivar(
+        responseId: string,
+        data: { enviarCorreo: boolean; mensaje?: string }
+    ): Promise<{ correoEnviado: boolean; correoError?: string; respuestasConservadas: number }> {
+        const response = await apiService.post<{
+            correoEnviado: boolean;
+            correoError?: string;
+            respuestasConservadas: number;
+        }>(`${this.basePath}/${responseId}/reactivar`, data);
+        return response.data;
+    }
+
     async autoEvaluate(responseId: string): Promise<TestResponse> {
         const response = await apiService.post<TestResponse>(
             `${this.basePath}/${responseId}/auto-evaluate`

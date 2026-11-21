@@ -32,7 +32,10 @@ import { formatDateShort } from "../../utils/formatters";
 import {
     TestsRendidos,
     respuestasDeTestDelTrabajador,
+    RespuestaConProceso,
 } from "../../components/common/TestsRendidos";
+import { UserRole } from "../../types/user.types";
+import { ReactivarTestModal } from "../../components/admin/ReactivarTestModal";
 
 export const WorkerDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -45,6 +48,7 @@ export const WorkerDetailPage = () => {
     const [approveModal, setApproveModal] = useState<{ isOpen: boolean; reportId: string | null }>({ isOpen: false, reportId: null });
     const [uploadingReportId, setUploadingReportId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [testPorReactivar, setTestPorReactivar] = useState<RespuestaConProceso | null>(null);
 
     // Detect user role and route
     const { user } = useAuthStore();
@@ -340,7 +344,22 @@ export const WorkerDetailPage = () => {
             )}
 
             {/* Tests rendidos: cuelgan de cada postulacion */}
-            <TestsRendidos worker={worker} />
+            <TestsRendidos
+                worker={worker}
+                onReactivar={
+                    !isEvaluator && !isCompany && !isGuest && user?.role === UserRole.ADMIN_TALENTREE
+                        ? setTestPorReactivar
+                        : undefined
+                }
+            />
+            {testPorReactivar && worker && (
+                <ReactivarTestModal
+                    fila={testPorReactivar}
+                    nombrePostulante={`${worker.firstName} ${worker.lastName}`}
+                    correoPostulante={worker.email}
+                    onClose={() => setTestPorReactivar(null)}
+                />
+            )}
 
             {/* Procesos */}
             {filteredWorkerProcesses && filteredWorkerProcesses.length > 0 && (
