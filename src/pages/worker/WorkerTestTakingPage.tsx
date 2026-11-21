@@ -138,6 +138,31 @@ export const WorkerTestTakingPage = () => {
             : [];
     }, [testResponse, isFixedTest]);
 
+    /**
+     * Retomar con las respuestas que ya están en el servidor.
+     *
+     * El avance solo se guardaba en el navegador, y ese guardado se borra al
+     * enviar el test. Cuando un test vencido se reabre (21-11-2026: cinco
+     * 16PF cerrados por tiempo, con 104 a 180 respuestas guardadas), la
+     * persona lo encontraba en blanco y tenía que partir de cero. Solo se usa
+     * si el navegador no trae nada propio, que siempre es más reciente.
+     */
+    const [respuestasServidorAplicadas, setRespuestasServidorAplicadas] = useState(false);
+    useEffect(() => {
+        if (respuestasServidorAplicadas || !testResponse || questions.length === 0) return;
+        setRespuestasServidorAplicadas(true);
+        if (testResponse.isCompleted || Object.keys(answers).length > 0) return;
+        const delServidor: Record<string, string | string[] | number | null> = {};
+        for (const a of testResponse.answers ?? []) {
+            const id = a.fixedTestQuestion?.id ?? a.question?.id;
+            if (id && a.answer !== null && a.answer !== undefined) delServidor[id] = a.answer;
+        }
+        if (Object.keys(delServidor).length === 0) return;
+        setAnswers(delServidor);
+        const primeraSinResponder = questions.findIndex((q) => delServidor[q.id] === undefined);
+        setCurrentQuestion(primeraSinResponder === -1 ? questions.length - 1 : primeraSinResponder);
+    }, [testResponse, questions, answers, respuestasServidorAplicadas]);
+
     // Save progress to localStorage when currentQuestion changes
     useEffect(() => {
         if (testResponseId) {
