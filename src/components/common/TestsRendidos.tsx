@@ -36,8 +36,22 @@ const ETIQUETA_DE_ESTADO: Record<string, { texto: string; clase: string }> = {
     },
 };
 
-/** Tabla compacta con los tests que rindió la persona. */
-export const TestsRendidos = ({ worker }: { worker?: Worker | null }) => {
+/** Estados desde los que el admin puede reactivar un test. */
+const ESTADOS_REACTIVABLES = ["insufficient_answers", "abandoned"];
+
+/**
+ * Tabla compacta con los tests que rindió la persona.
+ *
+ * `onReactivar` solo lo pasa la ficha del admin: agrega la columna con el
+ * botón «Reactivar» en los tests que quedaron incompletos.
+ */
+export const TestsRendidos = ({
+    worker,
+    onReactivar,
+}: {
+    worker?: Worker | null;
+    onReactivar?: (fila: RespuestaConProceso) => void;
+}) => {
     const respuestas = respuestasDeTestDelTrabajador(worker);
 
     return (
@@ -62,11 +76,15 @@ export const TestsRendidos = ({ worker }: { worker?: Worker | null }) => {
                                 <th className="py-2 pr-6 font-medium">
                                     Estado
                                 </th>
-                                <th className="py-2 font-medium">Fecha</th>
+                                <th className="py-2 pr-6 font-medium">Fecha</th>
+                                {onReactivar && (
+                                    <th className="py-2 font-medium">Acción</th>
+                                )}
                             </tr>
                         </thead>
                         <tbody>
-                            {respuestas.map(({ respuesta, proceso }) => {
+                            {respuestas.map((fila) => {
+                                const { respuesta, proceso } = fila;
                                 const estado =
                                     ETIQUETA_DE_ESTADO[
                                         respuesta.status ?? ""
@@ -93,13 +111,28 @@ export const TestsRendidos = ({ worker }: { worker?: Worker | null }) => {
                                                 {estado.texto}
                                             </span>
                                         </td>
-                                        <td className="py-2 text-gray-700 tabular-nums">
+                                        <td className="py-2 pr-6 text-gray-700 tabular-nums">
                                             {fecha
                                                 ? new Date(
                                                       fecha
                                                   ).toLocaleDateString("es-CL")
                                                 : "—"}
                                         </td>
+                                        {onReactivar && (
+                                            <td className="py-2">
+                                                {ESTADOS_REACTIVABLES.includes(
+                                                    respuesta.status ?? ""
+                                                ) && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onReactivar(fila)}
+                                                        className="px-3 py-1 text-xs font-semibold rounded-lg bg-teal-600 text-white hover:bg-teal-700"
+                                                    >
+                                                        Reactivar
+                                                    </button>
+                                                )}
+                                            </td>
+                                        )}
                                     </tr>
                                 );
                             })}
