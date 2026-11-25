@@ -35,6 +35,25 @@ class AuthService {
         return data;
     }
 
+    async solicitarRecuperacion(email: string): Promise<{ message: string }> {
+        const { data } = await apiService.post<{ message: string }>(
+            "/auth/forgot-password",
+            { email }
+        );
+        return data;
+    }
+
+    async restablecerClave(
+        token: string,
+        password: string
+    ): Promise<{ message: string; email: string }> {
+        const { data } = await apiService.post<{
+            message: string;
+            email: string;
+        }>("/auth/reset-password", { token, password });
+        return data;
+    }
+
     async logout(): Promise<void> {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");

@@ -7,6 +7,7 @@ import { useUploadCV } from "../../hooks/useWorkers";
 import { toast } from "../../utils/toast";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { getRutError } from "../../utils/rut";
+import { sugerirCorreo } from "../../utils/sugerenciaCorreo";
 import { limpiarOpcionales } from "../../utils/registro";
 import {
     mensajeDePassword,
@@ -239,10 +240,12 @@ export const RegisterWorkerPage = () => {
                 setCurrentStep(1);
             } else if (!validateStep2()) {
                 setCurrentStep(2);
+            } else if (/rut/i.test(mensaje)) {
+                // Va antes que el correo: el aviso de RUT repetido tambien
+                // menciona el correo con que se registro esa cuenta.
+                setCurrentStep(2);
             } else if (/correo|email/i.test(mensaje)) {
                 setCurrentStep(1);
-            } else if (/rut/i.test(mensaje)) {
-                setCurrentStep(2);
             }
         }
     };
@@ -346,6 +349,8 @@ export const RegisterWorkerPage = () => {
                                         handleChange("email", e.target.value)
                                     }
                                     readOnly={!!fromInvitation}
+                                    autoCapitalize="none"
+                                    autoCorrect="off"
                                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                                         errors.email
                                             ? "border-red-500"
@@ -362,6 +367,28 @@ export const RegisterWorkerPage = () => {
                                         {errors.email}
                                     </p>
                                 )}
+                                {!fromInvitation &&
+                                    sugerirCorreo(formData.email) && (
+                                        <p className="mt-1 text-sm text-amber-700">
+                                            ¿Quisiste decir{" "}
+                                            <button
+                                                type="button"
+                                                className="font-semibold underline"
+                                                onClick={() =>
+                                                    handleChange(
+                                                        "email",
+                                                        sugerirCorreo(
+                                                            formData.email
+                                                        ) as string
+                                                    )
+                                                }
+                                            >
+                                                {sugerirCorreo(formData.email)}
+                                            </button>
+                                            ? Revisa bien tu correo: es con el
+                                            que vas a iniciar sesión.
+                                        </p>
+                                    )}
                                 {/*
                                  * R-09. El correo venia precargado de la
                                  * invitacion pero se podia cambiar, sin aviso.

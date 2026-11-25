@@ -64,7 +64,24 @@ class ApiService {
             async (error) => {
                 const originalRequest = error.config;
 
-                if (error.response?.status === 401 && !originalRequest._retry) {
+                /**
+                 * En las rutas de autenticacion un 401 significa "correo o
+                 * contraseña incorrectos", no "sesion vencida". Antes se
+                 * intentaba renovar la sesion igual, fallaba, y se recargaba
+                 * /login: el mensaje de error se borraba antes de leerlo y la
+                 * persona solo veia que la pagina "no hacia nada" (caso del
+                 * 24-11-2026, 77 intentos sin ver un solo error).
+                 */
+                const esRutaDeAutenticacion =
+                    /\/auth\/(login|register|refresh|forgot-password|reset-password)/.test(
+                        originalRequest?.url ?? ""
+                    );
+
+                if (
+                    error.response?.status === 401 &&
+                    !originalRequest._retry &&
+                    !esRutaDeAutenticacion
+                ) {
                     originalRequest._retry = true;
 
                     try {

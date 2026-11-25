@@ -59,6 +59,8 @@ const TITULOS: Record<string, string> = {
 
     "/oportunidades": "Oportunidades laborales",
     "/login": "Iniciar sesión",
+    "/recuperar-clave": "Recuperar contraseña",
+    "/restablecer-clave": "Nueva contraseña",
     "/register": "Crear cuenta",
     "/terms": "Términos y condiciones",
     "/faq": "Preguntas frecuentes",
