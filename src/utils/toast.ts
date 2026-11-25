@@ -52,10 +52,15 @@ class ToastManager {
         };
 
         toast.className = `${colors[type]} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 pointer-events-auto transform transition-all duration-300 translate-x-0 opacity-100`;
-        toast.innerHTML = `
-      <span class="font-bold text-lg">${icons[type]}</span>
-      <span>${message}</span>
-    `;
+        // Se arma con textContent: el mensaje puede traer texto que viene del
+        // servidor y con innerHTML se ejecutaba como HTML (XSS).
+        const icono = document.createElement("span");
+        icono.className = "font-bold text-lg";
+        icono.textContent = icons[type];
+        const texto = document.createElement("span");
+        texto.textContent = message;
+        toast.appendChild(icono);
+        toast.appendChild(texto);
 
         container.appendChild(toast);
 
