@@ -141,6 +141,8 @@ export const LoginPage = () => {
                             onChange={(e) => setEmail(e.target.value)}
                             className="input"
                             placeholder="tu@email.com"
+                            autoCapitalize="none"
+                            autoCorrect="off"
                             required
                             disabled={loginMutation.isPending}
                         />
@@ -160,6 +162,18 @@ export const LoginPage = () => {
                             required
                             disabled={loginMutation.isPending}
                         />
+                        <div className="mt-2 text-right">
+                            <Link
+                                to={`/recuperar-clave${
+                                    email.trim()
+                                        ? `?email=${encodeURIComponent(email.trim())}`
+                                        : ""
+                                }`}
+                                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                            >
+                                ¿Olvidaste tu contraseña?
+                            </Link>
+                        </div>
                     </div>
 
                     <button

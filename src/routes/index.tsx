@@ -16,6 +16,8 @@ import { LandingPage } from "../pages/public/LandingPage";
 import { OpportunitiesPage } from "../pages/public/OpportunitiesPage";
 import { LoginPage } from "../pages/public/LoginPage";
 import { RegisterWorkerPage } from "../pages/public/RegisterWorkerPage";
+import { RecuperarClavePage } from "../pages/public/RecuperarClavePage";
+import { RestablecerClavePage } from "../pages/public/RestablecerClavePage";
 import { UnauthorizedPage } from "../pages/public/UnauthorizedPage";
 import { NotFoundPage } from "../pages/public/NotFoundPage";
 import { AcceptInvitationPage } from "../pages/public/AcceptInvitationPage";
@@ -120,6 +122,14 @@ export const AppRoutes = () => {
                     <Route index element={<LandingPage />} />
                     <Route path="oportunidades" element={<OpportunitiesPage />} />
                     <Route path="login" element={<LoginPage />} />
+                    <Route
+                        path="recuperar-clave"
+                        element={<RecuperarClavePage />}
+                    />
+                    <Route
+                        path="restablecer-clave"
+                        element={<RestablecerClavePage />}
+                    />
                     <Route
                         path="register/worker"
                         element={<RegisterWorkerPage />}
