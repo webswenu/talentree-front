@@ -36,22 +36,48 @@ const ETIQUETA_DE_ESTADO: Record<string, { texto: string; clase: string }> = {
     },
 };
 
+/** Etiqueta del estado. Un test abierto aún no tiene `status`. */
+function etiquetaDe(respuesta: TestResponse) {
+    if (!respuesta.status && !respuesta.isCompleted) {
+        return ETIQUETA_DE_ESTADO.in_progress;
+    }
+    if (
+        respuesta.status === "insufficient_answers" &&
+        respuesta.metadata?.motivo === "tiempo"
+    ) {
+        return {
+            texto: "Incompleto (tiempo agotado)",
+            clase: ETIQUETA_DE_ESTADO.insufficient_answers.clase,
+        };
+    }
+    return (
+        ETIQUETA_DE_ESTADO[respuesta.status ?? ""] ?? {
+            texto: respuesta.status ?? "—",
+            clase: "bg-gray-100 text-gray-700",
+        }
+    );
+}
+
 /** Estados desde los que el admin puede reactivar un test. */
 const ESTADOS_REACTIVABLES = ["insufficient_answers", "abandoned"];
 
 /**
  * Tabla compacta con los tests que rindió la persona.
  *
- * `onReactivar` solo lo pasa la ficha del admin: agrega la columna con el
- * botón «Reactivar» en los tests que quedaron incompletos.
+ * `onReactivar` y `onReiniciar` solo los pasa la ficha del admin: agregan la
+ * columna de acciones. «Reactivar» aparece en los tests incompletos (conserva
+ * las respuestas); «Reiniciar» en todos (las borra y se rinde desde cero).
  */
 export const TestsRendidos = ({
     worker,
     onReactivar,
+    onReiniciar,
 }: {
     worker?: Worker | null;
     onReactivar?: (fila: RespuestaConProceso) => void;
+    onReiniciar?: (fila: RespuestaConProceso) => void;
 }) => {
+    const conAcciones = !!onReactivar || !!onReiniciar;
     const respuestas = respuestasDeTestDelTrabajador(worker);
 
     return (
@@ -77,7 +103,7 @@ export const TestsRendidos = ({
                                     Estado
                                 </th>
                                 <th className="py-2 pr-6 font-medium">Fecha</th>
-                                {onReactivar && (
+                                {conAcciones && (
                                     <th className="py-2 font-medium">Acción</th>
                                 )}
                             </tr>
@@ -85,13 +111,7 @@ export const TestsRendidos = ({
                         <tbody>
                             {respuestas.map((fila) => {
                                 const { respuesta, proceso } = fila;
-                                const estado =
-                                    ETIQUETA_DE_ESTADO[
-                                        respuesta.status ?? ""
-                                    ] ?? {
-                                        texto: respuesta.status ?? "—",
-                                        clase: "bg-gray-100 text-gray-700",
-                                    };
+                                const estado = etiquetaDe(respuesta);
                                 const fecha = respuesta.completedAt;
 
                                 return (
@@ -118,19 +138,33 @@ export const TestsRendidos = ({
                                                   ).toLocaleDateString("es-CL")
                                                 : "—"}
                                         </td>
-                                        {onReactivar && (
+                                        {conAcciones && (
                                             <td className="py-2">
-                                                {ESTADOS_REACTIVABLES.includes(
-                                                    respuesta.status ?? ""
-                                                ) && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => onReactivar(fila)}
-                                                        className="px-3 py-1 text-xs font-semibold rounded-lg bg-teal-600 text-white hover:bg-teal-700"
-                                                    >
-                                                        Reactivar
-                                                    </button>
-                                                )}
+                                                <div className="flex flex-wrap gap-2">
+                                                    {onReactivar &&
+                                                        ESTADOS_REACTIVABLES.includes(
+                                                            respuesta.status ?? ""
+                                                        ) && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => onReactivar(fila)}
+                                                                title="Reabre el test conservando lo que ya respondió"
+                                                                className="px-3 py-1 text-xs font-semibold rounded-lg bg-teal-600 text-white hover:bg-teal-700"
+                                                            >
+                                                                Reactivar
+                                                            </button>
+                                                        )}
+                                                    {onReiniciar && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => onReiniciar(fila)}
+                                                            title="Borra las respuestas de este test para que lo rinda desde cero"
+                                                            className="px-3 py-1 text-xs font-semibold rounded-lg border border-red-300 text-red-700 hover:bg-red-50"
+                                                        >
+                                                            Reiniciar
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         )}
                                     </tr>
