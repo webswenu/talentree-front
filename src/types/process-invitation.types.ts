@@ -41,6 +41,8 @@ export interface ProcessInvitation {
     acceptedAt: Date | null;
     expiresAt: Date;
     createdAt: Date;
+    /** Solo al leer por token: el correo invitado ya tiene cuenta en Talentree. */
+    tieneCuenta?: boolean;
 }
 
 export interface CreateProcessInvitationDto {
@@ -64,6 +66,8 @@ export interface BulkInviteWorkersDto {
 export interface BulkInviteResult {
     successful: ProcessInvitation[];
     failed: {
+        /** Fila de la planilla (la 1 es el encabezado). */
+        fila: number;
         email: string;
         reason: string;
     }[];
