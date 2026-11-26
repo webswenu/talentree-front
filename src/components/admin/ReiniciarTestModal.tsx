@@ -76,7 +76,12 @@ export const ReiniciarTestModal = ({ fila, nombrePostulante, correoPostulante, o
                     <ul className="text-sm text-gray-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4 list-disc pl-8 space-y-1">
                         <li>Se borran <strong>las respuestas y el resultado de este test</strong>. Los demás tests del proceso no se tocan.</li>
                         <li>Se borra el informe de este proceso, <strong>también si ya está aprobado</strong>; se genera otro cuando termine.</li>
-                        <li>La persona rinde el test desde la primera pregunta, con el tiempo completo.</li>
+                        <li>
+                            La persona rinde el test desde la primera pregunta
+                            {(respuesta.fixedTest?.duration ?? respuesta.test?.duration)
+                                ? ", con el tiempo completo."
+                                : "."}
+                        </li>
                         <li>El intento anterior queda respaldado en la auditoría.</li>
                     </ul>
 

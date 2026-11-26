@@ -47,6 +47,7 @@ import { BulkInviteModal } from "../../components/admin/BulkInviteModal";
 import { toast } from "../../utils/toast";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { ModalPortal } from "../../components/common/ModalPortal";
+import { TestsDelCandidatoModal } from "../../components/admin/TestsDelCandidatoModal";
 import { formatDateShort } from "../../utils/formatters";
 
 type TabType = "candidates" | "approved" | "final_decisions" | "reports" | "timeline";
@@ -74,6 +75,8 @@ export const ProcessDetailPage = () => {
     const [showInvitationsTable, setShowInvitationsTable] = useState(false);
     const [uploadingReportId, setUploadingReportId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    // Candidato cuyos tests de este proceso se están mirando (Reactivar/Reiniciar).
+    const [testsDeWorkerId, setTestsDeWorkerId] = useState<string | null>(null);
 
     const { data: process, isLoading, error } = useProcess(id!);
     const { data: workersData } = useProcessWorkers(id!) as { data?: WorkerProcess[] };
@@ -129,6 +132,8 @@ export const ProcessDetailPage = () => {
     const isEvaluator = location.pathname.includes("/evaluador");
     const isCompany = location.pathname.includes("/empresa");
     const baseRoute = isEvaluator ? "/evaluador" : isCompany ? "/empresa" : "/admin";
+    // Reactivar/reiniciar tests: solo la admin de Talentree en su propia vista.
+    const esAdminTalentree = isAdmin && !isEvaluator && !isCompany;
 
     // Solo admin puede editar/asignar/eliminar
     const canEdit = isAdmin && !isEvaluator && !isCompany;
@@ -764,6 +769,15 @@ export const ProcessDetailPage = () => {
                                                     >
                                                         Ver Detalle
                                                     </button>
+                                                    {esAdminTalentree && (
+                                                        <button
+                                                            onClick={() => setTestsDeWorkerId(workerProcess.worker.id)}
+                                                            className="text-teal-700 hover:text-teal-900"
+                                                            title="Ver sus tests de este proceso para reactivarlos o reiniciarlos"
+                                                        >
+                                                            Tests
+                                                        </button>
+                                                    )}
                                                     {/* Botones de aprobar/rechazar para candidatos completados.
                                                         Se habilitan solo con el informe aprobado: así el orden
                                                         (tests → informe → decisión → aviso) lo impone la pantalla. */}
@@ -1881,6 +1895,14 @@ export const ProcessDetailPage = () => {
                         </div>
                     </div>
                 </ModalPortal>
+            )}
+
+            {testsDeWorkerId && id && (
+                <TestsDelCandidatoModal
+                    workerId={testsDeWorkerId}
+                    processId={id}
+                    onClose={() => setTestsDeWorkerId(null)}
+                />
             )}
         </div>
     );
