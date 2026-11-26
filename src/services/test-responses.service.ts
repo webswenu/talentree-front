@@ -8,6 +8,14 @@ import {
     TestResponseStats,
 } from "../types/test-response.types";
 
+export interface ResultadoReinicio {
+    testsBorrados: number;
+    respuestasArchivadas: number;
+    informesBorrados: number;
+    correoEnviado: boolean;
+    correoError?: string;
+}
+
 class TestResponsesService {
     private basePath = "/test-responses";
 
@@ -45,6 +53,22 @@ class TestResponsesService {
             correoError?: string;
             respuestasConservadas: number;
         }>(`${this.basePath}/${responseId}/reactivar`, data);
+        return response.data;
+    }
+
+    /**
+     * Solo admin: borra todos los tests de la postulación (y sus informes) para
+     * que la persona los rinda de nuevo desde cero. El backend guarda un
+     * respaldo del intento anterior en la auditoría.
+     */
+    async reiniciarParticipacion(
+        workerProcessId: string,
+        data: { motivo: string; enviarCorreo: boolean; mensaje?: string }
+    ): Promise<ResultadoReinicio> {
+        const response = await apiService.post<ResultadoReinicio>(
+            `${this.basePath}/worker-process/${workerProcessId}/reiniciar`,
+            data
+        );
         return response.data;
     }
 
