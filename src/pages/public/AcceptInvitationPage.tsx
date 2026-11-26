@@ -254,7 +254,26 @@ export const AcceptInvitationPage = () => {
                                 )}
                             </button>
 
-                            {!user && (
+                            {!user && invitation.tieneCuenta && (
+                                <div className="bg-teal-50 border border-teal-200 rounded-lg p-4 text-sm text-teal-900">
+                                    <p>
+                                        <strong>{invitation.email}</strong> ya tiene una cuenta en Talentree.
+                                        Inicia sesión con ese correo para aceptar; no necesitas registrarte de nuevo.
+                                    </p>
+                                    <p className="mt-2">
+                                        ¿No recuerdas tu contraseña?{" "}
+                                        <Link
+                                            to="/recuperar-clave"
+                                            className="font-medium text-teal-700 underline hover:text-teal-600"
+                                        >
+                                            Recupérala aquí
+                                        </Link>
+                                        {" "}y después vuelve a abrir el enlace de la invitación.
+                                    </p>
+                                </div>
+                            )}
+
+                            {!user && !invitation.tieneCuenta && (
                                 <p className="text-center text-sm text-gray-600">
                                     ¿No tienes cuenta?{" "}
                                     <Link

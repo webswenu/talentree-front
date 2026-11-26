@@ -50,6 +50,8 @@ export const RegisterWorkerPage = () => {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [serverError, setServerError] = useState("");
+    // El correo de la invitación ya tiene cuenta: registrarse de nuevo fallaría.
+    const [cuentaExistente, setCuentaExistente] = useState(false);
     const [cvFile, setCvFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,6 +61,7 @@ export const RegisterWorkerPage = () => {
             processInvitationsService
                 .findByToken(fromInvitation)
                 .then((invitation) => {
+                    setCuentaExistente(!!invitation.tieneCuenta);
                     if (invitation.email) {
                         setFormData((prev) => ({
                             ...prev,
@@ -321,6 +324,27 @@ export const RegisterWorkerPage = () => {
 
                 {/* Form Card */}
                 <div className="bg-white shadow-xl rounded-lg p-8">
+                    {cuentaExistente && fromInvitation && (
+                        <div className="mb-6 bg-teal-50 border border-teal-200 text-teal-900 px-4 py-3 rounded-lg text-sm">
+                            <p className="font-semibold mb-1">
+                                {formData.email} ya tiene una cuenta en Talentree
+                            </p>
+                            <p>
+                                No necesitas registrarte de nuevo.{" "}
+                                <Link
+                                    to={`/login?fromInvitation=${fromInvitation}`}
+                                    className="font-medium underline hover:text-teal-700"
+                                >
+                                    Inicia sesión
+                                </Link>{" "}
+                                con ese correo y la invitación quedará aceptada. Si no recuerdas la contraseña,{" "}
+                                <Link to="/recuperar-clave" className="font-medium underline hover:text-teal-700">
+                                    recupérala aquí
+                                </Link>
+                                .
+                            </p>
+                        </div>
+                    )}
                     {serverError && (
                         <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                             {serverError}

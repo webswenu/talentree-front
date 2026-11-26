@@ -103,8 +103,16 @@ export const useBulkCreateProcessInvitations = () => {
             }
 
             if (failed.length > 0) {
+                // Antes decía «Revisa los detalles», pero el modal se cerraba y
+                // los motivos no se mostraban en ninguna parte.
+                const detalle = failed
+                    .slice(0, 5)
+                    .map((f) => `Fila ${f.fila} (${f.email}): ${f.reason}`)
+                    .join("\n");
+                const resto = failed.length > 5 ? `\n... y ${failed.length - 5} más` : "";
                 toast.error(
-                    `${failed.length} invitación(es) fallaron. Revisa los detalles.`
+                    `${failed.length} invitación(es) no se enviaron:\n${detalle}${resto}`,
+                    { duration: 15000, style: { whiteSpace: "pre-line", maxWidth: 520 } }
                 );
             }
         },
