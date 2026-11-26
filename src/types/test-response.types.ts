@@ -61,6 +61,8 @@ export interface SubmitAnswerDto {
 
 export interface SubmitTestDto {
     answers: SubmitAnswerDto[];
+    /** true si lo envió el temporizador al acabarse el tiempo. */
+    cierreAutomatico?: boolean;
 }
 
 export interface EvaluateAnswerDto {

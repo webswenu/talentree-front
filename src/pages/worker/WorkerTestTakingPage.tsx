@@ -199,7 +199,8 @@ export const WorkerTestTakingPage = () => {
         try {
             const response = await submitMutation.mutateAsync({
                 responseId: testResponseId,
-                data: { answers: submitAnswers },
+                // Lo envió la persona con «Finalizar», no el reloj.
+                data: { answers: submitAnswers, cierreAutomatico: false },
             });
             // Clean up progress from localStorage after successful submit
             localStorage.removeItem(`test_progress_${testResponseId}`);

@@ -36,6 +36,7 @@ import {
 } from "../../components/common/TestsRendidos";
 import { UserRole } from "../../types/user.types";
 import { ReactivarTestModal } from "../../components/admin/ReactivarTestModal";
+import { ReiniciarTestModal } from "../../components/admin/ReiniciarTestModal";
 import { ReiniciarParticipacionModal } from "../../components/admin/ReiniciarParticipacionModal";
 
 export const WorkerDetailPage = () => {
@@ -50,6 +51,7 @@ export const WorkerDetailPage = () => {
     const [uploadingReportId, setUploadingReportId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [testPorReactivar, setTestPorReactivar] = useState<RespuestaConProceso | null>(null);
+    const [testPorReiniciar, setTestPorReiniciar] = useState<RespuestaConProceso | null>(null);
     const [postulacionPorReiniciar, setPostulacionPorReiniciar] = useState<{ id: string; proceso: string } | null>(null);
 
     // Detect user role and route
@@ -353,7 +355,16 @@ export const WorkerDetailPage = () => {
             <TestsRendidos
                 worker={worker}
                 onReactivar={esAdminTalentree ? setTestPorReactivar : undefined}
+                onReiniciar={esAdminTalentree ? setTestPorReiniciar : undefined}
             />
+            {testPorReiniciar && worker && (
+                <ReiniciarTestModal
+                    fila={testPorReiniciar}
+                    nombrePostulante={`${worker.firstName} ${worker.lastName}`}
+                    correoPostulante={worker.email}
+                    onClose={() => setTestPorReiniciar(null)}
+                />
+            )}
             {testPorReactivar && worker && (
                 <ReactivarTestModal
                     fila={testPorReactivar}

@@ -129,7 +129,7 @@ export const useTestTimers = () => {
             // Submit with whatever answers exist (even if empty)
             await submitMutationRef.current.mutateAsync({
                 responseId: testResponseId,
-                data: { answers }
+                data: { answers, cierreAutomatico: true }
             });
 
 
@@ -141,6 +141,15 @@ export const useTestTimers = () => {
             // pantalla (incluso fuera del test), donde el aviso no tendría
             // ningún contexto ni nada que hacer al respecto.
             console.warn(`No se pudo enviar automáticamente el test ${testResponseId} al vencer el tiempo:`, error);
+            // Si el test ya no existe (la admin lo reinició) o ya se envió, no
+            // hay nada que reintentar: se suelta el temporizador.
+            const status = (error as { response?: { status?: number } })?.response?.status;
+            if (status === 404 || status === 400) {
+                localStorage.removeItem(`test_progress_answers_${testResponseId}`);
+                localStorage.removeItem(`test_progress_${testResponseId}`);
+                removeTimer(testResponseId);
+                return;
+            }
             // Don't remove timer if submit failed - it will retry next interval
         }
     }, [removeTimer]);

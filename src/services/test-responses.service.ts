@@ -72,6 +72,22 @@ class TestResponsesService {
         return response.data;
     }
 
+    /**
+     * Solo admin: borra UN test de la postulación (completo, incompleto o
+     * abierto) para que la persona lo rinda de nuevo desde cero. El backend
+     * guarda un respaldo en la auditoría.
+     */
+    async reiniciarTest(
+        responseId: string,
+        data: { motivo: string; enviarCorreo: boolean; mensaje?: string }
+    ): Promise<Omit<ResultadoReinicio, "testsBorrados">> {
+        const response = await apiService.post<Omit<ResultadoReinicio, "testsBorrados">>(
+            `${this.basePath}/${responseId}/reiniciar`,
+            data
+        );
+        return response.data;
+    }
+
     async autoEvaluate(responseId: string): Promise<TestResponse> {
         const response = await apiService.post<TestResponse>(
             `${this.basePath}/${responseId}/auto-evaluate`
