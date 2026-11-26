@@ -36,6 +36,7 @@ import {
 } from "../../components/common/TestsRendidos";
 import { UserRole } from "../../types/user.types";
 import { ReactivarTestModal } from "../../components/admin/ReactivarTestModal";
+import { ReiniciarParticipacionModal } from "../../components/admin/ReiniciarParticipacionModal";
 
 export const WorkerDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -49,6 +50,7 @@ export const WorkerDetailPage = () => {
     const [uploadingReportId, setUploadingReportId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [testPorReactivar, setTestPorReactivar] = useState<RespuestaConProceso | null>(null);
+    const [postulacionPorReiniciar, setPostulacionPorReiniciar] = useState<{ id: string; proceso: string } | null>(null);
 
     // Detect user role and route
     const { user } = useAuthStore();
@@ -63,6 +65,10 @@ export const WorkerDetailPage = () => {
     // Permission checks
     const canEdit = user && hasPermission(user.role, Permission.REPORTS_EDIT);
     const canApprove = user && hasPermission(user.role, Permission.REPORTS_APPROVE);
+    // Reactivar un test o reiniciar una participación: solo la admin de Talentree
+    // (el backend lo exige igual; esto solo esconde los botones).
+    const esAdminTalentree =
+        !isEvaluator && !isCompany && !isGuest && user?.role === UserRole.ADMIN_TALENTREE;
 
     const { data: worker, isLoading } = useQuery({
         queryKey: ["worker", id],
@@ -346,11 +352,7 @@ export const WorkerDetailPage = () => {
             {/* Tests rendidos: cuelgan de cada postulacion */}
             <TestsRendidos
                 worker={worker}
-                onReactivar={
-                    !isEvaluator && !isCompany && !isGuest && user?.role === UserRole.ADMIN_TALENTREE
-                        ? setTestPorReactivar
-                        : undefined
-                }
+                onReactivar={esAdminTalentree ? setTestPorReactivar : undefined}
             />
             {testPorReactivar && worker && (
                 <ReactivarTestModal
@@ -358,6 +360,15 @@ export const WorkerDetailPage = () => {
                     nombrePostulante={`${worker.firstName} ${worker.lastName}`}
                     correoPostulante={worker.email}
                     onClose={() => setTestPorReactivar(null)}
+                />
+            )}
+            {postulacionPorReiniciar && worker && (
+                <ReiniciarParticipacionModal
+                    workerProcessId={postulacionPorReiniciar.id}
+                    nombreProceso={postulacionPorReiniciar.proceso}
+                    nombrePostulante={`${worker.firstName} ${worker.lastName}`}
+                    correoPostulante={worker.email}
+                    onClose={() => setPostulacionPorReiniciar(null)}
                 />
             )}
 
@@ -438,6 +449,20 @@ export const WorkerDetailPage = () => {
                                                             className="text-blue-600 hover:text-blue-900"
                                                         >
                                                             Ver Proceso
+                                                        </button>
+                                                    )}
+                                                    {esAdminTalentree && (
+                                                        <button
+                                                            onClick={() =>
+                                                                setPostulacionPorReiniciar({
+                                                                    id: wp.id,
+                                                                    proceso: wp.process?.name || "este proceso",
+                                                                })
+                                                            }
+                                                            className="text-red-600 hover:text-red-800"
+                                                            title="Borra los tests de este proceso para que los rinda de nuevo"
+                                                        >
+                                                            Reiniciar
                                                         </button>
                                                     )}
                                                     {wp.process?.id && videos[wp.process.id] && (
